@@ -167,6 +167,23 @@ button:focus-visible { outline: 3px solid var(--mango); outline-offset: 2px; }
 .mk { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; align-items: start; }
 .mk canvas { width: 110px; height: 140px; background: #103646; border-radius: 12px; cursor: default; }
 .mk .pvbox { position: sticky; top: 0; }
+.tut { position: fixed; inset: 0; z-index: 9000; }
+.tutspot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 4px #ffa733, 0 0 0 9999px rgba(4, 16, 22, 0.62); transition: all 0.35s ease; pointer-events: none; }
+.tutspot.none { left: 50% !important; top: 42% !important; width: 0 !important; height: 0 !important; box-shadow: 0 0 0 9999px rgba(4, 16, 22, 0.62); }
+.tutcard { position: fixed; left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 32px)); background: #fffdf8; color: #10232c; border-radius: 20px; padding: 18px 18px 14px; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4); transition: top 0.35s ease, bottom 0.35s ease; font-family: Figtree, system-ui, sans-serif; }
+.tutcard .tk { font: 700 12px/1 Figtree, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #c26a00; }
+.tutcard h3 { margin: 6px 0 6px; font: 800 20px/1.2 Figtree, system-ui, sans-serif; color: #10232c; }
+.tutcard .ti { font-size: 34px; line-height: 1; float: right; margin: -2px 0 6px 10px; }
+.tutcard p { margin: 0 0 12px; font-size: 15px; line-height: 1.45; color: #2c434d; }
+.tutcard ul { margin: 0 0 12px; padding-left: 18px; font-size: 14px; line-height: 1.5; color: #2c434d; }
+.tutcard .tdots { display: flex; gap: 5px; margin: 2px 0 12px; clear: both; }
+.tutcard .tdots i { width: 7px; height: 7px; border-radius: 50%; background: #d9d3c6; }
+.tutcard .tdots i.on { background: #ffa733; width: 18px; border-radius: 4px; }
+.tutcard .tbtns { display: flex; gap: 8px; align-items: center; }
+.tutcard .tbtns button { font: 700 15px/1 Figtree, system-ui, sans-serif; border: 0; border-radius: 12px; padding: 11px 16px; cursor: pointer; }
+.tutcard .tnext { background: #ffa733; color: #10232c; margin-left: auto; }
+.tutcard .tback { background: #efe9dd; color: #10232c; }
+.tutcard .tskip { background: none; color: #6b7d84; padding: 11px 4px !important; }
 canvas.pv3d { width: 130px; height: 170px; background: radial-gradient(circle at 50% 35%, #2a6a80, #103646); border-radius: 12px; display: block; }
 .pvwrap { display: flex; justify-content: center; margin: 4px 0 10px; }
 .pvwrap canvas.pv3d { width: 150px; height: 196px; }
@@ -395,6 +412,7 @@ button.prow { transition: transform 0.1s ease; } button.prow:active { transform:
     <button class="navitem" id="navMap" type="button"><svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg><span class="navl">Map</span></button>
     <button class="navitem" id="navPhone" type="button"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M10.5 18h3"/></svg><span class="navl">Phone</span><span class="navbadge" id="navbadge" hidden></span></button>
   </nav>
+  <div class="tut" id="tut" hidden><div class="tutspot" id="tutSpot"></div><div class="tutcard" id="tutCard" role="dialog" aria-live="polite" aria-label="How to play"></div></div>
   <div class="phonewrap" id="phone" hidden>
     <div class="phone" role="dialog" aria-label="Your phone">
       <button class="pclose" id="pclose" type="button" aria-label="Close phone">✕</button>
@@ -1945,6 +1963,7 @@ function phoneRender() { // draw the current phone screen
   if (pv.app === "settings") { // settings
     prow(box, "Name", s.name); prow(box, "Status", ROLE[s.role].label);
     { const r = el("button", "prow"); r.type = "button"; r.append(el("span", "", "Replay the welcome intro"), el("b", "", "›")); r.onclick = () => { closePhone(); playIntro(); }; box.append(r); } // watch the intro again
+    { const r = el("button", "prow"), l = el("span", "", "📘 How to play"); l.append(el("small", "", "A one-minute tour of the game")); r.type = "button"; r.append(l, el("b", "", "›")); r.onclick = tutStart; box.append(r); } // the tutorial again
     { const r = el("button", "prow"), l = el("span", "", "Progress saving"); l.append(el("small", "", db ? "Saved on this device and to your account" + (myCloud ? " · last synced " + new Date(myCloud.savedAt || Date.now()).toLocaleDateString() : "") : "Saved on this device only")); r.type = "button"; r.append(l, el("b", "", db ? "Load from cloud ›" : "ⓘ")); r.onclick = () => { loadCloudManually(); phoneRender(); }; box.append(r); } // cross-device save
     if (window.claude && window.claude.account) { // self-hosted server: a username and password to play this character on other devices
       const acc = window.claude.account, nm = acc.name(); prow(box, "Login", nm ? "@" + nm : "Not set", nm ? "Log in with it on any phone or computer to carry on here" : "Add one so you never lose this character, and can play it on other devices"); // current login
@@ -2249,10 +2268,47 @@ function openCreate() { // the "who are you" screen
     { const P = pieceSet(myLook()); for (const k of SLOTS) s.wardrobe[pieceKey(P.g, k, P[k])] = 1; } // your starting clothes are yours to keep
     s.made = true; s.joined = s.joined || Date.now(); s.day0 = day(); s.permit = day() + permDays(); save(); closeMenu(); // done, start playing
     toast("Bonzour " + s.name + ". Your room is paid until Monday. Go find work, or a party."); // welcome
+    if (!s.tutDone) setTimeout(tutStart, 900); // first time: the guided tour
   }; // end start
   card.appendChild(go); // add the button
   $("sheet").hidden = false; // show the screen (game stays paused)
 } // end openCreate
+
+// ================= first-time tutorial: a short guided tour of the screen =================
+const TUT = [ // [what to highlight (or ""), icon, title, text, bullet points]
+  ["", "🌴", () => "Bonzour " + (s.name || "") + "!", "Welcome to Flic en Flac Life: live your island life on Mauritius' west coast, alongside real players. Here's a quick tour.", []],
+  [".zoom", "👆", "Getting around", "", ["Tap the ground to walk there", "Tap a glowing ring, or a building, to walk over and use it", "Drag to look around · pinch or + / − to zoom", "On a keyboard: arrows or WASD to walk, E to use"]],
+  ["#needs", "❤️", "Look after yourself", "These bars are your food, sleep, hygiene, bladder, fun and social life. Eat, sleep, shower and see people before they run low, or you'll faint and pay the clinic.", []],
+  ["#navPhone", "📱", "Your phone", "Most things start here.", ["Jobs, to earn money", "Messages and other players", "Wardrobe, to change your outfit", "MCB Juice, your money · Delivery · Health"]],
+  ["#navMap", "🗺️", "Map and rides", "Open the map to find any place. Tap Ride to get a taxi or bus there, or drive your own car once you have one.", []],
+  ["#navHome", "🏠", "Your own home", "You have a private house in the Players' Estate. Sleep, cook, shower, decorate and host house parties there.", ["Nobody can come in unless you invite them", "Invite someone from their profile on your phone", "Buy furniture and pets from the Buy tab"]],
+  ["#quest", "🎯", "Your goals", "Follow these goals to get started. They pay you as you go, and lead to a big life ambition.", []],
+  ["#chat", "💬", "Meet people", "Say hi in the public chat. Message players, make friends, go on dates, join their parties and send them money.", []],
+  ["", "💸", "Money and rent", "Rent is due every Monday at 08:00. Keep enough in your wallet.", ["Get a job from the Jobs app or at the buildings", "Sell coconuts on the beach", "Save or invest at MCB"]],
+  ["", "👕", "Look your best", "Buy clothes at the fashion store in Cascavelle Mall, get your hair done at Hair & Nails, and change outfits any time in the Wardrobe app. You can replay this tour from Settings.", []]
+]; // end TUT
+let tutI = -1; // the step showing (-1 when closed)
+function tutShow(i) { // draw one step: spotlight the thing it talks about, and a card beside it
+  tutI = i; const st = TUT[i], box = $("tut"), card = $("tutCard"), spot = $("tutSpot"); box.hidden = false; card.innerHTML = ""; // open
+  card.append(el("div", "ti", st[1]), el("div", "tk", "How to play · " + (i + 1) + " of " + TUT.length), el("h3", "", typeof st[2] === "function" ? st[2]() : st[2])); // icon, step, title
+  if (st[3]) card.append(el("p", "", st[3])); if (st[4].length) { const ul = el("ul", ""); for (const t of st[4]) ul.append(el("li", "", t)); card.append(ul); } // text and tips
+  const dots = el("div", "tdots"); TUT.forEach((q, j) => dots.append(el("i", j === i ? "on" : ""))); card.append(dots); // progress
+  const bt = el("div", "tbtns"), mk = (cls, txt, fn) => { const b = el("button", cls, txt); b.type = "button"; b.onclick = fn; bt.append(b); return b; }; // buttons
+  if (i > 0) mk("tback", "Back", () => tutShow(i - 1)); else mk("tskip", "Skip tour", tutEnd);
+  mk("tnext", i === TUT.length - 1 ? "Let's go!" : "Next", () => (i === TUT.length - 1 ? tutEnd() : tutShow(i + 1))).focus(); card.append(bt);
+  tutPlace();
+} // end tutShow
+function tutPlace() { // move the spotlight onto its target and keep the card out of its way
+  if (tutI < 0) return; const st = TUT[tutI], spot = $("tutSpot"), card = $("tutCard"), t = st[0] && document.querySelector(st[0]); // the target, if it is on screen
+  const r = t && t.offsetParent !== null ? t.getBoundingClientRect() : null; // its box
+  if (!r || r.width < 2) { spot.className = "tutspot none"; card.style.top = ""; card.style.bottom = Math.max(16, innerHeight * 0.5 - 150) + "px"; return; } // nothing to point at: card in the middle
+  const p = 8; spot.className = "tutspot"; Object.assign(spot.style, { left: r.left - p + "px", top: r.top - p + "px", width: r.width + p * 2 + "px", height: r.height + p * 2 + "px" }); // ring around it
+  if (r.top + r.height / 2 > innerHeight / 2) { card.style.top = ""; card.style.bottom = Math.max(12, innerHeight - r.top + 18) + "px"; } else { card.style.bottom = ""; card.style.top = Math.min(innerHeight - 260, r.bottom + 18) + "px"; } // card above or below it
+} // end tutPlace
+function tutStart() { closePhone(); tutShow(0); } // open the tour from the start
+function tutEnd() { tutI = -1; $("tut").hidden = true; s.tutDone = 1; save(); } // close it for good
+addEventListener("resize", tutPlace); // keep the spotlight on target
+addEventListener("keydown", (e) => { if (tutI < 0) return; if (e.key === "Escape") tutEnd(); else if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); tutI === TUT.length - 1 ? tutEnd() : tutShow(tutI + 1); } else if (e.key === "ArrowLeft" && tutI > 0) { e.preventDefault(); e.stopPropagation(); tutShow(tutI - 1); } }, true); // keyboard: next, back, close
 
 // ================= time passing =================
 function advance(min, decay) { // move the clock forward
@@ -2574,6 +2630,25 @@ function textTex(text, bg, fg, px) { // a picture of a label, cached by its text
   x2.fillStyle = fg; x2.textAlign = "center"; x2.textBaseline = "middle"; x2.fillText(text, c.width / 2, c.height / 2 + 2); // the words
   const t2 = new THREE.CanvasTexture(c); t2.encoding = THREE.sRGBEncoding; t2.userData = { aspect: c.width / c.height }; TEXS[k] = t2; return t2; // ready to use
 } // end textTex
+const LABELS = []; // every name tag picture, redrawn once the web font has loaded
+function labelTex(text, icon, col) { // a map-pin name tag: white pill with a soft shadow, a coloured icon badge, bold dark text and a pointer underneath
+  const k = "L|" + text + "|" + icon + "|" + col; if (TEXS[k]) return TEXS[k]; // reuse
+  const c = document.createElement("canvas"), t2 = new THREE.CanvasTexture(c); t2.encoding = THREE.sRGBEncoding; t2.anisotropy = 4; // drawing surface and its texture
+  const draw = () => { // (drawn again when the font arrives)
+    let x2 = c.getContext("2d"); const F = "800 46px Figtree, system-ui, sans-serif"; x2.font = F; // bold lettering
+    const tw = Math.ceil(x2.measureText(text).width), H = 84, B = icon ? 64 : 0, PL = icon ? 10 : 30, PR = 30, W2 = PL + B + (icon ? 14 : 0) + tw + PR, TIP = 16, SH = 12; // sizes in pixels
+    c.width = W2 + SH * 2; c.height = H + TIP + SH * 2; x2 = c.getContext("2d"); x2.font = F; // resize (this clears it)
+    x2.shadowColor = "rgba(4,20,28,0.38)"; x2.shadowBlur = 12; x2.shadowOffsetY = 3; x2.fillStyle = "rgba(255,255,255,0.97)"; // soft drop shadow
+    x2.beginPath(); if (x2.roundRect) x2.roundRect(SH, SH, W2, H, H / 2); else x2.rect(SH, SH, W2, H); x2.moveTo(SH + W2 / 2 - TIP, SH + H - 1); x2.lineTo(SH + W2 / 2, SH + H + TIP); x2.lineTo(SH + W2 / 2 + TIP, SH + H - 1); x2.closePath(); x2.fill(); x2.shadowColor = "transparent"; // the pill and its pointer
+    if (icon) { x2.fillStyle = col; x2.beginPath(); x2.arc(SH + PL + B / 2, SH + H / 2, B / 2, 0, 7); x2.fill(); x2.font = "36px sans-serif"; x2.textAlign = "center"; x2.textBaseline = "middle"; x2.fillText(icon, SH + PL + B / 2, SH + H / 2 + 2); x2.font = F; } // the coloured badge with its icon
+    x2.fillStyle = "#10232c"; x2.textAlign = "left"; x2.textBaseline = "middle"; x2.fillText(text, SH + PL + B + (icon ? 14 : 0), SH + H / 2 + 2); // the name
+    t2.userData = { aspect: c.width / c.height, tip: SH / c.height, redraw: draw }; t2.needsUpdate = true; // the pointer's tip sits at the sprite's anchor
+  }; draw(); TEXS[k] = t2; LABELS.push(t2); return t2;
+} // end labelTex
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { for (const t of LABELS) t.userData.redraw(); }); // sharper lettering once Figtree is in
+function nameTag(text, icon, col, px, near) { // a name tag sprite anchored at its pointer, always drawn on top
+  const sp = sprite(labelTex(text, icon, col), 0.5, true); sp.center.set(0.5, sp.material.map.userData.tip); sp.renderOrder = 5; sp.userData.px = px || 30; sp.userData.near = near || 0; return sp; // px: height on screen; near: only show within this many tiles of you
+} // end nameTag
 function emojiTex(ch) { // a picture of an emoji icon
   if (TEXS["e" + ch]) return TEXS["e" + ch]; // reuse
   const c = document.createElement("canvas"); c.width = c.height = 96; const x2 = c.getContext("2d"); // drawing surface
@@ -2705,8 +2780,8 @@ function buildGround() { // the ground as one big painted picture, plus water an
 
 function buildingGroup(b) { // one building as a 3D block with roof, windows, door and sign
   const gr = new THREE.Group(); gr.position.set(b.x, 0, b.y); const w = b.w, h = b.h; // placed at its footprint
-  if (b.lot) { for (const [x, z, sx, sz] of [[w / 2, 0.1, w, 0.06], [w / 2, h - 0.1, w, 0.06], [0.1, h / 2, 0.06, h], [w - 0.1, h / 2, 0.06, h]]) box(sx, 0.35, sz, "#8a6a3c", x, 0.18, z, gr); const sp = sprite(textTex("Free plot", "#6b4a2f", "#ffffff"), 0.35); sp.position.set(w / 2, 0.7, h / 2); gr.add(sp); return gr; } // fenced empty plot
-  const big = w * h >= 40, H3 = b.tall || (big ? 3.8 : h <= 3 ? 2.4 : 2.9); // building height (the bank is a tower)
+  if (b.lot) { for (const [x, z, sx, sz] of [[w / 2, 0.1, w, 0.06], [w / 2, h - 0.1, w, 0.06], [0.1, h / 2, 0.06, h], [w - 0.1, h / 2, 0.06, h]]) box(sx, 0.35, sz, "#8a6a3c", x, 0.18, z, gr); const sp = nameTag("Free plot", "🌱", "#5f8f3a", 22, 9); sp.position.set(w / 2, 0.9, h / 2); gr.add(sp); gr.userData.tag = sp; return gr; } // fenced empty plot (its sign shows when you are close)
+  const big = w * h >= 40, H3 = b.tall || (big ? 3.8 : h <= 3 ? 2.4 : 2.9); let top = H3 + 0.5; // building height (the bank is a tower), and the highest point of the roof
   box(w, H3, h, b.col, w / 2, H3 / 2, h / 2, gr); box(w + 0.1, 0.22, h + 0.1, shade(b.col, 0.7), w / 2, 0.11, h / 2, gr); // walls and a darker plinth
   if (b.roof === "flat") { // flat concrete roof
     box(w + 0.2, 0.16, h + 0.2, b.roofCol, w / 2, H3 + 0.08, h / 2, gr); // slab
@@ -2715,7 +2790,7 @@ function buildingGroup(b) { // one building as a 3D block with roof, windows, do
   } else { // hipped tile roof or straw thatch
     const rh = b.roof === "thatch" ? 1.5 : Math.max(0.8, Math.min(1.6, Math.min(w, h) * 0.32)); // roof height
     const roof = mesh(geo("pyr", () => { const g2 = new THREE.ConeGeometry(1, 1, 4); g2.rotateY(Math.PI / 4); return g2; }), mat(b.roofCol, { flatShading: true }), w / 2, H3 + rh / 2, h / 2, gr); // four-sided roof
-    roof.scale.set((w + 0.5) / Math.SQRT2, rh, (h + 0.5) / Math.SQRT2); // stretched over the building
+    roof.scale.set((w + 0.5) / Math.SQRT2, rh, (h + 0.5) / Math.SQRT2); top = H3 + rh; // stretched over the building
   } // end roof
   const fh = b.tall ? 1.2 : 1.45, floors = b.tall ? Math.floor((H3 - 0.6) / fh) : H3 > 3 ? 2 : 1, n = Math.max(2, Math.floor(w / 1.25)); // floors and windows per floor on the front
   for (let f = 0; f < floors; f++) for (let i = 0; i < n; i++) { // front windows
@@ -2726,9 +2801,9 @@ function buildingGroup(b) { // one building as a 3D block with roof, windows, do
   for (let f = 0; f < floors; f++) for (let z = 0.9; z < h - 0.5; z += 1.5) { box(0.06, 0.72, 0.62, "#3a2a1a", w + 0.02, 1.05 + f * fh, z, gr); box(0.02, 0.6, 0.5, R.winMat, w + 0.06, 1.05 + f * fh, z, gr); } // east side windows
   box(0.78, 1.25, 0.08, "#2a1a10", w / 2, 0.62, h + 0.03, gr); box(0.56, 0.6, 0.02, R.winMat, w / 2, 0.85, h + 0.08, gr); box(1.1, 0.06, 0.4, "#cfc7b4", w / 2, 0.03, h + 0.2, gr); // door, door glass and step
   if (b.awn) { const aw = box(w * 0.92, 0.05, 0.7, b.awn, w / 2, 1.62, h + 0.32, gr); aw.rotation.x = 0.35; } // awning over the shop front
-  const signH = 0.38, sp = mesh(geo("plane", () => new THREE.PlaneGeometry(1, 1)), new THREE.MeshBasicMaterial({ map: textTex(b.name, b.sign || "#14222b", "#ffffff") }), w / 2, floors >= 2 ? H3 - 0.4 : Math.min(H3 - 0.32, 2.05), h + 0.09, gr, false); // sign board facing the street
+  const signH = 0.38, sp = mesh(geo("plane", () => new THREE.PlaneGeometry(1, 1)), new THREE.MeshBasicMaterial({ map: textTex(b.name, b.sign || "#14222b", "#ffffff", 64) }), w / 2, floors >= 2 ? H3 - 0.4 : Math.min(H3 - 0.32, 2.05), h + 0.09, gr, false); // sign board facing the street
   sp.scale.set(Math.min(w * 0.9, signH * sp.material.map.userData.aspect), signH, 1); // keep the lettering in proportion
-  const tag = sprite(textTex((BICON[b.id] ? BICON[b.id] + " " : "") + b.name, "rgba(6,28,40,0.85)", "#ffffff"), 0.34); tag.position.set(w / 2, H3 + (b.roof === "flat" ? 1.0 : b.roof === "thatch" ? 2.1 : 2.0), h / 2); gr.add(tag); gr.userData.tag = tag; if (BICON[b.id]) { const em = sprite(emojiTex(BICON[b.id]), 0.65); em.position.copy(tag.position); tag.position.y += 0.6; gr.add(em); gr.userData.em = em; } // name and a big emoji floating above the roof
+  const home = !b.id && !b.icon, tag = nameTag(b.name, b.icon || BICON[b.id] || "🏠", b.sign || b.roofCol || "#1f6fa8", home ? 26 : 34, home ? 16 : 0); tag.position.set(w / 2, top + 0.25, h / 2); gr.add(tag); gr.userData.tag = tag; // its name tag, pointing at the roof (players' houses only show theirs when you are close)
   gr.userData.box = { x: b.x, y: b.y, w, h }; gr.traverse((m) => { if (m.isMesh && m.material !== R.winMat && !m.material.map) m.material = m.material.clone(); }); // remember the footprint and give it its own materials so it can fade
   return gr; // finished building
 } // end buildingGroup
@@ -3070,7 +3145,7 @@ function buildRoom(id) { // the inside of a building, built the first time you e
   box(0.2, 0.5, h - 1.8, shade(b.col, 0.85), w - 0.9, 0.25, h / 2, gr); for (const [x0, x1] of [[0.8, w / 2 - 0.6], [w / 2 + 0.6, w - 0.8]]) box(x1 - x0, 0.5, 0.2, shade(b.col, 0.85), (x0 + x1) / 2, 0.25, h - 0.9, gr); // low cutaway front and right walls, with the doorway
   box(w - 1.6, 0.12, 0.24, "#ffffff", w / 2, 0.06, 1.0, gr); box(0.24, 0.12, h - 1.8, "#ffffff", 1.0, 0.06, h / 2, gr); // skirting boards
   for (const i of [0, 1]) { const wx = i ? w - 3 : 3; box(1.2, 0.9, 0.04, "#3a2a1a", wx, 1.7, 1.01, gr); box(1.05, 0.78, 0.02, R.winMat, wx, 1.7, 1.04, gr); box(0.16, 0.12, 0.12, R.lampMat, wx + (i ? -1.1 : 1.1), 2.2, 1.06, gr); } // windows and wall lamps on the back wall
-  const sg = mesh(geo("plane", () => new THREE.PlaneGeometry(1, 1)), new THREE.MeshBasicMaterial({ map: textTex(b.name, b.sign || "#14222b", "#ffffff") }), w / 2, 2.2, 1.02, gr, false); sg.scale.set(0.45 * sg.material.map.userData.aspect, 0.45, 1); // name sign on the back wall
+  const sg = mesh(geo("plane", () => new THREE.PlaneGeometry(1, 1)), new THREE.MeshBasicMaterial({ map: textTex(b.name, b.sign || "#14222b", "#ffffff", 64) }), w / 2, 2.2, 1.02, gr, false); sg.scale.set(0.45 * sg.material.map.userData.aspect, 0.45, 1); // name sign on the back wall
   const lamp = new THREE.PointLight(0xffe2b0, 0.7, Math.max(w, h) * 1.4); lamp.position.set(w / 2, 2.6, h / 2); gr.add(lamp); // warm ceiling light
   for (const o of ROOM[id]) furn(o.kind, o.x, o.y, gr, o.k, o.rot || 0); // furniture
   gr.userData.marks = ROOM[id].filter((o) => o.use).map((o) => { const ring = mesh(geo("ring", () => new THREE.RingGeometry(0.26, 0.36, 28)), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, side: THREE.DoubleSide }), o.x, 0.03, o.y, gr, false); ring.rotation.x = -Math.PI / 2; const ic = sprite(emojiTex(o.icon || "•"), 0.5); ic.position.set(o.x, 1.75, o.y); gr.add(ic); const lb = sprite(textTex(o.name, "rgba(6,28,40,0.85)", "#ffffff"), 0.26, true); lb.position.set(o.x, 2.15, o.y); gr.add(lb); return { o, ring, ic }; }); // station rings, icons and names
@@ -3178,7 +3253,7 @@ function buildLandmark() { // big white letters on the grass: FLIC EN FLAC
   for (let i = 0; i < 22; i++) for (const [z, k] of [[1.0, 0], [4.9, 2]]) sph(0.16, ["#ef6f9c", "#ffd23c", "#ffffff", "#e4572e"][(i + k) % 4], 27.6 + i * 0.75, 0.12, z, R.world, 6); // flower borders
 } // end buildLandmark
 function buildApts() { // the apartment block for players who arrive after every estate plot is taken
-  const gr = buildingGroup({ x: APTS.x, y: APTS.y, w: APTS.w, h: APTS.h, name: APTS.name, col: "#f1e4d0", roof: "flat", roofCol: "#c2457a", sign: "#7a2fd1", door: "S", tall: 5.2 }); R.world.add(gr); // a tall block with a pink roof
+  const gr = buildingGroup({ x: APTS.x, y: APTS.y, w: APTS.w, h: APTS.h, name: APTS.name, icon: "🏢", col: "#f1e4d0", roof: "flat", roofCol: "#c2457a", sign: "#7a2fd1", door: "S", tall: 5.2 }); R.world.add(gr); // a tall block with a pink roof
 } // end buildApts
 function buildHouse() { // (old) the shared small house on Coral Street, no longer built: everyone has their own home now
   const hg = new THREE.Group(); R.world.add(hg); const col = "#efe0c4"; // group and wall colour
@@ -3188,8 +3263,12 @@ function buildHouse() { // (old) the shared small house on Coral Street, no long
   const tag = sprite(textTex("🏠 Coral Street · your home", "rgba(6,28,40,0.85)", "#ffffff"), 0.42); tag.position.set(23, 4.5, 6.5); hg.add(tag); hg.userData.tag = tag; // label
   hg.userData.box = { x: 19, y: 3, w: 8, h: 7 }; hg.traverse((m) => { if (m.isMesh && m.material !== R.winMat) m.material = m.material.clone(); }); // fades like other buildings
 } // end buildHouse
-function scaleLabels() { // keep building names readable when zoomed out
-  for (const gr of R.world.children.concat(R.estate ? R.estate.children : [])) for (const sp of [gr.userData.tag, gr.userData.em]) { if (!sp) continue; if (!sp.userData.bs) sp.userData.bs = sp.scale.clone(); sp.scale.copy(sp.userData.bs).multiplyScalar(R.lk); } // grow labels with distance
+const _lp = typeof THREE !== "undefined" ? new THREE.Vector3() : null; // scratch for label positions
+function scaleLabels() { // keep every building's name tag the same readable size on screen at any zoom
+  const vh = (R.renderer.domElement.clientHeight || innerHeight), per = 2 * Math.tan(R.camera.fov * Math.PI / 360) / vh, big = Math.min(innerWidth, innerHeight) < 700 ? 1.08 : 1; // world size of one screen pixel per unit distance (a touch bigger on phones)
+  for (const gr of R.world.children.concat(R.estate ? R.estate.children : [])) { const sp = gr.userData.tag; if (!sp || !sp.userData.px) continue; // only the new tags
+    sp.getWorldPosition(_lp); if (sp.userData.near) sp.visible = !introOn && Math.hypot(_lp.x - s.x, _lp.z - s.y) < sp.userData.near; if (!sp.visible) continue; // houses and plots: only when you are near
+    const hgt = sp.userData.px * big * per * R.camera.position.distanceTo(_lp); sp.scale.set(hgt * sp.material.map.userData.aspect, hgt, 1); } // constant pixel height
 } // end scaleLabels
 
 // ================= phone home screen =================
