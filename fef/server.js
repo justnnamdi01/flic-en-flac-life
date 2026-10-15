@@ -50,9 +50,9 @@ function pruneMail() { // keep the mail collection from growing without bound
 
 // ---------- the little Firestore-like database (collections of documents) ----------
 const dict = (o) => Object.assign(Object.create(null), o || {}); // a lookup table with no prototype (so "__proto__" is just a key)
-let db = { players: {}, mail: {}, auth: { bound: dict(), accounts: dict(), names: dict() } }; // two public collections, plus private login data
-try { const loaded = JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); db.players = loaded.players || {}; db.mail = loaded.mail || {}; const a = loaded.auth || {}; db.auth = { bound: dict(a.bound), accounts: dict(a.accounts), names: dict(a.names) }; } catch (e) {} // load last state (known collections only)
-const PUBLIC_COLS = ["players", "mail"];               // the only collections a tab may read
+let db = { players: {}, mail: {}, homes: dict(), auth: { bound: dict(), accounts: dict(), names: dict() }, invites: dict() }; // public collections, plus private login data and home invites
+try { const loaded = JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); db.players = loaded.players || {}; db.mail = loaded.mail || {}; db.homes = dict(loaded.homes); const a = loaded.auth || {}; db.auth = { bound: dict(a.bound), accounts: dict(a.accounts), names: dict(a.names) }; db.invites = dict(); for (const k in loaded.invites || {}) db.invites[k] = dict(loaded.invites[k]); } catch (e) {} // load last state (known collections only)
+const PUBLIC_COLS = ["players", "mail", "homes"];      // the only collections a tab may read (homes: which player lives at which address)
 let saveTimer = null;                                  // debounce disk writes
 function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { fs.writeFile(DATA_FILE, JSON.stringify(db), () => {}); }, 400); } // write at most ~2x/sec
 
@@ -73,6 +73,55 @@ function whoIs(m) { // work out a connecting tab's uid from its hello; bound[uid
   if (ALLOW_LEGACY && UID_RE.test(id) && !m.token && db.auth.bound[id] !== 2) { if (!db.auth.bound[id]) { db.auth.bound[id] = 1; persist(); } return id; } // a browser from before keys existed claims its old id (again, if the key never reached it)
   const fresh = crypto.randomBytes(12).toString("hex"); db.auth.bound[fresh] = 2; persist(); return fresh; // no id, a wrong key, or someone else's id: a brand-new player (its key is required from now on)
 }
+// ---------- homes: one private address per player, entered only by its owner and invited guests ----------
+const parties = new Map();                             // owner uid -> time their house party ends (anyone may come in until then)
+const homeOf = (uid) => { for (const i in db.homes) if (db.homes[i].uid === uid) return +i; return -1; }; // a player's address number, or -1
+function canVisit(owner, guest) { // may this guest be inside this owner's home (or their house party)?
+  if (!owner || owner === guest) return true;           // your own place
+  if ((parties.get(owner) || 0) > Date.now()) return true; // a party is on: open house
+  const inv = db.invites[owner]; return !!(inv && inv[guest] > Date.now()); // an invite that has not run out
+}
+function roomOwner(p) { // whose private room a presence says it is in ("" for public places)
+  const where = typeof p.in === "string" ? p.in : "";
+  if (where.startsWith("home:")) return where.slice(5); // someone's home
+  if (where === "houseparty") return typeof p.ph === "string" ? p.ph : ""; // someone's house party
+  return "";
+}
+function tellUid(uid, obj) { for (const [, p] of peers) if (p.uid === uid) send(p.ws, obj); } // every open tab of one player
+function kickGuest(owner, guest) { // send a guest out of someone's home right away
+  for (const [, p] of peers) if (p.uid === guest && roomOwner(p.presence || {}) === owner) { p.presence.in = ""; p.presence.ph = ""; peersDirty = true; send(p.ws, { t: "kicked", owner }); }
+}
+function homes(ws, me, m) { // claim an address, invite or uninvite a guest, open your house for a party, list your invites
+  const reply = (o) => send(ws, Object.assign({ t: "homes", rid: m.rid }, o));
+  if (m.t === "home.claim") { // everyone gets the lowest free address, once
+    let i = homeOf(me.uid);
+    if (i < 0) { if (!allow(me)) return reply({ ok: false, error: "Slow down a little." }); i = 0; while (db.homes[i]) i++; db.homes[i] = { uid: me.uid, at: Date.now() }; persist(); fanout("homes"); }
+    return reply({ ok: true, index: i });
+  }
+  if (m.t === "home.invites") { // who has invited me, and until when
+    const list = []; for (const owner in db.invites) { const until = db.invites[owner][me.uid]; if (until > Date.now()) list.push({ owner, until }); }
+    return reply({ ok: true, list });
+  }
+  if (!allow(me)) return reply({ ok: false, error: "Slow down a little." });
+  const to = String(m.to || "");
+  if (m.t === "home.invite") { // let one player in for a few hours
+    if (!UID_RE.test(to) || to === me.uid) return reply({ ok: false, error: "You can't invite that player." });
+    const until = Date.now() + Math.min(24, Math.max(1, Number(m.hours) || 3)) * 3600000, inv = db.invites[me.uid] || (db.invites[me.uid] = dict());
+    for (const g in inv) if (inv[g] < Date.now()) delete inv[g]; // tidy old ones
+    if (Object.keys(inv).length >= 50) return reply({ ok: false, error: "You have too many open invites. Cancel some first." });
+    inv[to] = until; persist(); tellUid(to, { t: "invited", owner: me.uid, until }); return reply({ ok: true, until });
+  }
+  if (m.t === "home.uninvite") { // take an invite back (and walk them out if they are inside)
+    const inv = db.invites[me.uid]; if (inv) delete inv[to]; persist(); if (!canVisit(me.uid, to)) kickGuest(me.uid, to); return reply({ ok: true });
+  }
+  if (m.t === "home.party") { // open house while a party runs (at most 15 minutes from now)
+    const until = Math.min(Date.now() + 15 * 60000, Number(m.until) || 0); if (until > Date.now()) parties.set(me.uid, until); else parties.delete(me.uid);
+    return reply({ ok: true });
+  }
+  return reply({ ok: false, error: "Unknown request." });
+}
+setInterval(() => { for (const [owner, until] of parties) if (until <= Date.now()) { parties.delete(owner); for (const [, p] of peers) if (p.uid && roomOwner(p.presence || {}) === owner && !canVisit(owner, p.uid)) kickGuest(owner, p.uid); } }, 15000); // parties end: uninvited guests go home
+
 async function account(ws, me, m) { // create a login for this character, or log in to another one
   const reply = (o) => send(ws, Object.assign({ t: "account", rid: m.rid }, o));
   if (!allow(me) || !allow(me)) return reply({ ok: false, error: "Slow down a little." }); // costs two write tokens
@@ -150,7 +199,11 @@ wss.on("connection", (ws) => {
     }
     if (!me.uid) return;                                  // nothing else until hello
     if (m.t === "account.register" || m.t === "account.login") { account(ws, me, m); return; } // logins
-    if (m.t === "presence") { if (sizeOk(m.patch, MAX_PRESENCE)) { me.presence = Object.assign(me.presence || {}, m.patch || {}); peersDirty = true; } return; } // merge a small presence patch
+    if (m.t === "home.claim" || m.t === "home.invites" || m.t === "home.invite" || m.t === "home.uninvite" || m.t === "home.party") { homes(ws, me, m); return; } // homes and invites
+    if (m.t === "presence") { if (sizeOk(m.patch, MAX_PRESENCE)) { // merge a small presence patch
+      me.presence = Object.assign(me.presence || {}, m.patch || {}); me.presence.uid = me.uid; // nobody can pose as another player
+      const owner = roomOwner(me.presence); if (!canVisit(owner, me.uid)) { me.presence.in = ""; me.presence.ph = ""; send(ws, { t: "kicked", owner }); } // no invite: not allowed in
+      peersDirty = true; } return; }
     if (m.t === "doc.set") { // only your own players/<uid>, nothing else
       const parts = String(m.path || "").split("/"), col = parts[0], id = parts[1]; // which document
       if (col === "players" && id && id === me.uid && allow(me) && sizeOk(m.data, MAX_DOC)) { db.players[id] = m.data; persist(); fanout("players"); } // save your own record

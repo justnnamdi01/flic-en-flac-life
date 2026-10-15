@@ -24,7 +24,10 @@ game behaves exactly as it does on claude.ai:
 | --- | --- |
 | `claude.use("user")` | a server-issued player id and signed key (stored per browser), plus optional logins |
 | `claude.use("room")` | live presence — everyone's position, chat and actions, 8× a second |
-| `claude.use("db")`   | two collections: `players` (saves + leaderboard) and `mail` (money transfers) |
+| `claude.use("db")`   | collections: `players` (saves + leaderboard), `mail` (money transfers) and `homes` (who lives at which address, read-only) |
+| `claude.homes` | private homes: every player gets one address (43 estate plots, then flats in the apartment block); only the owner, invited guests, or anyone during the owner's house party may be inside, and the server enforces it |
+
+Characters are Quaternius' Ultimate Modular Men and Women packs (CC0), split into head, top, legs and feet pieces in `public/models/people2/`. Trees are from Kenney's Nature Kit (CC0).
 
 `public/net-adapter.js` implements that interface over a WebSocket and is loaded **before** the
 game, so nothing in the game itself had to change.

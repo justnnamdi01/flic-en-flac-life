@@ -25,7 +25,8 @@
     ws.onmessage = function (ev) {
       var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (m.t === "welcome") { myPeer = m.peer; remember(m.uid, m.token); accountName = m.account || ""; open = true; for (var id in snaps) sendSub(id); var q = readyQ; readyQ = []; q.forEach(function (r) { r(); }); } // accepted: the server says who we are, then restore subscriptions
-      else if (m.t === "account") { var ar = asks[m.rid]; if (ar) { clearTimeout(ar.timer); delete asks[m.rid]; ar.resolve(m); } } // a login answer
+      else if (m.t === "account" || m.t === "homes") { var ar = asks[m.rid]; if (ar) { clearTimeout(ar.timer); delete asks[m.rid]; ar.resolve(m); } } // an answer to a login or home request
+      else if (m.t === "invited" || m.t === "kicked") { (homeCbs[m.t] || []).forEach(function (cb) { try { cb(m); } catch (e) {} }); } // someone invited you, or you were sent out of a home
       else if (m.t === "peers") { if (peersCb) peersCb({ peers: m.peers.map(function (p) { return { peer: p.peer, presence: p.presence, kind: p.kind || "viewer", isMe: p.peer === myPeer, sameTab: p.peer === myPeer }; }) }); } // room update
       else if (m.t === "snap") { var s = snaps[m.id]; if (s && s.cb) s.cb({ docs: m.docs.map(function (d) { return { id: d.id, data: function () { return d.data; } }; }) }); } // a collection's data
       else if (m.t === "ack") { var pr = pending[m.rid]; if (pr) { clearTimeout(pr.timer); pr.resolve(); delete pending[m.rid]; } } // a write landed
@@ -45,6 +46,7 @@
     });
   }
   var asks = {};                                                  // login requests waiting for an answer: rid -> { resolve, timer }
+  var homeCbs = {};                                               // listeners for "invited" and "kicked"
   function ask(obj) { // a request whose answer comes back as a message (resolves with { ok, error, ... })
     return whenReady().then(function () {
       return new Promise(function (resolve) {
@@ -80,6 +82,14 @@
       name: function () { return accountName; },                                  // this character's login, or "" if none
       register: function (name, pass) { return ask({ t: "account.register", name: name, pass: pass }).then(function (r) { if (r.ok) accountName = r.name; return r; }); }, // add a login to this character
       login: function (name, pass) { return ask({ t: "account.login", name: name, pass: pass }).then(function (r) { if (r.ok) remember(r.uid, r.token); return r; }); } // switch this browser to that character (reload afterwards)
+    },
+    homes: { // private homes: your address, and who may come in
+      claim: function () { return ask({ t: "home.claim" }); },                                   // your address number (given once, kept forever)
+      invites: function () { return ask({ t: "home.invites" }); },                               // who has invited you: { list: [{ owner, until }] }
+      invite: function (to, hours) { return ask({ t: "home.invite", to: to, hours: hours }); },  // let a player in for a few hours
+      uninvite: function (to) { return ask({ t: "home.uninvite", to: to }); },                    // take it back
+      party: function (until) { return ask({ t: "home.party", until: until }); },                // open house until then (0 to close)
+      on: function (type, cb) { (homeCbs[type] = homeCbs[type] || []).push(cb); }                 // "invited" or "kicked"
     }
   };
 })();

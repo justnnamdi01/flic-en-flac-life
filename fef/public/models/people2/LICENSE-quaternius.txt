@@ -1,0 +1,3 @@
+﻿Characters: "Ultimate Modular Men Pack" and "Ultimate Modular Women Pack" by Quaternius (quaternius.com),
+public domain (CC0 1.0): https://creativecommons.org/publicdomain/zero/1.0/
+Split into separate head/top/legs/feet files, with only the Idle, Walk, Run, Wave and Interact animations kept.

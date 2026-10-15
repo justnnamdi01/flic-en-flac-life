@@ -164,8 +164,12 @@ button:focus-visible { outline: 3px solid var(--mango); outline-offset: 2px; }
 .slotbets button.on { background: var(--mango); color: var(--mango-ink); border-color: var(--mango); }
 .slotbtns { display: flex; gap: 10px; }
 .hint { color: var(--muted); font-size: 0.75rem; }
-.mk { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; align-items: start; }
+.mk { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; align-items: start; }
 .mk canvas { width: 110px; height: 140px; background: #103646; border-radius: 12px; cursor: default; }
+.mk .pvbox { position: sticky; top: 0; }
+canvas.pv3d { width: 130px; height: 170px; background: radial-gradient(circle at 50% 35%, #2a6a80, #103646); border-radius: 12px; display: block; }
+.pvwrap { display: flex; justify-content: center; margin: 4px 0 10px; }
+.pvwrap canvas.pv3d { width: 150px; height: 196px; }
 .mkf { display: grid; gap: 6px; min-width: 0; }
 .mkf label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
 .mkf h3 { margin-top: 4px; }
@@ -500,7 +504,7 @@ function fresh() { // a brand new life
     rents: 0, // rents processed so far
     incomeDay: 1, // last day stall income was paid
     name: "", g: "m", role: "resident", skin: SKINS[2], shirt: SHIRTS[0], // who you are
-    pants: "#22364a", cap: "", shades: false, style: 0, wardrobe: {}, // what you wear and own
+    pants: "#22364a", cap: "", shades: false, style: 0, wardrobe: {}, head: "", top: "", legs: "", feet: "", // what you wear and own (head/top/legs/feet: clothing pieces, "" = your default)
     hs: "", hcol: "#17100c", nails: "", car: false, rentCar: 0, driver: false, job: null, autoWork: false, rel: {}, claimed: {}, joined: 0, // hairstyle, hair colour, nail colour, car owned, rental end, student driver, relationships, money already received, first played
     goals: 0, hoops: 0, baskets: 0, // football goals, basketball points, baskets made
     harass: 0, reported: 0, reportAt: 0, // street harassment encounters, reports made, when the police follow up
@@ -559,8 +563,11 @@ const hash = (x, y) => ((x * 73856093) ^ (y * 19349663)) >>> 0; // fixed pseudo-
 
 const FB = { x0: 36, x1: 49, y0: 38, y1: 44, gy0: 40, gy1: 42 }; // football pitch edges and the goal mouth
 const CT = { x0: 50, x1: 55, y0: 38, y1: 44, hx: 52.5, hy: 38.55 }; // basketball court edges and the hoop
-const PLOTS = []; // fifteen house plots in the players' estate, south of Cascavelle
-for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) PLOTS.push({ x: 59 + c * 4, y: 31 + r * 4 }); // five across, three down
+const PLOTS = []; // house plots in the players' estate: every player gets one address, in this order
+for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) PLOTS.push({ x: 59 + c * 4, y: 31 + r * 4 }); // the first estate: five across, three down, south of Cascavelle
+for (let r = 0; r < 2; r++) for (let c = 0; c < 7; c++) PLOTS.push({ x: 80 + c * 4, y: 31 + r * 4 }); // the east extension, north of the airport
+for (let r = 0; r < 2; r++) for (let c = 0; c < 7; c++) PLOTS.push({ x: 70 + c * 4, y: 50 + r * 4 }); // the south extension, past Jamal's
+const APTS = { x: 99, y: 50, w: 6, h: 7, name: "Flamboyants Apartments" }; // when every plot is taken, newer players get a private flat here
 function buildMap() { // fill the terrain and collision grids
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { // every tile
     let t = x < 4 ? 0 : x < 8 ? 1 : x < 13 ? 2 : 3; // deep sea, lagoon, sand, grass from west to east
@@ -572,14 +579,12 @@ function buildMap() { // fill the terrain and collision grids
     if (x >= FB.x0 && x < FB.x1 && y >= FB.y0 && y < FB.y1) t = 12; // football pitch
     if (x >= CT.x0 && x < CT.x1 && y >= CT.y0 && y < CT.y1) t = 13; // basketball court
     if (y === 34 && x >= 4 && x <= 8) t = 7; // wooden jetty
-    if (x >= 19 && x <= 26 && y >= 3 && y <= 9) t = (x === 19 || x === 26 || y === 3 || y === 9) ? 6 : 5; // your room: walls and floor
-    if (x === 22 && y === 9) t = 5; // front door gap
     if (x >= 27 && x <= 38 && y >= 20 && y <= 26) t = (x === 32 || x === 33 || y === 23) ? 10 : 9; // the park: lawn with crossing paths
     terr[y * W + x] = t; // store terrain
     solid[y * W + x] = (t === 0 || t === 6) ? 1 : 0; // deep water and walls block you
   } // end tile loop
   for (const b of BUILD) for (let y = b.y; y < b.y + b.h; y++) for (let x = b.x; x < b.x + b.w; x++) solid[y * W + x] = 1; // buildings block you
-  for (let y = 3; y <= 9; y++) for (let x = 19; x <= 26; x++) solid[y * W + x] = 1; // your house on Coral Street is closed: you go in through the front door
+  for (let y = APTS.y; y < APTS.y + APTS.h; y++) for (let x = APTS.x; x < APTS.x + APTS.w; x++) solid[y * W + x] = 1; // the apartment block
   for (const p of PLOTS) for (let y = p.y; y < p.y + 3; y++) for (let x = p.x; x < p.x + 3; x++) solid[y * W + x] = 1; // house plots block you too
   for (let y = 0; y < H; y++) for (let x = 13; x < W; x++) { // place trees
     if (terr[y * W + x] !== 3 || solid[y * W + x]) continue; // trees only on free grass
@@ -711,9 +716,9 @@ const OBJ = [ // every usable thing in the world
   { x: 25.5, y: 7.5, icon: "🚽", name: "Toilet", acts: () => [A("Use the toilet", "5 min", 5, 0, { bladder: 100 }, { msg: "Relief." })] }, // home toilet
   { x: 20.5, y: 7.5, icon: "🍳", name: "Stove", acts: () => [A("Cook rice and rougaille", "40 min · uses 1 grocery meal (" + s.meals + " left)", 40, 0, { hunger: 55, fun: 5 }, { why: s.meals > 0 ? "" : "No groceries. Go to the Supermarche", run() { s.meals--; return "Home food. Cheap and korek."; } })] }, // cooking
   { x: 23, y: 4.5, icon: "📺", name: "TV", show: () => s.tv, acts: () => [A("Watch football", "1 hour · +40 fun", 60, 0, { fun: 40, energy: -3 }, { msg: "Premier League on MBC. Good match." })] }, // only after you buy a TV
-  { x: 22.5, y: 10.5, icon: "🚪", name: "Front door", acts: () => s.debt > 0 // your door and the landlord
+  { get x() { return myDoor().x; }, get y() { return myDoor().y; }, icon: "🚪", name: "Front door", acts: () => s.debt > 0 // your door (at your own address) and the landlord
     ? [A("Pay the landlord " + rs(s.debt), "Unlocks your room", 5, s.debt, {}, { run() { txn("Paid the landlord", -s.debt); s.debt = 0; return "Paid. The landlord gave the key back."; } })] // pay to unlock
-    : [...homeDoorActs(), A("Check the rent notice", rs(s.rent) + " every Monday at 08:00", 0, 0, {}, { msg: "Rent is " + rs(s.rent) + " every Monday morning." }), hostAct()] }, // rent info, and hosting a party
+    : [...homeDoorActs(), ...(homesApi() && myHomeIdx >= PLOTS.length ? [{ label: "Knock on a neighbour's flat", info: APTS.name, go: () => { closeMenu(); openMenu(APTS.name, aptFlats()); } }] : []), A("Check the rent notice", rs(s.rent) + " every Monday at 08:00", 0, 0, {}, { msg: "Rent is " + rs(s.rent) + " every Monday morning." }), hostAct()] }, // rent info, and hosting a party
   { x: 10.5, y: 7.5, icon: "🥥", name: "Coconut spot", acts: () => [A("Sell coconuts to tourists", "2 hours · Rs 250 to 500" + (s.cooler ? " +50% cooler" : ""), 120, 0, { energy: -15, hunger: -10, bladder: -15, fun: -5, social: 10 }, { why: openAt(9, 17), run() { const p = Math.round(rnd(250, 500) * (s.cooler ? 1.5 : 1) * (1 + Math.min(s.cha, 20) * 0.03)); s.money += p; return "Sold coconuts under the filaos: " + rs(p) + "."; } })] }, // self-employed gig
   { x: 13.5, y: 11.5, icon: "🚐", name: "Dholl puri van", acts: () => [ // street food
     A("Pair of dholl puri", "Rs 40 · +30 food", 10, 40, { hunger: 30 }, { why: openAt(7, 19), msg: "Dholl puri with rougaille and achard." }), // cheap meal
@@ -750,7 +755,7 @@ const PLACE = { // what each building door offers
   saxo: () => [...partyActs("saxo"), shift("saxo"), partTime("Saxo bar back", 550, 18, 1), A("Cocktail on the deck", "Rs 350 · 1 hour · fun and people", 60, 350, { fun: 32, social: 22, bladder: -20, energy: -6 }, { why: openAt(18, 3), msg: "Cocktail by the sea while the DJ warms up." }), A("Dance", "Free on normal nights · 1 hour", 60, 0, { fun: 28, social: 18, energy: -18, hygiene: -10 }, { why: openAt(21, 3), run() { s.cha++; return "You held the dance floor."; } })], // club nights
   sapphire: () => [...partyActs("sapphire"), A("Dinner", "Rs 600 · +70 food, +15 fun", 60, 600, { hunger: 70, fun: 15, social: 10 }, { why: openAt(11, 23), msg: "Grilled fish and a sea breeze." }), A("Cocktail at the bar", "Rs 300 · 45 min · fun and people", 45, 300, { fun: 25, social: 20, bladder: -15 }, { why: openAt(11, 2), msg: "Cold cocktail, good playlist." })], // eat and drink
   tigers: () => [A("Pint and football", "Rs 220 · 1 hour · fun and people", 60, 220, { fun: 30, social: 22, bladder: -22 }, { why: openAt(11, 1), msg: "Big screen, loud crowd, cold pint." }), A("Burger and chips", "Rs 260 · +60 food", 30, 260, { hunger: 60 }, { why: openAt(11, 23), msg: "Proper pub burger." }), { label: "🎱 Play 8-ball pool", info: "For money vs the house, or a friendly frame", go: poolMenu }, shift("tigers"), partTime("Tigers waiter", 500, 12, 22)], // pub
-  mall: () => [{ label: "Fashion: T-shirts", info: "Rs 400 each · changes how you look", go: () => fashionMenu("tee") }, { label: "Fashion: shorts and trousers", info: "Rs 700 each", go: () => fashionMenu("bottom") }, { label: "Fashion: caps, shades, party outfit", info: "From Rs 350", go: () => fashionMenu("extra") }, shift("fashion"), partTime("Fold and tag clothes", 450, 10, 18), // fashion store
+  mall: () => [{ label: "Fashion: tops and colours", info: "Tees, hoodies, suits, dresses · changes how you look", go: () => fashionMenu("tee") }, { label: "Fashion: bottoms and shoes", info: "Jeans, shorts, skirts, sneakers, boots", go: () => fashionMenu("bottom") }, { label: "Fashion: hats, caps, shades, costumes", info: "From Rs 350", go: () => fashionMenu("extra") }, shift("fashion"), partTime("Fold and tag clothes", 450, 10, 18), // fashion store
     A("Buy a bicycle", "Rs 5,000 · move 40% faster", 20, 5000, {}, { why: s.bike ? "You own one" : "", run() { s.bike = true; return "A bicycle. The coast road got shorter."; } }), A("Buy a scooter", "Rs 25,000 · move twice as fast", 20, 25000, {}, { why: s.scooter ? "You own one" : "", run() { s.scooter = true; return "Scooter bought. Helmet on."; } }), // bikes and scooters only — cars are rented and sold at Flic Motors
     A("Buy a TV", "Rs 6,000 · fun at home", 20, 6000, {}, { why: s.tv ? "You own one" : "", run() { s.tv = true; return "TV delivered to your room."; } }), A("Buy a proper mattress", "Rs 8,000 · full rest every night", 20, 8000, {}, { why: s.bed ? "You own one" : "", run() { s.bed = true; return "No more back pain."; } }), A("Buy a cooler box", "Rs 2,500 · coconut sales +50%", 10, 2500, {}, { why: s.cooler ? "You own one" : "", run() { s.cooler = true; return "Cold coconuts sell faster."; } }), // home and electronics
     A("Watch a film", "Rs 300 · 2 hours · +55 fun", 120, 300, { fun: 55, social: 10, bladder: -20 }, { msg: "Popcorn, air-con, good film." }), // cinema
@@ -793,7 +798,7 @@ OBJ.push({ x: 46.5, y: 27.5, icon: "🚏", stop: true, name: "Jumbo bus stop", a
 OBJ.push({ x: 28.5, y: 23.5, icon: "⛲", name: "Park fountain", acts: () => [A("Sit by the fountain", "45 min · +18 fun, +10 people", 45, 0, { fun: 18, social: 10, energy: 5 }, { msg: "Kids on bikes, old men playing dominoes." }), A("Picnic", "Uses 1 grocery meal · +40 food, +15 fun", 40, 0, { hunger: 40, fun: 15 }, { why: s.meals > 0 ? "" : "No groceries", run() { s.meals--; return "Picnic on the grass."; } })] }); // chill in the park
 OBJ.push({ x: 42.5, y: 37, icon: "⚽", name: "Football bench", acts: footballMenu }); // pick a team and start a match
 OBJ.push({ x: 11, y: 26, icon: "👜", name: "Elderly tourists on the beach", acts: () => [stealBeach()] }); // a risky snatch
-OBJ.push({ x: 24.5, y: 10.8, icon: "🛵", name: "Delivery driver", show: () => !!s.driverWait, acts: () => [A("Collect your delivery", "Take your order from the rider", 0, 0, {}, { run: collectDelivery })] }); // the rider waiting outside your home
+OBJ.push({ get x() { return myDoor().x + 1.2; }, get y() { return myDoor().y + 0.3; }, icon: "🛵", name: "Delivery driver", show: () => !!s.driverWait, acts: () => [A("Collect your delivery", "Take your order from the rider", 0, 0, {}, { run: collectDelivery })] }); // the rider waiting outside your home
 OBJ.push({ x: 81.5, y: 44.5, icon: "✈️", name: "SSR Airport (closed)", acts: () => [A("Look through the fence", "The airport is closed to the public", 0, 0, {}, { msg: "Planes come and go over Flic en Flac, but the airport is closed to the public. No boarding today." })] }); // closed-airport marker
 OBJ.push({ x: 37.5, y: 23.5, icon: "🏃", name: "Jogging track", acts: () => [A("Jog three laps", "Free · 45 min · +1 fitness", 45, 0, { energy: -18, hygiene: -18, fun: 8, hunger: -8 }, { why: s.energy < 25 ? "Too tired" : "", run() { s.fit++; return "Three laps done. Fitness is now " + s.fit + "."; } })] }); // free fitness
 
@@ -940,11 +945,26 @@ function wearAct(key, name, price, put) { // one item in the store: buy it once,
     if (!own) { s.wardrobe[key] = 1; s.style++; } // new clothes raise your style
     put(); return name + " on. Style is " + s.style + "."; } }); // wear it
 } // end wearAct
+const HATS = { m: ["farmer", "worker", "king", "swat", "astronaut"], f: ["hooded", "worker", "witch"] }; // heads that are really headwear: sold at the fashion store, not the salon
+const SLOT_FIELD = { head: "head", body: "top", legs: "legs", feet: "feet" }; // where each piece is kept in your save
+const pieceKey = (g, slot, id) => "p:" + g + ":" + slot + ":" + id; // how an owned piece is remembered
+function ownsPiece(g, slot, id) { // free basics, your starting outfit, what you wear now, and anything bought
+  if (OUTFITS[g][slot][0][0] === id || !!s.wardrobe[pieceKey(g, slot, id)]) return true;
+  if (slot === "head" && !HATS[g].includes(id) && (OUTFITS[g].head.find((q) => q[0] === id) || [])[2] === 0) return true; // free hairstyles
+  const P = pieceSet(myLook()); return P.g === g && P[slot] === id; // wearing it
+} // end ownsPiece
+function wearPiece(slot, id) { const P = pieceSet(myLook()); for (const k of SLOTS) s.wardrobe[pieceKey(P.g, k, P[k])] = 1; s[SLOT_FIELD[slot]] = id; if (slot === "head" && s.hs !== "bald") s.hs = ""; save(); } // keep what you had, put the new piece on
+function pieceAct(slot, q, verb) { // one piece on a rack: buy it once, wear it any time
+  const g = s.g === "f" ? "f" : "m", [id, name, price] = q, own = ownsPiece(g, slot, id), on = pieceSet(myLook())[slot] === id;
+  return A((on ? "✓ " : "") + name, on ? "Wearing it" : own ? "Owned · put it on" : rs(price) + " · +1 style", 5, own ? 0 : price, {}, { run() { if (!own) { s.wardrobe[pieceKey(g, slot, id)] = 1; s.style++; } wearPiece(slot, id); return name + " on. Style is " + s.style + "."; } }); // menu line
+} // end pieceAct
 function fashionMenu(kind) { // the fashion store's racks
-  let acts = []; // items on this rack
-  if (kind === "tee") acts = WEAR.tee.map(([n, c, p]) => wearAct("t" + c, n, p, () => { s.shirt = c; })); // tops change your shirt
-  if (kind === "bottom") acts = WEAR.bottom.map(([n, c, p]) => wearAct("b" + c, n, p, () => { s.pants = c; })); // bottoms change your shorts or skirt
-  if (kind === "extra") acts = [ // accessories and the party outfit
+  let acts = []; const g = s.g === "f" ? "f" : "m"; // items on this rack, for your body
+  const dye = (list, field, key) => list.map(([n, c, p]) => wearAct(key + c, "Dye: " + n.replace(/ (tee|shorts|chinos|jeans|linen|denim|cargo)$/i, ""), p, () => { s[field] = c; })).concat([A("Original colours", "Free · how the piece was made", 0, 0, {}, { run() { s[field] = ""; save(); return "Back to the original colours."; } })]); // colour the main fabric
+  if (kind === "tee") acts = OUTFITS[g].body.map((q) => pieceAct("body", q)).concat(dye(WEAR.tee, "shirt", "t")); // tops, then colours for your top
+  if (kind === "bottom") acts = OUTFITS[g].legs.map((q) => pieceAct("legs", q)).concat(OUTFITS[g].feet.map((q) => pieceAct("feet", q)), dye(WEAR.bottom, "pants", "b")); // bottoms, shoes, then colours
+  if (kind === "extra") acts = [ // headwear, accessories and the party outfit
+    ...OUTFITS[g].head.filter((q) => HATS[g].includes(q[0])).map((q) => pieceAct("head", q)), // hats and helmets
     wearAct("capk", "Black cap", 350, () => { s.cap = "#15171a"; }), wearAct("capr", "Red cap", 350, () => { s.cap = "#d81e2c"; }), // caps
     wearAct("shades", "Sunglasses", 500, () => { s.shades = true; }), // shades
     wearAct("party", "Party outfit", 1800, () => { s.shirt = "#15171a"; s.pants = "#15171a"; s.shades = true; s.style += s.wardrobe.partyBonus ? 0 : 3; s.wardrobe.partyBonus = 1; }), // all black, big style boost
@@ -962,7 +982,7 @@ function salonAct(key, name, price, mins, put) { if (myClass() === "pretty") pri
 } // end salonAct
 function salonMenu(kind) { // the salon's price list
   let acts = []; // services on this list
-  if (kind === "cut") acts = HAIRS.map(([n, st, p]) => salonAct("h" + st, n, p, 45, () => { s.hs = st; })); // cuts change your hairstyle
+  if (kind === "cut") { const g = s.g === "f" ? "f" : "m"; acts = OUTFITS[g].head.filter((q) => !HATS[g].includes(q[0])).map(([id, n, p]) => salonAct("h" + g + id, n, Math.max(250, p), 45, () => { wearPiece("head", id); s.hs = ""; })).concat([salonAct("hbald", "Clean shave", 250, 30, () => { s.hs = "bald"; })]); } // cuts change your hairstyle
   if (kind === "col") acts = HCOLS.map(([n, c, p]) => salonAct("c" + c, n, p, 60, () => { s.hcol = c; })); // colour changes your hair colour
   if (kind === "nail") acts = NAILS.map(([n, c]) => salonAct("n" + c, n, 350, 30, () => { s.nails = c; })).concat([A("Remove polish", "Free", 0, 0, {}, { run() { s.nails = ""; return "Polish off."; } })]); // nails
   openMenu("Hair & Nails", acts, "Open 09:00 to 19:00. Other players see your new look."); // show the list
@@ -1070,7 +1090,8 @@ function drawCar(c) { // paint one vehicle from above
   if (c.plate) { g.fillStyle = "#ffffff"; g.fillRect(x + bw / 2 - 6, y + bh / 2 - 6, 12, 12); g.fillStyle = "#d81e2c"; g.font = "800 10px Figtree, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("L", x + bw / 2, y + bh / 2 + 1); } // learner plate on the student car
 } // end drawCar
 
-PLOTS.forEach((p, i) => OBJ.push({ x: p.x + 1.5, y: p.y + 3.5, icon: "", plot: i, get name() { const h = estateList()[i]; return h ? h.name + "'s house" : "Free plot"; }, acts: () => plotActs(i) })); // a doorstep for every plot
+PLOTS.forEach((p, i) => OBJ.push({ x: p.x + 1.5, y: p.y + 3.5, icon: "", plot: i, show: () => i !== (homesApi() ? myHomeIdx : 0), get name() { const h = estateList()[i]; return h ? h.name + "'s house" : "Free plot"; }, acts: () => plotActs(i) })); // a doorstep for every plot (yours is your front door)
+OBJ.push({ x: APTS.x + APTS.w / 2, y: APTS.y + APTS.h + 0.5, icon: "🏢", name: APTS.name, show: () => !(homesApi() && myHomeIdx >= PLOTS.length), acts: () => aptActs() }); // the apartment block's entrance (yours is your front door)
 OBJ.push({ id: "estate", x: 57.5, y: 30.5, icon: "🏘️", name: "Players' Estate", acts: () => [A("Read the notice board", estateList().length + " of 15 houses taken", 0, 0, {}, { msg: "Every player gets a house here. It grows as they get richer." })] }); // sign at the estate entrance
 OBJ.push({ id: "sports", x: 49.5, y: 37.3, icon: "🏟️", name: "Sports ground", acts: () => [ // sign between the pitch and the court
   A("How to play", "Football: run into the ball to dribble, Kick to shoot. Basketball: walk into the ball, Shoot, then Release in the green.", 0, 0, {}, { msg: "Score in either goal. Baskets from far out are worth 3." }), // rules
@@ -1133,7 +1154,7 @@ function partyActs(id) { // extra actions a venue gets around its party
 
 // ================= homes, furniture and pets =================
 const HOMES = [ // the housing ladder: everyone starts in a small room
-  { n: "Small room", where: "Coral Street, Flic en Flac", rent: 0, dep: 0, slots: 3, w: 12, h: 9, col: "#f3e3c6", floor: ["#c9a27a", "#bd956c"], kit: 5.4, tv: 7.9, deco: [9.8, 7.4], pet: [3.6, 7.7], slotList: [[4.8, 6.0], [7.4, 6.0], [2.6, 6.2]] }, // rent depends on who you are
+  { n: "Small room", where: "Your own front door", rent: 0, dep: 0, slots: 3, w: 12, h: 9, col: "#f3e3c6", floor: ["#c9a27a", "#bd956c"], kit: 5.4, tv: 7.9, deco: [9.8, 7.4], pet: [3.6, 7.7], slotList: [[4.8, 6.0], [7.4, 6.0], [2.6, 6.2]] }, // rent depends on who you are
   { n: "Studio apartment", where: "Pasadena Flats, Flic en Flac", rent: 5000, dep: 9000, slots: 6, w: 16, h: 10, col: "#efe2c8", floor: ["#d8c3a0", "#cdb592"] }, // first step up
   { n: "Two-bedroom apartment", where: "Sunset Residence, Flic en Flac", rent: 9000, dep: 18000, slots: 9, w: 20, h: 12, col: "#dfe8ee", floor: ["#c9b39a", "#bea68b"] }, // room to entertain
   { n: "Sea-view penthouse", where: "Wolmar seafront", rent: 18000, dep: 45000, slots: 12, w: 24, h: 14, col: "#f6f1e3", floor: ["#f2f0ea", "#e4e1d8"] } // the top
@@ -1166,14 +1187,15 @@ function slotsFor(t) { // furniture spots in a home, as [x, y] where you stand t
   for (let x = 11; x <= H.w - 5; x += 2.6) if (out.length < H.slots) out.push([x, 3.0]); // along the back wall in bigger homes
   return out.slice(0, H.slots); // as many as the home allows
 } // end slotsFor
-function homeSetup() { // lay out the inside of your apartment for your tier, furniture and pet
-  const t = s.home || 0, H = HOMES[t]; // apartment size (a small-room player sees the studio layout, unused)
-  ROOMDEF.home = { w: H.w, h: H.h, name: "Your " + H.n.toLowerCase(), col: H.col, sign: "#1f6fa8", roofCol: "#1f6fa8", floor: H.floor, st: [] }; // room size and colours
-  const list = homeStations(t).filter((q) => q.from !== "TV" || s.tv).map((q) => ({ icon: q.icon, name: q.name, kind: q.kind, x: q.x, y: q.y, use: true, acts: q.go ? () => [{ label: "🎨 Decorate mode", info: "Move and rotate your furniture", go: () => { closeMenu(); startDecor(); } }, { label: "🛋️ Furniture, pets & move house", info: "Buy, sell and upgrade", go: () => { closeMenu(); openPhone("house"); } }] : () => OBJ.find((o) => o.name === q.from).acts() })); // bed, kitchen, TV, bathroom, decorate
-  if (s.pet) list.push({ icon: PETS[s.pet.k].i, name: s.pet.name + "'s bed", kind: "petbed", x: (s.petXY && s.petXY[0]) || (H.pet ? H.pet[0] : 2.4), y: (s.petXY && s.petXY[1]) || (H.pet ? H.pet[1] : H.h - 2.2), rot: s.petRot || 0, di: "pet", use: true, acts: petActs }); // pet corner
-  slotsFor(t).forEach(([sx, sy], i) => { const k = s.decor[i]; if (!FURN[k]) return; const xy = (s.decorXY && s.decorXY[i]) || [sx, sy]; list.push({ icon: FURN[k].i, name: FURN[k].n, kind: "d:" + k, x: xy[0], y: xy[1], rot: (s.decorRot && s.decorRot[i]) || 0, di: i, use: !!DECOR_ACTS[k], acts: () => DECOR_ACTS[k]() }); }); // your furniture
+function homeSetup(src, key, owner) { // lay out the inside of a home for its tier, furniture and pet: yours, or (key "visit") the one you are visiting
+  src = src || s; key = key || "home"; const guest = key !== "home"; // whose home, and are you a guest?
+  const t = src.home || 0, H = HOMES[t]; // apartment size (a small-room player sees the studio layout, unused)
+  ROOMDEF[key] = { w: H.w, h: H.h, name: guest ? owner + "'s home" : "Your " + H.n.toLowerCase(), col: H.col, sign: "#1f6fa8", roofCol: "#1f6fa8", floor: H.floor, st: [] }; // room size and colours
+  const list = homeStations(t).filter((q) => (q.from !== "TV" || src.tv) && (!guest || !q.go)).map((q) => ({ icon: q.icon, name: q.name, kind: q.kind, x: q.x, y: q.y, use: !guest, acts: q.go ? () => [{ label: "🎨 Decorate mode", info: "Move and rotate your furniture", go: () => { closeMenu(); startDecor(); } }, { label: "🛋️ Furniture, pets & move house", info: "Buy, sell and upgrade", go: () => { closeMenu(); openPhone("house"); } }] : () => OBJ.find((o) => o.name === q.from).acts() })); // bed, kitchen, TV, bathroom, decorate (guests only look)
+  if (src.pet) list.push({ icon: PETS[src.pet.k].i, name: src.pet.name + "'s bed", kind: "petbed", x: (src.petXY && src.petXY[0]) || (H.pet ? H.pet[0] : 2.4), y: (src.petXY && src.petXY[1]) || (H.pet ? H.pet[1] : H.h - 2.2), rot: src.petRot || 0, di: "pet", use: !guest, acts: petActs }); // pet corner
+  slotsFor(t).forEach(([sx, sy], i) => { const k = src.decor[i]; if (!FURN[k]) return; const xy = (src.decorXY && src.decorXY[i]) || [sx, sy]; list.push({ icon: FURN[k].i, name: FURN[k].n, kind: "d:" + k, x: xy[0], y: xy[1], rot: (src.decorRot && src.decorRot[i]) || 0, di: guest ? undefined : i, use: !!DECOR_ACTS[k], acts: () => DECOR_ACTS[k]() }); }); // furniture (guests can use the fun pieces)
   list.push({ icon: "🚪", name: "Exit", kind: "", x: H.w / 2, y: H.h - 1.5, use: true, exit: true }); // the way out
-  ROOM.home = list; if (R.rooms && R.rooms.home) { R.scene.remove(R.rooms.home); delete R.rooms.home; } // rebuild the 3D room next time it is drawn
+  ROOM[key] = list; if (R.rooms && R.rooms[key]) { R.scene.remove(R.rooms[key]); delete R.rooms[key]; } // rebuild the 3D room next time it is drawn
 } // end homeSetup
 function goHome() { homeSetup(); enterBuilding("home"); } // go up to your apartment
 function homeDoorActs() { // extra choices at your front door
@@ -1210,7 +1232,7 @@ function moveHome(t) { // move to another home
   if (old.dep) { s.money += old.dep; txn("Deposit back", old.dep); } s.money -= cost; txn("Moved: " + H.n, -cost); // money changes hands
   s.home = t; s.rent = rent; homeSetup(); // new home and rent
   if (s.inside === "home") { s.x = rw() / 2; s.y = rh() - 2.6; path = []; } // you are standing in it
-  save(); toast(t ? "You moved into a " + H.n.toLowerCase() + " at " + H.where + ". Your front door on Coral Street takes you up." : "You moved back into a small room. Deposit returned."); // tell you
+  save(); toast(t ? "You moved into a " + H.n.toLowerCase() + ". Your own front door takes you there." : "You moved back into a small room. Deposit returned."); // tell you
 } // end moveHome
 
 let petPos = { x: 0, y: 0, in: "", mv: false, ang: 0 }; // where your pet is
@@ -1490,10 +1512,10 @@ const others = {}, seen = {}, threads = { town: [] }, pnames = {}; // players on
 let myBubble = { text: "", until: 0 }; // your own speech bubble
 const safeHex = (v, d) => (typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v : d); // only accept real colour codes from other players
 const peerName = (o) => String(o.p.name || "Player").slice(0, 14); // another player's display name, kept short
-function peerLook(p) { return { g: p.g === "f" ? "f" : "m", skin: safeHex(p.skin, SKINS[2]), hair: safeHex(p.hcol, "#17100c"), hs: ["short", "fade", "afro", "long", "braids", "bun", "bald"].includes(p.hs) ? p.hs : "", nails: p.nails ? safeHex(p.nails, "") : "", shirt: safeHex(p.shirt, SHIRTS[3]), pants: safeHex(p.pants, "#22364a"), cap: p.cap ? safeHex(p.cap, "") : "", shades: !!p.shades, role: ROLE[p.role] ? p.role : "resident" }; } // build a safe look from what a player sent
+function peerLook(p) { return { g: p.g === "f" ? "f" : "m", skin: safeHex(p.skin, SKINS[2]), hair: safeHex(p.hcol, "#17100c"), hs: ["short", "fade", "afro", "long", "braids", "bun", "bald"].includes(p.hs) ? p.hs : "", nails: p.nails ? safeHex(p.nails, "") : "", shirt: p.shirt === "" ? "" : safeHex(p.shirt, SHIRTS[3]), pants: p.pants === "" ? "" : safeHex(p.pants, "#22364a"), cap: p.cap ? safeHex(p.cap, "") : "", shades: !!p.shades, role: ROLE[p.role] ? p.role : "resident", head: String(p.hd || "").slice(0, 20), top: String(p.tp || "").slice(0, 20), legs: String(p.lg || "").slice(0, 20), feet: String(p.ft || "").slice(0, 20) }; } // build a safe look from what a player sent
 function netSend() { // tell everyone where you are
   if (!room || !s.made) return; // offline, or still creating your character
-  const me = { name: s.name, g: s.g, skin: s.skin, shirt: s.shirt, pants: s.pants, cap: s.cap || "", shades: !!s.shades, role: s.role, x: Math.round(s.x * 50) / 50, y: Math.round(s.y * 50) / 50, face: s.face, mv: meMoving, in: s.inside || "", hid: !!(ride && ride.on), uid, hs: s.hs, hcol: s.hcol, nails: s.nails, hp: hostingNow() ? s.hostEnd : 0, ph: s.inside === "houseparty" ? s.hpHost : "", cls: myClass(), po: busy && busy.pose ? busy.pose.k : "", pz: busy && busy.pose ? busy.pose.h : 0, dn: dancing || "", pet: s.pet ? s.pet.k : "", hg: hostingNow() ? s.genre : "", hm: s.home || 0, tm: s.team || "", mt: matchMsg() }; // your public state, including any house party you host or attend
+  const me = { name: s.name, g: s.g, skin: s.skin, shirt: s.shirt, pants: s.pants, cap: s.cap || "", shades: !!s.shades, role: s.role, x: Math.round(s.x * 50) / 50, y: Math.round(s.y * 50) / 50, face: s.face, mv: meMoving, in: roomKey(), hid: !!(ride && ride.on), uid, hs: s.hs, hcol: s.hcol, nails: s.nails, hd: s.head || "", tp: s.top || "", lg: s.legs || "", ft: s.feet || "", hp: hostingNow() ? s.hostEnd : 0, ph: s.inside === "houseparty" ? s.hpHost : "", cls: myClass(), po: busy && busy.pose ? busy.pose.k : "", pz: busy && busy.pose ? busy.pose.h : 0, dn: dancing || "", pet: s.pet ? s.pet.k : "", hg: hostingNow() ? s.genre : "", hm: s.home || 0, tm: s.team || "", mt: matchMsg() }; // your public state, including any house party you host or attend
   for (const k of ["fb", "bb"]) if (ballDirty[k] && Date.now() - ballSent[k] > 130) { // a ball you touched needs sharing (at most 7 times a second)
     const b = BALL[k], r2 = (v) => Math.round(v * 100) / 100; // the ball and a rounding helper
     room.presence({ [k]: k === "fb" ? { x: r2(b.x), y: r2(b.y), vx: r2(b.vx), vy: r2(b.vy), t: b.t, a: b.a, b: b.b } : { x: r2(b.x), y: r2(b.y), vx: r2(b.vx), vy: r2(b.vy), t: b.t, h: b.h } }).catch(() => {}); // send where it is and how it moves
@@ -1508,6 +1530,7 @@ function netPeers(ch) { // the list of players changed
   for (const p of ch.peers) { // every open game
     if (p.isMe) { if (p.sameTab) myPeer = p.peer; continue; } // that is you
     const pr = p.presence || {}; // what they sent
+    { const dsc = Object.getOwnPropertyDescriptor(pr, "in"); if (dsc && typeof dsc.value === "string" && dsc.value.startsWith("home:")) { const raw = dsc.value; Object.defineProperty(pr, "in", { get: () => roomOf(raw), enumerable: true, configurable: true }); } } // a private home: "home" if it is yours, "visit" if you are visiting it, somewhere else otherwise
     if (p.kind !== "viewer" || typeof pr.x !== "number" || typeof pr.y !== "number") continue; // not a player with a position yet
     here[p.peer] = 1; // still online
     let o = others[p.peer]; // their record here
@@ -1568,8 +1591,17 @@ function drawBubble(x, y, text) { // speech bubble above a head
 // ================= shared records (richest list, houses, money transfers) =================
 let db = null, uid = "", canWrite = true, players = [], lastDoc = "", lastDocAt = 0, writing = false; // shared database, your player id, write permission, everyone's records, your last saved record
 const cleanPlayer = (id, d) => ({ id, name: String(d.name || "Player").slice(0, 14), money: Number.isFinite(d.money) ? Math.round(d.money) : 0, role: ROLE[d.role] ? d.role : "resident", shirt: safeHex(d.shirt, SHIRTS[3]), joined: Number.isFinite(d.joined) ? d.joined : 0, cls: CLASSES[d.cls] ? d.cls : "" }); // never trust what another player's record contains
-const estateList = () => players.slice().sort((a, b) => a.joined - b.joined).slice(0, PLOTS.length); // who lives on which plot: first come, first housed
 const richList = () => players.slice().sort((a, b) => b.money - a.money).slice(0, 20); // the 20 richest players
+
+// ================= private homes: every player has their own address; guests need an invite =================
+let homesMap = {}, myHomeIdx = -1; const myInvites = {}, rawSaves = {}; // address -> owner uid, your address, owners who invited you (uid -> until), everyone's saved game (for visiting)
+const homesApi = () => window.claude && window.claude.homes; // only the self-hosted server gives private homes
+const ownerAt = (i) => (homesApi() ? homesMap[i] || "" : i === 0 ? uid || "me" : ""); // who lives at an address (alone, you live at the first plot)
+function doorAt(i) { return i < 0 ? null : i < PLOTS.length ? { x: PLOTS[i].x + 1.5, y: PLOTS[i].y + 3.5 } : { x: APTS.x + APTS.w / 2, y: APTS.y + APTS.h + 0.5 }; } // where an address's front door is
+const addrName = (i) => (i < 0 ? "No address yet" : i < PLOTS.length ? "House " + (i + 1) + ", Players' Estate" : "Flat " + (i - PLOTS.length + 1) + ", " + APTS.name); // a printable address
+const myDoor = () => doorAt(homesApi() ? myHomeIdx : 0) || doorAt(0); // your own front door
+const invitedBy = (owner) => (myInvites[owner] || 0) > Date.now(); // may you go into their home?
+const estateList = () => PLOTS.map((p, i) => { const id = ownerAt(i); return id ? players.find((q) => q.id === id) || { id, name: id === (uid || "me") ? s.name : "Neighbour", money: 0, role: "resident", shirt: SHIRTS[3] } : null; }); // who lives on each plot
 function estateHouses() { // turn the plots into drawable houses
   const list = estateList(); // residents in plot order
   return PLOTS.map((p, i) => { // one house per plot
@@ -1579,13 +1611,44 @@ function estateHouses() { // turn the plots into drawable houses
     return { x: p.x, y: p.y, w: 3, h: 3, name: h.name, col: tier[0], roof: tier[1], roofCol: tier[2], sign: h.shirt }; // their house, signed in their colour
   }); // end houses
 } // end estateHouses
+function guestActs(owner, name) { // knocking on someone else's door
+  const host = hostOf(owner), peer = Object.keys(others).find((k) => others[k].p.uid === owner); // a party on? are they online?
+  return [...(host ? [{ label: "Join " + name + "'s house party", info: "It is on right now · everyone is welcome", go: () => { closeMenu(); joinParty(host); } }] : []), // open house
+    invitedBy(owner) ? { label: "Go inside " + name + "'s home", info: "You're invited until " + new Date(myInvites[owner]).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), go: () => { closeMenu(); visitHome(owner, name); } } // with an invite
+      : { label: "Knock on the door", info: peer ? name + " is online · they can invite you in" : name + " is not home right now", go: () => { closeMenu(); if (peer) { sendMsg(peer, "🚪 I'm at your door! Invite me in from my profile on your phone."); toast("You knocked. " + name + " can invite you in."); } else toast("Nobody answers. You need an invite to go in."); } }, // without one
+    { label: "Send money to " + name, info: "From your wallet", go: () => { closeMenu(); openPhone("sendto", owner); } }]; // gifts
+} // end guestActs
 function plotActs(i) { // what a plot's doorstep offers
   const h = estateList()[i]; // who lives here
   if (!h) return [A("Free plot", "The next new player gets this one", 0, 0, {}, { msg: "Nobody lives here yet." })]; // empty
-  if (h.id === uid) return [A("Your house", "It grows with your money: Rs 10,000, Rs 50,000, Rs 150,000", 0, 0, {}, { msg: "Home, as the whole country sees it." }), hostAct()]; // yours, where you can host
-  const host = hostOf(h.id); // is this player hosting right now?
-  return (host ? [{ label: "Join " + h.name + "'s house party", info: "It is on right now", go: () => { closeMenu(); joinParty(host); } }] : []).concat([A(h.name + " lives here", ROLE[h.role].label + " · worth " + rs(h.money), 0, 0, {}, { msg: h.name + " is not answering the door." }), { label: "Send money to " + h.name, info: "From your wallet", go: () => { closeMenu(); openPhone("sendto", h.id); } }]); // someone else's
+  if (h.id === (uid || "me")) return OBJ.find((o) => o.name === "Front door").acts(); // yours: your front door
+  return [A(h.name + " lives here", ROLE[h.role].label + " · worth " + rs(h.money), 0, 0, {}, { msg: h.name + "'s house." }), ...guestActs(h.id, h.name)]; // someone else's
 } // end plotActs
+function aptFlats() { // the flats in the apartment block you can knock on
+  const flats = Object.keys(homesMap).filter((i) => +i >= PLOTS.length && homesMap[i] !== uid).map((i) => { const id = homesMap[i], p = players.find((q) => q.id === id), nm = p ? p.name : "Neighbour"; return { label: addrName(+i) + " · " + nm, info: invitedBy(id) ? "You're invited" : hostOf(id) ? "Party on" : "Invite needed", go: () => { closeMenu(); openMenu(addrName(+i), guestActs(id, nm)); } }; }); // every other flat
+  return flats.length ? flats : [A(APTS.name, "Private flats for newer residents", 0, 0, {}, { msg: "Nobody else lives here yet." })]; // the list
+} // end aptFlats
+const aptActs = () => aptFlats(); // the block's entrance, for visitors
+function cleanVisit(raw) { // read the parts of another player's save needed to show their home, trusting nothing
+  let v = {}; try { v = JSON.parse(raw) || {}; } catch (e) {} const num = (n) => (Number.isFinite(n) ? n : 0);
+  return { home: Math.max(0, Math.min(HOMES.length - 1, num(v.home) | 0)), tv: !!v.tv, decor: (Array.isArray(v.decor) ? v.decor : []).filter((k) => FURN[k]).slice(0, 30), decorXY: (Array.isArray(v.decorXY) ? v.decorXY : []).slice(0, 30).map((p) => (Array.isArray(p) ? [num(p[0]), num(p[1])] : null)), decorRot: (Array.isArray(v.decorRot) ? v.decorRot : []).slice(0, 30).map(num), pet: v.pet && PETS[v.pet.k] ? { k: v.pet.k, name: String(v.pet.name || "Pet").slice(0, 14) } : null, petXY: Array.isArray(v.petXY) ? [num(v.petXY[0]), num(v.petXY[1])] : null, petRot: num(v.petRot) };
+} // end cleanVisit
+function visitHome(owner, name) { // step inside someone's home
+  homeSetup(cleanVisit(rawSaves[owner]), "visit", name); s.visitOf = owner; enterBuilding("visit"); toast("Welcome to " + name + "'s home."); // their layout, then in
+} // end visitHome
+function roomKey() { return s.inside === "home" ? "home:" + (uid || "me") : s.inside === "visit" ? "home:" + (s.visitOf || "") : s.inside || ""; } // where you are, as other players see it
+function roomOf(raw) { // what another player's location means from where you are
+  if (typeof raw !== "string" || !raw.startsWith("home:")) return raw || ""; // a public place
+  const owner = raw.slice(5); return owner === uid ? "home" : s.inside === "visit" && owner === s.visitOf ? "visit" : "away:" + owner; // your home, the home you are visiting, or a home elsewhere
+} // end roomOf
+async function homesStart() { // get your address and your invites from the server
+  const api = homesApi(); if (!api || !db) return; // only on the self-hosted server
+  db.collection("homes").onSnapshot((snap) => { const m = {}; for (const d of snap.docs) { const v = d.data() || {}; if (typeof v.uid === "string") m[d.id] = v.uid; } homesMap = m; }, () => {}); // who lives where, live
+  api.on("invited", (m) => { myInvites[m.owner] = m.until; const p = players.find((q) => q.id === m.owner); toast("🏠 " + (p ? p.name : "A neighbour") + " invited you to their home. Knock on their door to go in."); }); // an invite arrived
+  api.on("kicked", () => { if (s.inside === "visit" || s.inside === "houseparty") { leaveBuilding(); toast("You're not invited in any more, so you headed back outside."); } }); // the invite ended
+  const r = await api.claim(); if (r && r.ok) { myHomeIdx = r.index; const d = doorAt(myHomeIdx); if (s.inside === "home" || s.inside === "") { s.ox = d.x; s.oy = d.y; } if (!s.inside && Math.hypot(s.x - 22.5, s.y - 10.8) < 1.5) { s.x = d.x; s.y = d.y; } save(); } // your address (and step out at your own door)
+  const iv = await api.invites(); if (iv && iv.ok) for (const q of iv.list) myInvites[q.owner] = q.until; // invites you already have
+} // end homesStart
 function syncPlayer() { // save your public record when it has changed
   if (!db || !uid || !canWrite || !s.made || writing) return; // nothing to do, or not allowed
   const doc = { name: s.name, money: Math.round(netWorth()), role: s.role, shirt: s.shirt, joined: s.joined || Date.now(), cls: myClass(), save: cloudSave(), savedAt: s.stamp || Date.now() }; // what everyone may see about you
@@ -1616,9 +1679,10 @@ async function dbStart() { // connect to the shared records if this view allows 
   uid = user ? (await user.id()) || "" : ""; // your player id, if the platform gives one
   db = await window.claude.use("db"); // the shared database
   if (!db) return; // not available here
-  db.collection("players").limit(200).onSnapshot((snap) => { players = snap.docs.map((d) => cleanPlayer(d.id, d.data() || {})); for (const d of snap.docs) if (d.id === uid) maybeLoadCloud(d.data() || {}); if (!$("phone").hidden && (pv.app === "rich" || pv.app === "send" || pv.app === "settings") && !(document.activeElement && document.activeElement.tagName === "INPUT" && $("phone").contains(document.activeElement))) phoneRender(); }, () => { db = null; }); // everyone's records, live
+  db.collection("players").limit(200).onSnapshot((snap) => { players = snap.docs.map((d) => cleanPlayer(d.id, d.data() || {})); for (const d of snap.docs) { const sv = (d.data() || {}).save; if (typeof sv === "string") rawSaves[d.id] = sv; } /* saved homes, for visiting */ for (const d of snap.docs) if (d.id === uid) maybeLoadCloud(d.data() || {}); if (!$("phone").hidden && (pv.app === "rich" || pv.app === "send" || pv.app === "settings") && !(document.activeElement && document.activeElement.tagName === "INPUT" && $("phone").contains(document.activeElement))) phoneRender(); }, () => { db = null; }); // everyone's records, live
   if (uid) db.collection("mail").where("to", "==", uid).onSnapshot((snap) => { for (const d of snap.docs) claimMail(d); }, () => {}); // money sent to you
   setInterval(syncPlayer, 4000); // check every 4 seconds whether your record needs saving
+  homesStart().catch(() => {}); // your private home
 } // end dbStart
 
 const seenHp = {}; // house parties already announced
@@ -1662,7 +1726,7 @@ $("chatForm").onsubmit = (e) => { e.preventDefault(); const v = $("chatBox").val
 // ================= phone =================
 let pv = { app: "home", arg: "" }; // which phone screen is open
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }; // make an element safely (text is never HTML)
-const APPS = [["msgs", "💬", "Messages", "#1f8f4e"], ["maps", "🗺️", "Maps", "#3d9be9"], ["ride", "🚕", "Rides", "#f2b430"], ["cars", "🚗", "Cars", "#3d9be9"], ["delivery", "🛵", "Delivery", "#1f8f4e"], ["wallet", "💳", "Wallet", "#7a4fd1"], ["jobs", "💼", "Jobs", "#d9482b"], ["goals", "🎯", "Goals", "#e4572e"], ["events", "🎉", "Events", "#c2457a"], ["health", "❤️", "Health", "#ef4f6a"], ["juice", "🧃", "Juice", "#c8102e"], ["campus", "🎓", "Campus", "#7a2f2f"], ["rich", "🏆", "Rich list", "#d4a017"], ["players", "👥", "Players", "#2a9d8f"], ["house", "🏠", "Home", "#b5482f"], ["games", "🎮", "Games", "#8e44ad"], ["alerts", "🔔", "Alerts", "#e4572e"], ["invite", "📨", "Invite", "#2a9d8f"], ["settings", "⚙️", "Settings", "#6c7781"]]; // apps on the home screen
+const APPS = [["msgs", "💬", "Messages", "#1f8f4e"], ["maps", "🗺️", "Maps", "#3d9be9"], ["wardrobe", "👕", "Wardrobe", "#7a4fd1"],["ride", "🚕", "Rides", "#f2b430"], ["cars", "🚗", "Cars", "#3d9be9"], ["delivery", "🛵", "Delivery", "#1f8f4e"], ["wallet", "💳", "Wallet", "#7a4fd1"], ["jobs", "💼", "Jobs", "#d9482b"], ["goals", "🎯", "Goals", "#e4572e"], ["events", "🎉", "Events", "#c2457a"], ["health", "❤️", "Health", "#ef4f6a"], ["juice", "🧃", "Juice", "#c8102e"], ["campus", "🎓", "Campus", "#7a2f2f"], ["rich", "🏆", "Rich list", "#d4a017"], ["players", "👥", "Players", "#2a9d8f"], ["house", "🏠", "Home", "#b5482f"], ["games", "🎮", "Games", "#8e44ad"], ["alerts", "🔔", "Alerts", "#e4572e"], ["invite", "📨", "Invite", "#2a9d8f"], ["settings", "⚙️", "Settings", "#6c7781"]]; // apps on the home screen
 function openPhone(app, arg) { pv = { app: app || "home", arg: arg || "" }; $("phone").hidden = false; phoneRender(); } // take the phone out
 function closePhone() { $("phone").hidden = true; } // put it away
 function phoneStat() { // the phone's status bar
@@ -1712,7 +1776,7 @@ function phoneRender() { // draw the current phone screen
     f.append(inp, go); f.onsubmit = (e) => { e.preventDefault(); sendMsg(id, inp.value); inp.value = ""; }; sc.append(f); // send on Enter or the button
     return; // done
   } // end thread
-  const names = { games: "Games", alerts: "Alerts", delivery: "Delivery", deliverfrom: "Delivery", invite: "Invite friends", players: "Players", player: "Player", house: "Home", cars: "Cars", msgs: "Messages", maps: "Maps", wallet: "Wallet", jobs: "Jobs", goals: "Goals", events: "Events", health: "Health", campus: "Campus", juice: "MCB Juice", invest: "Invest", history: "Bank history", rich: "Rich list", send: "Send money", sendto: "Send money", settings: "Settings" }; // app titles
+  const names = { games: "Games", alerts: "Alerts", delivery: "Delivery", deliverfrom: "Delivery", invite: "Invite friends", players: "Players", player: "Player", house: "Home", cars: "Cars", msgs: "Messages", maps: "Maps", wallet: "Wallet", jobs: "Jobs", goals: "Goals", events: "Events", health: "Health", campus: "Campus", juice: "MCB Juice", invest: "Invest", history: "Bank history", rich: "Rich list", send: "Send money", sendto: "Send money", settings: "Settings", wardrobe: "Wardrobe" }; // app titles
   phead(sc, names[pv.app]); const box = el("div", "pbody"); sc.append(box); // title bar and content area
   if (pv.app === "msgs") { // chat list
     unread = 0; setBadge(); // you have seen the list
@@ -1829,13 +1893,16 @@ function phoneRender() { // draw the current phone screen
     link("🗓️ Ask " + nm + " out", "Food, drinks, ice cream, cinema · buy each other treats", () => askOut(pv.arg)); // hang out
     if (s.plan && s.plan.peer === pv.arg && !s.plan.met) link("🚕 Ride to " + doorOf(s.plan.place).name, "Your plan with " + nm, () => { closePhone(); rideModes(doorOf(s.plan.place)); }); // get to the date
     link("🫣 Pickpocket " + nm, "Stand right next to them · about " + Math.round(caughtChance() * 100) + "% chance the police catch you", () => pickpocket(pv.arg)); // crime
-    if (hostingNow()) link("🎉 Invite to your house party", "Sends them a message", () => { sendMsg(pv.arg, "🎉 Come to my house party! Find my house in the Players' Estate."); toast("Invite sent to " + nm + "."); }); // invite
+    if (hostingNow()) link("🎉 Invite to your house party", "Sends them a message", () => { sendMsg(pv.arg, "🎉 Come to my house party! Find my house: " + addrName(homesApi() ? myHomeIdx : 0) + "."); toast("Invite sent to " + nm + "."); }); // invite
+    if (homesApi() && typeof o.p.uid === "string" && o.p.uid) { const g = o.p.uid, inv = (s.guestList || {})[g] > Date.now(); // invite them into your home, or take it back
+      link(inv ? "🚪 Cancel home invite" : "🏠 Invite to your home", inv ? "They can come in until " + new Date(s.guestList[g]).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "For 3 hours · your address: " + addrName(myHomeIdx), () => { // only invited players can come inside
+        (inv ? homesApi().uninvite(g) : homesApi().invite(g, 3)).then((r) => { if (!r.ok) { toast(r.error); return; } s.guestList = s.guestList || {}; if (inv) delete s.guestList[g]; else { s.guestList[g] = r.until; sendMsg(pv.arg, "🏠 You're invited to my home for 3 hours: " + addrName(myHomeIdx) + "."); } save(); toast(inv ? "Invite cancelled. " + nm + " can't come in now." : nm + " is invited for 3 hours."); phoneRender(); }); }); }
     if (o.p.hp > Date.now()) link("🎉 Join their house party", "On right now", () => { closePhone(); joinParty(o); }); // join
     link("🚶 Go to " + nm, o.p.in ? "Walk to " + (b ? b.name : "them") : "Walk to where they are", () => { closePhone(); goToPeer(o); }); // find them
   } // end player
   if (pv.app === "house") { // your home: furniture, pets and moving house
     const H = homeTier(); box.append(el("div", "pbig", H.n), el("p", "pnote", H.where + " · " + rs(s.rent) + " a week · comfort " + comfort())); // where you live
-    if (s.home && s.inside !== "home") link("Go home", "Walk to your front door on Coral Street", () => { closePhone(); if (s.inside) leaveBuilding(); const d = OBJ.find((q) => q.name === "Front door"); pending = d; path = findPath(s.x, s.y, d.x, d.y); }); // head home
+    if (s.inside !== "home") link("Go home", "Walk to your front door · " + addrName(homesApi() ? myHomeIdx : 0), () => { closePhone(); if (s.inside) leaveBuilding(); const d = OBJ.find((q) => q.name === "Front door"); pending = d; path = findPath(s.x, s.y, d.x, d.y); }); // head home
     if (s.decor.length || s.pet) link("🎨 Decorate mode", "Move and rotate your furniture in your home", () => { closePhone(); startDecor(); }); // arrange things
     box.append(el("p", "pnote", "Your furniture · " + Math.min(s.decor.length, H.slots) + " of " + H.slots + " spots used")); // furniture
     s.decor.forEach((k, i) => { const f = FURN[k]; if (!f) return; prow(box, f.i + " " + f.n, i < H.slots ? "Placed" : "Storage", "+" + f.c + " comfort"); const bar = el("div", "tbar"), mv = el("button", "", i < H.slots ? "Move spot" : "Swap in"), sl = el("button", "", "Sell for " + rs(f.p / 2)); mv.type = sl.type = "button"; mv.onclick = () => { moveFurn(i); phoneRender(); }; sl.onclick = () => { sellFurn(i); phoneRender(); }; bar.append(mv, sl); bar.style.borderRadius = "12px"; box.append(bar); }); // each piece
@@ -1863,6 +1930,17 @@ function phoneRender() { // draw the current phone screen
     box.append(el("p", "pnote", "Prices move once a game day. Investments count toward the rich list and Big Baller.")); // how it works
   } // end invest
   if (pv.app === "history") { for (const x of s.txns) prow(box, x.l, (x.a > 0 ? "+" : "") + rs(x.a), "Day " + x.d); if (!s.txns.length) box.append(el("p", "pnote", "No transactions yet.")); } // bank history
+  if (pv.app === "wardrobe") { // change into anything you own, any time
+    const g = s.g === "f" ? "f" : "m", P = pieceSet(myLook()), pvw = el("div", "pvwrap"), cv3 = charPreview(myLook()); if (cv3) { pvw.append(cv3); box.append(pvw); } // a turning preview of you
+    const tabs = [["head", "Hair & hats"], ["body", "Tops"], ["legs", "Bottoms"], ["feet", "Shoes"]], cur = pv.arg || "body", bar = el("div", "tbar"); bar.style.borderRadius = "12px"; // one tab per slot
+    for (const [k, n] of tabs) { const b = el("button", k === cur ? "on" : "", n); b.type = "button"; b.onclick = () => openPhone("wardrobe", k); bar.append(b); } box.append(bar);
+    const owned = OUTFITS[g][cur].filter((q) => ownsPiece(g, cur, q[0])); // what you can wear from this slot
+    for (const [id, n] of owned) link((P[cur] === id ? "✓ " : "") + n, P[cur] === id ? "Wearing it" : "Put it on", () => { wearPiece(cur, id); phoneRender(); }); // tap to change
+    if (cur === "body" || cur === "legs") { const f = cur === "body" ? "shirt" : "pants", list = cur === "body" ? WEAR.tee : WEAR.bottom, row = el("div", "opts"); // colours you own for this slot
+      const mk = (c, label) => { const b = el("button", "opt" + ((s[f] || "") === c ? " on" : ""), label || ""); b.type = "button"; if (!label) { b.classList.add("sw"); b.style.background = c; b.setAttribute("aria-label", "Colour " + c); } b.onclick = () => { s[f] = c; save(); phoneRender(); }; row.append(b); };
+      mk("", "Original"); for (const [, c] of list) if (s.wardrobe[(cur === "body" ? "t" : "b") + c] || c === (cur === "body" ? SHIRTS[0] : "#22364a") || s[f] === c) mk(c); box.append(el("p", "pnote", "Colour")); box.append(row); }
+    box.append(el("p", "pnote", "Buy more at the fashion store in Cascavelle Mall and get haircuts at Hair & Nails. Characters by Quaternius (CC0)."));
+  } // end wardrobe
   if (pv.app === "settings") { // settings
     prow(box, "Name", s.name); prow(box, "Status", ROLE[s.role].label);
     { const r = el("button", "prow"); r.type = "button"; r.append(el("span", "", "Replay the welcome intro"), el("b", "", "›")); r.onclick = () => { closePhone(); playIntro(); }; box.append(r); } // watch the intro again
@@ -2061,7 +2139,7 @@ function questSkip() { s.quest++; if (s.quest === 4) s.qParty0 = s.parties; save
 // ================= house parties =================
 const hostingNow = () => s.hostEnd > Date.now(); // is your party still on?
 const hostOf = (id) => Object.values(others).find((o) => o.p.uid === id && o.p.hp > Date.now()); // the online player hosting at this id, if any
-function startHosting() { s.hostEnd = Date.now() + 600000; s.hpHost = uid || "me"; s.guests = {}; s.parties++; enterBuilding("houseparty"); return "Your house party has started. Players online have been told."; } // ten real minutes of party
+function startHosting() { s.hostEnd = Date.now() + 600000; s.hpHost = uid || "me"; s.guests = {}; s.parties++; if (homesApi()) homesApi().party(s.hostEnd).catch(() => {}); enterBuilding("houseparty"); return "Your house party has started. Players online have been told, and anyone can come in while it lasts."; } // ten real minutes of party, open to everyone
 function hostAct() { return hostingNow() ? { label: "Back to your house party", info: "It is still going", go: () => { closeMenu(); s.hpHost = uid || "me"; enterBuilding("houseparty"); } } : A("Host a house party", "Rs 1,500 for drinks and snacks · 10 real minutes · players online can join", 0, 1500, {}, { run: startHosting }); } // host, or go back in
 function joinParty(o) { const key = o.p.uid + ":" + o.p.hp; if (!s.hpJoined[key]) { s.hpJoined[key] = 1; s.parties++; } s.hpHost = o.p.uid; enterBuilding("houseparty"); toast("You joined " + peerName(o) + "'s house party."); } // walk into someone's party (it counts once)
 
@@ -2143,17 +2221,22 @@ function optRow(boxId, list, key, redo) { // build one row of choice buttons
 } // end optRow
 function openCreate() { // the "who are you" screen
   const card = $("card"); // sheet body
-  card.innerHTML = '<h2>Who are you in Flic en Flac?</h2><div class="mk"><canvas id="pv" width="220" height="280"></canvas><div class="mkf"><label for="nm">Name</label><input id="nm" type="text" maxlength="14" placeholder="Your name"><h3>Gender</h3><div class="opts" id="og"></div><h3>Status</h3><div class="opts" id="or"></div><p id="ri"></p><h3 id="ch">Course</h3><div class="opts" id="oco"></div><h3>Skin</h3><div class="opts" id="os"></div><h3>Shirt</h3><div class="opts" id="oc"></div></div></div>'; // layout
+  card.innerHTML = '<h2>Who are you in Flic en Flac?</h2><div class="mk"><div class="pvbox" id="pvbox"><canvas id="pv" width="220" height="280"></canvas></div><div class="mkf"><label for="nm">Name</label><input id="nm" type="text" maxlength="14" placeholder="Your name"><h3>Gender</h3><div class="opts" id="og"></div><h3>Status</h3><div class="opts" id="or"></div><p id="ri"></p><h3 id="ch">Course</h3><div class="opts" id="oco"></div><h3>Skin</h3><div class="opts" id="os"></div><h3>Hair</h3><div class="opts" id="ohd"></div><h3>Hair colour</h3><div class="opts" id="ohc"></div><h3>Outfit</h3><div class="opts" id="oot"></div><h3>Top colour</h3><div class="opts" id="oc"></div></div></div>'; // layout
   const redo = () => { // refresh choices and preview
-    optRow("og", [["m", "Man"], ["f", "Woman"]], "g", redo); // gender buttons
-    optRow("or", Object.keys(ROLE).map((k) => [k, ROLE[k].label]), "role", redo); // status buttons
+    const g = s.g === "f" ? "f" : "m"; if (s.head && !hasPiece(g, "head", s.head)) s.head = ""; // hair must exist for this body
+    optRow("og", [["m", "Man"], ["f", "Woman"]], "g", () => { s.head = s.top = s.legs = s.feet = ""; redo(); }); // gender buttons (outfit resets to that body's basics)
+    optRow("or", Object.keys(ROLE).map((k) => [k, ROLE[k].label]), "role", () => { s.top = s.legs = s.feet = ""; redo(); }); // status buttons (starter outfit follows)
     optRow("os", SKINS.map((c) => [c]), "skin", redo); // skin swatches
-    optRow("oc", SHIRTS.map((c) => [c]), "shirt", redo); // shirt swatches
+    optRow("ohd", OUTFITS[g].head.filter((q) => q[2] <= 600 && !HATS[g].includes(q[0])).map((q) => [q[0], q[1]]), "head", redo); // hairstyles to start with
+    optRow("ohc", HCOLS.map((q) => [q[1]]), "hcol", redo); // hair colours
+    { const box2 = $("oot"); box2.innerHTML = ""; const kits = [ROLE_LOOK[g].resident, ROLE_LOOK[g].tourist, ROLE_LOOK[g].student], names = g === "f" ? ["Casual", "Sundress", "Punk"] : ["Casual", "Beach", "Hoodie"], cur = pieceSet(myLook()); // three starter outfits
+      kits.forEach((k, i) => { const b = el("button", "opt" + (cur.body === k[0] && cur.legs === k[1] ? " on" : ""), names[i]); b.type = "button"; b.onclick = () => { s.top = k[0]; s.legs = k[1]; s.feet = k[2]; redo(); }; box2.append(b); }); }
+    optRow("oc", [["", "Original"]].concat(SHIRTS.map((c) => [c])), "shirt", redo); // top colour (or as made)
     $("ri").textContent = ROLE[s.role].info; // explain the chosen status
     $("ch").hidden = $("oco").hidden = s.role !== "student"; // only students pick a course
     optRow("oco", Object.keys(COURSES).map((k) => [k, COURSES[k].short]), "course", redo); // course buttons
-    const pc = $("pv").getContext("2d"); pc.clearRect(0, 0, 220, 280); // clear the preview
-    drawBody(pc, 110, 170, 200, myLook(), 0, 0, false, false); // draw your character large
+    const c3 = charPreview(myLook()); if (c3) { if (c3.parentNode !== $("pvbox")) { $("pvbox").innerHTML = ""; $("pvbox").append(c3); } } // the 3D preview
+    else { const pc = $("pv").getContext("2d"); pc.clearRect(0, 0, 220, 280); drawBody(pc, 110, 170, 200, myLook(), 0, 0, false, false); } // or the flat drawing
   }; // end redo
   redo(); // first draw
   const go = document.createElement("button"); // start button
@@ -2162,6 +2245,7 @@ function openCreate() { // the "who are you" screen
     s.name = cleanText($("nm").value, 14) || "Alex"; // name, cleaned of hidden characters, with a fallback
     s.money = ROLE[s.role].money; s.rent = ROLE[s.role].weekly; // money and rent from your status
     if (s.role === "resident") s.cha = 3; // residents already know people
+    { const P = pieceSet(myLook()); for (const k of SLOTS) s.wardrobe[pieceKey(P.g, k, P[k])] = 1; } // your starting clothes are yours to keep
     s.made = true; s.joined = s.joined || Date.now(); s.day0 = day(); s.permit = day() + permDays(); save(); closeMenu(); // done, start playing
     toast("Bonzour " + s.name + ". Your room is paid until Monday. Go find work, or a party."); // welcome
   }; // end start
@@ -2385,7 +2469,7 @@ function draw() { // paint one frame
     g.font = "800 13px Unbounded, sans-serif"; g.fillStyle = "#ffffff"; g.textAlign = "center"; g.fillText(ev.org + " · LIVE", bx, b.y * T - cy - 12); // organiser banner
   } // end party lights
 } // end draw
-const myLook = () => ({ g: s.g, skin: s.skin, hair: s.hcol, hs: s.hs, nails: s.nails, shirt: s.shirt, pants: s.pants, cap: s.cap, shades: s.shades, role: s.role }); // how your character looks
+const myLook = () => ({ g: s.g, skin: s.skin, hair: s.hcol, hs: s.hs, nails: s.nails, shirt: s.shirt, pants: s.pants, cap: s.cap, shades: s.shades, role: s.role, head: s.head, top: s.top, legs: s.legs, feet: s.feet }); // how your character looks
 function rr(c, x, y, w, h, r) { c.beginPath(); if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h); c.fill(); } // filled rounded rectangle
 function drawBody(c, x, y, u, L, ph, face, swim, me) { // draw a person: u is their size, L their look
   const sw = Math.sin(ph) * 0.07 * u; // limb swing from walking
@@ -2512,7 +2596,7 @@ function init3d() { // build the 3D world; returns false if this device cannot d
   R.lampMat = new THREE.MeshLambertMaterial({ color: 0xfff3c4, emissive: 0xffd77a, emissiveIntensity: 0 }); // street lamp bulbs
   R.ray = new THREE.Raycaster(); R.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // for turning taps into ground positions
   R.party = [0xff3b8d, 0x35c4bb, 0xffd23c].map((c) => { const l = new THREE.PointLight(c, 0, 14); R.scene.add(l); return l; }); // three coloured party lights
-  for (const step of [buildGround, buildTown, buildTrees, buildHome, buildHouse, buildLandmark, buildTamarin, buildAirport, buildSugar, buildMonuments, buildMarkers, buildSports]) { try { step(); } catch (e) { console.error(e); } } // build each part; one failing part does not stop the rest
+  for (const step of [buildGround, buildTown, buildTrees, buildApts, buildLandmark, buildTamarin, buildAirport, buildSugar, buildMonuments, buildMarkers, buildSports]) { try { step(); } catch (e) { console.error(e); } } // build each part; one failing part does not stop the rest
   return true; // 3D is ready
 } // end init3d
 
@@ -2738,62 +2822,109 @@ function buildSports() { // goals, hoop and scoreboards
   R.fball = sph(0.14, "#ffffff", 0, 0.14, 0, R.dyn, 12); R.bball = sph(0.17, "#e8742a", 0, 0.17, 0, R.dyn, 12); // the two balls
 } // end buildSports
 
-// real people (Kenney Mini Characters, CC0): which body suits each hairstyle; until a body has loaded the simple shapes stand in
-const CHAR_BASE = { f: { long: "female-f", bun: "female-a", braids: "female-b", afro: "female-a", short: "female-e", fade: "female-e", bald: "female-e" }, m: { short: "male-d", fade: "male-f", afro: "male-a", long: "male-e", braids: "male-f", bun: "male-d", bald: "male-b" } };
-const CHARS = {}, CHARMAT = {}; // loaded bodies, and one material per set of colours
-const CHAR_H = 1.5; // how tall a person stands, in tiles
-function charBase(L) { const f = L.g === "f"; return CHAR_BASE[f ? "f" : "m"][L.hs || (f ? "long" : "short")] || (f ? "female-f" : "male-d"); } // body for a look
-function loadChar(name) { // fetch a body once, in the background
-  const c = CHARS[name] || (CHARS[name] = { state: "new" }); if (c.state !== "new") return c; // already asked for
+// real people (Quaternius Ultimate Modular Men & Women, CC0): every body is four swappable pieces on one animated skeleton
+const OUTFITS = { // [piece id, name, price] per gender and slot; the first of each slot is free for everyone
+  m: {
+    head: [["casual", "Short and neat", 0], ["business", "Side parting", 300], ["hoodie", "Messy fringe", 300], ["beach", "Surfer hair and earring", 400], ["adventurer", "Short hair and beard", 400], ["punk", "Red mohawk", 600], ["farmer", "Cowboy hat", 500], ["worker", "Hard hat and moustache", 500], ["king", "Royal crown", 25000], ["swat", "SWAT helmet", 6000], ["astronaut", "Space helmet", 30000]],
+    body: [["casual", "Casual tee", 0], ["punk", "Band tee", 600], ["hoodie", "Hoodie", 900], ["beach", "Open beach shirt", 700], ["business", "Suit jacket and tie", 3500], ["farmer", "Farmer's shirt", 800], ["worker", "Hi-vis work vest", 900], ["adventurer", "Explorer jacket", 2200], ["swat", "SWAT vest", 8000], ["king", "Royal armour", 40000], ["astronaut", "Space suit", 45000]],
+    legs: [["casual", "Jeans", 0], ["hoodie", "Denim shorts", 500], ["beach", "Board shorts", 600], ["punk", "Ripped jeans", 700], ["business", "Suit trousers", 2500], ["worker", "Work trousers", 800], ["adventurer", "Cargo trousers", 1500], ["swat", "SWAT trousers", 6000], ["king", "Royal legwear", 30000], ["astronaut", "Space suit trousers", 35000]],
+    feet: [["casual", "Red sneakers", 0], ["beach", "Sandals", 250], ["hoodie", "Purple sneakers", 900], ["business", "Black shoes", 1500], ["punk", "Punk boots", 1200], ["worker", "Work boots", 900], ["farmer", "Farm boots", 700], ["adventurer", "Hiking boots", 1400], ["swat", "Tactical boots", 4000], ["king", "Royal boots", 20000], ["astronaut", "Moon boots", 25000]]
+  },
+  f: {
+    head: [["woman2", "Long and loose", 0], ["suit", "Sleek ponytail", 400], ["woman1", "Red bun", 400], ["punk", "Pink mohawk", 700], ["adventurer", "Short crop", 500], ["soldier", "Tied back", 600], ["scifi", "Space-age bob", 800], ["hooded", "Hood up", 900], ["worker", "Hard hat", 500], ["witch", "Witch hat", 6000]],
+    body: [["woman2", "White top", 0], ["woman1", "Green dress", 1500], ["suit", "Blazer", 3500], ["punk", "Punk crop top", 700], ["worker", "Hi-vis work vest", 900], ["adventurer", "Explorer top", 2200], ["hooded", "Hooded cloak", 2600], ["soldier", "Army jacket", 5000], ["scifi", "Sci-fi suit", 30000], ["witch", "Witch robe", 9000]],
+    legs: [["woman2", "Orange trousers", 0], ["woman1", "Green skirt", 900], ["suit", "Suit trousers", 2500], ["punk", "Ripped leggings", 700], ["worker", "Work trousers", 800], ["adventurer", "Explorer shorts", 1500], ["hooded", "Dark leggings", 1200], ["soldier", "Army trousers", 4000], ["scifi", "Sci-fi leggings", 25000], ["witch", "Witch skirt", 6000]],
+    feet: [["woman2", "Sandals", 0], ["woman1", "Red flats", 800], ["suit", "Black heels", 1800], ["punk", "Punk boots", 1200], ["worker", "Work boots", 900], ["adventurer", "Hiking boots", 1400], ["hooded", "Leather boots", 1600], ["soldier", "Army boots", 3500], ["scifi", "Sci-fi boots", 20000], ["witch", "Witch boots", 5000]]
+  }
+}; // end OUTFITS
+const SLOTS = ["head", "body", "legs", "feet"]; // the four pieces of a person
+const HS_HEAD = { m: { short: "casual", fade: "business", afro: "hoodie", long: "adventurer", braids: "punk", bun: "beach", bald: "casual" }, f: { long: "woman2", bun: "woman1", braids: "adventurer", afro: "adventurer", short: "suit", fade: "suit", bald: "suit" } }; // older saves: hairstyle -> head
+const ROLE_LOOK = { m: { resident: ["casual", "casual", "casual"], tourist: ["beach", "beach", "beach"], student: ["hoodie", "hoodie", "hoodie"] }, f: { resident: ["woman2", "woman2", "woman2"], tourist: ["woman1", "woman1", "woman2"], student: ["punk", "punk", "punk"] } }; // starting top, legs and shoes per status
+const CHARS = {}, CHARMAT = {}; // loaded files by path, and shared recoloured materials
+const CHAR_H = 1.55; // how tall a person stands, in tiles
+const hasPiece = (g, slot, id) => OUTFITS[g][slot].some((q) => q[0] === id); // is this a real piece for that body?
+function pieceSet(L) { // the four pieces someone wears, always valid
+  const g = L.g === "f" ? "f" : "m", d = ROLE_LOOK[g][ROLE[L.role] ? L.role : "resident"] || ROLE_LOOK[g].resident; // body type, and defaults for their status
+  const pick = (slot, v, def) => (hasPiece(g, slot, v) ? v : def); // keep it if it exists
+  return { g, head: pick("head", L.head, HS_HEAD[g][L.hs] || OUTFITS[g].head[0][0]), body: pick("body", L.top, d[0]), legs: pick("legs", L.legs, d[1]), feet: pick("feet", L.feet, d[2]) };
+} // end pieceSet
+function loadChar(path) { // fetch one file (a skeleton or a piece) once, in the background
+  const c = CHARS[path] || (CHARS[path] = { state: "new" }); if (c.state !== "new") return c; // already asked for
   if (!THREE.GLTFLoader || !THREE.SkeletonUtils) { c.state = "failed"; return c; } c.state = "loading"; // no loader: keep the simple people
-  (R.gltf || (R.gltf = new THREE.GLTFLoader())).load("models/people/character-" + name + ".glb", (gl) => { try { prepChar(c, gl.scene); c.state = "ready"; } catch (e) { console.warn("character not usable", name, e); c.state = "failed"; } }, undefined, (e) => { console.warn("character not loaded", name, e); c.state = "failed"; }); // ready or failed
+  (R.gltf || (R.gltf = new THREE.GLTFLoader())).load("models/people2/" + path + ".glb", (gl) => { try { prepChar(c, gl, /skeleton$/.test(path)); c.state = "ready"; } catch (e) { console.warn("character part not usable", path, e); c.state = "failed"; } }, undefined, (e) => { console.warn("character part not loaded", path, e); c.state = "failed"; }); // ready or failed
   return c;
 } // end loadChar
-function prepChar(c, scene) { // learn a body's shape and move its skin, hair, shirt and trousers onto their own colour swatches so any look can repaint them
-  scene.updateMatrixWorld(true); const meshes = []; let img = null; scene.traverse((o) => { if (o.isSkinnedMesh) { meshes.push(o); if (!img && o.material.map) img = o.material.map.image; } }); // the two skinned meshes and the colour map
-  const head = meshes.find((m) => /head/.test(m.name)), body = meshes.find((m) => /body/.test(m.name)); if (!img || !head || !body) throw new Error("unexpected model layout");
-  const cellOf = (u, v) => Math.min(7, Math.floor(u * 8)) + 8 * Math.min(3, Math.floor(v * 4)); // the colour map is 8 swatches across, 4 down
-  const info = (m) => { const g2 = m.geometry, uv = g2.attributes.uv, si = g2.attributes.skinIndex, sw = g2.attributes.skinWeight, pos = g2.attributes.position, out = []; // per point: swatch, bone and position
-    for (let i = 0; i < uv.count; i++) { const ws = [sw.getX(i), sw.getY(i), sw.getZ(i), sw.getW(i)], js = [si.getX(i), si.getY(i), si.getZ(i), si.getW(i)], b = m.skeleton.bones[js[ws.indexOf(Math.max(...ws))]]; out.push({ cell: cellOf(uv.getX(i), uv.getY(i)), bone: b ? b.name : "", p: new THREE.Vector3().fromBufferAttribute(pos, i) }); }
-    return out; };
-  const most = (vs) => { const n = {}; let best = -1, bn = 0; for (const v of vs) { n[v.cell] = (n[v.cell] || 0) + 1; if (n[v.cell] > bn) { bn = n[v.cell]; best = v.cell; } } return best; }; // the commonest swatch
-  const hv = info(head), bv = info(body), at = (n) => { const v = new THREE.Vector3(); scene.getObjectByName(n).getWorldPosition(v); return v; }; // bone positions
-  const sh = at("arm-left"), hipY = at("leg-left").y, hd = at("head"), ts = at("torso"); let hand = null, far = -1; for (const v of bv) if (v.bone === "arm-left") { const d2 = v.p.distanceTo(sh); if (d2 > far) { far = d2; hand = v; } } // the hand is the arm point farthest from the shoulder
-  const skin = hand ? hand.cell : -1, hair = most(hv.filter((v) => v.cell !== skin)), shirt = most(bv.filter((v) => v.cell !== skin && v.bone === "torso")), pants = most(bv.filter((v) => v.cell !== skin && /^leg/.test(v.bone) && v.p.y > hipY * 0.4)); // swatch of each part
-  const move = (m, vs, region) => { const uv = m.geometry.attributes.uv; vs.forEach((v, i) => { const r = region(v); if (r < 0) return; const u = uv.getX(i), w = uv.getY(i); uv.setXY(i, r / 8 + (u - Math.min(7, Math.floor(u * 8)) / 8), w - Math.min(3, Math.floor(w * 4)) / 4); }); uv.needsUpdate = true; }; // point at the free top row: 0 skin, 1 hair, 2 shirt, 3 trousers
-  move(head, hv, (v) => v.cell === skin ? 0 : v.cell === hair ? 1 : -1); // face and hair (eyes keep their colour)
-  move(body, bv, (v) => v.cell === skin ? 0 : /^leg/.test(v.bone) ? (v.cell === pants ? 3 : -1) : v.cell === shirt ? 2 : -1); // hands, top and trousers (shoes, ties and belts keep theirs)
-  head.geometry.computeBoundingBox(); const hb = head.geometry.boundingBox, eyes = hv.filter((v) => v.cell !== skin && v.cell !== hair && v.p.z > 0); // head size, and the eye points
-  const tv = bv.filter((v) => v.bone === "torso"); // torso points
-  c.scene = scene; c.img = img; c.k = CHAR_H / hb.max.y; c.hip = hipY * c.k; // the body, its colour map, its scale and hip height
-  c.head = { w: hb.max.x - hb.min.x, d: hb.max.z - hb.min.z, top: hb.max.y - hd.y, cz: (hb.max.z + hb.min.z) / 2 - hd.z, front: hb.max.z - hd.z, eye: (eyes.length ? eyes.reduce((a, v) => a + v.p.y, 0) / eyes.length : hd.y + (hb.max.y - hd.y) * 0.4) - hd.y }; // head box relative to the head bone
-  c.torso = { front: Math.max(...tv.map((v) => v.p.z)) - ts.z, back: Math.min(...tv.map((v) => v.p.z)) - ts.z, mid: (Math.max(...tv.map((v) => v.p.y)) + ts.y) / 2 - ts.y }; // chest and back relative to the torso bone
+function prepChar(c, gl, isSkel) { // learn what we need from a loaded file
+  const sc = gl.scene; sc.updateMatrixWorld(true); c.scene = sc;
+  if (isSkel) { // the skeleton: its clips, size, and each limb's rest direction (for poses)
+    c.clips = {}; for (const a of gl.animations) c.clips[a.name] = a; // Idle, Walk, Run, Wave, Interact
+    const B = {}; sc.traverse((o) => { if (o.name) B[o.name] = o; }); const wp = (n) => B[n].getWorldPosition(new THREE.Vector3()); // bones by name, and where they are
+    c.k = CHAR_H / wp("Head_end").y; c.hip = wp("UpperLegL").y * c.k; // scale to full height, hip height in tiles
+    c.limbs = {}; for (const [n, child] of [["UpperArmL", "LowerArmL"], ["UpperArmR", "LowerArmR"], ["UpperLegL", "LowerLegL"], ["UpperLegR", "LowerLegR"], ["LowerLegL", "LowerLegL_end"], ["LowerLegR", "LowerLegR_end"]]) c.limbs[n] = { dir: wp(child).sub(wp(n)).normalize(), q: B[n].getWorldQuaternion(new THREE.Quaternion()) }; // rest direction and orientation in body space
+    const hm = B.Head.matrixWorld, hy = wp("Head_end").y - wp("Head").y; c.headH = hy; // the head bone, and how tall a head is
+    c.headHold = new THREE.Matrix4().copy(hm).invert().multiply(new THREE.Matrix4().makeTranslation(...wp("Head").toArray())); // a frame on the head that stays upright and unscaled in body space
+    c.chestHold = new THREE.Matrix4().copy(B.Chest.matrixWorld).invert().multiply(new THREE.Matrix4().makeTranslation(...wp("Chest").toArray())); // the same on the chest
+    return;
+  }
+  let node = null; sc.traverse((o) => { if (!node && /_(Head|Body|Legs|Feet)$/.test(o.name) && (o.isSkinnedMesh || o.children.some((q) => q.isSkinnedMesh))) node = o; }); if (!node) throw new Error("no piece in file"); // the piece itself
+  c.node = node; const count = {}; node.traverse((o) => { if (o.isSkinnedMesh) { const nm = o.material.name || ""; count[nm] = (count[nm] || 0) + o.geometry.attributes.position.count; } }); // which colours cover the most of it
+  c.main = Object.keys(count).filter((n) => !/^(Skin|Hair|Eye|Eyebrow)/.test(n)).sort((a, b) => count[b] - count[a])[0] || ""; // the main fabric (dyed by the player's colour)
 } // end prepChar
-function charMat(L, img) { // a colour map painted with this look's skin, hair, top and trousers (shared by everyone with the same colours)
-  const cols = [L.skin, L.hs === "bald" ? L.skin : L.hair, L.shirt, L.pants].map((c2) => /^#[0-9a-f]{6}$/i.test(c2 || "") ? c2 : "#7a7f86"), key = cols.join("|"); if (CHARMAT[key]) return CHARMAT[key]; // a clean shave paints the hair (and beard) as skin
-  const S = 256, cw = S / 8, ch = S / 4, c = document.createElement("canvas"); c.width = c.height = S; const x2 = c.getContext("2d"); x2.drawImage(img, 0, 0, S, S); // copy the pack's colours
-  cols.forEach((col, r) => { x2.fillStyle = col; x2.fillRect(r * cw, 0, cw / 2, ch); const gd = x2.createLinearGradient(0, 0, 0, ch); gd.addColorStop(0, shade(col, 1.12)); gd.addColorStop(1, shade(col, 0.72)); x2.fillStyle = gd; x2.fillRect(r * cw + cw / 2, 0, cw / 2, ch); }); // flat and shaded halves, like the pack's own swatches
-  const t2 = new THREE.CanvasTexture(c); t2.encoding = THREE.sRGBEncoding; t2.flipY = false; t2.generateMipmaps = false; t2.minFilter = THREE.LinearFilter; // glTF colour maps are not flipped
-  return CHARMAT[key] = new THREE.MeshLambertMaterial({ map: t2, skinning: true }); // lit like the rest of the town
-} // end charMat
-function makeModelPerson(L, c) { // a person from a real model, with the same moving parts the walk, dance and pose code uses
-  const gr = new THREE.Group(), body = THREE.SkeletonUtils.clone(c.scene), m = charMat(L, c.img); body.scale.setScalar(c.k); gr.add(body); // the body at full height
-  body.traverse((o) => { if (o.isSkinnedMesh) { o.material = m; o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; } }); // painted and shadowed
-  const bone = (n) => body.getObjectByName(n), armL = new THREE.Object3D(), armR = new THREE.Object3D(); // the pose code turns these; they are copied onto the arm bones
-  const bL = bone("arm-right"), bR = bone("arm-left"), down = (a) => new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, a)), dL = down(Math.PI / 2 - 0.12), dR = down(-(Math.PI / 2 - 0.12)); // the model's arms point sideways; these hang them down
-  const parts = { legL: bone("leg-right"), legR: bone("leg-left"), armL, armR }; // "left" here is the side at -x, which is the model's right
-  const hb = bone("head"), tb = bone("torso"), H = c.head, T = c.torso; // where accessories go
-  if (L.cap) { box(H.w * 1.06, 0.08, H.d * 1.06, L.cap, 0, H.top - 0.03, H.cz, hb); box(H.w * 0.8, 0.016, 0.12, L.cap, 0, H.top - 0.07, H.front + 0.05, hb); } // cap with a peak
-  if (L.shades) box(H.w * 0.78, 0.05, 0.02, "#101214", 0, H.eye, H.front + 0.008, hb); // sunglasses
-  if (L.role === "tourist") { cyl(0.3, 0.3, 0.015, "#e9d49a", 0, H.top + 0.005, H.cz, hb, 16); cyl(0.17, 0.19, 0.08, "#d9bf7a", 0, H.top + 0.045, H.cz, hb, 12); box(0.08, 0.06, 0.04, "#1d1d1d", 0, T.mid, T.front + 0.02, tb); } // straw hat and camera
-  if (L.role === "student") box(0.2, 0.17, 0.08, "#1d2a36", 0, T.mid, T.back - 0.04, tb); // backpack
-  const sync = () => { bL.quaternion.setFromEuler(armL.rotation).multiply(dL); bR.quaternion.setFromEuler(armR.rotation).multiply(dR); }; // copy the arm swing onto the bones
-  return { g: gr, parts, sync, hip: c.hip }; // same shape as a simple person, plus the arm copy
+function partMat(src, col) { // a lit, skinned copy of a piece's material in a given colour (shared by everyone wearing the same)
+  const key = src.name + "|" + col; if (CHARMAT[key]) return CHARMAT[key];
+  const m = new THREE.MeshLambertMaterial({ skinning: true, color: col ? new THREE.Color(col).convertSRGBToLinear() : src.color.clone() }); m.name = src.name; return CHARMAT[key] = m; // pack colours are already linear
+} // end partMat
+function pieceColour(slot, matName, main, L) { // what colour a material should be for this look ("" keeps the pack's colour)
+  if (/^Skin_Darker/.test(matName)) return shade(L.skin, 0.85); if (/^Skin/.test(matName)) return L.skin; // skin
+  if (/^Hair/.test(matName)) return L.hs === "bald" ? L.skin : L.hair; if (/^Eyebrow/.test(matName)) return shade(L.hs === "bald" ? "#3a2a20" : L.hair, 0.8); // hair and brows
+  if (matName === main && slot === "body" && L.shirt) return L.shirt; if (matName === main && slot === "legs" && L.pants) return L.pants; // the dyed top and bottoms
+  return ""; // everything else as made
+} // end pieceColour
+function makeModelPerson(L, P) { // a person from four real pieces, with the same moving parts the walk, dance and pose code uses
+  const sk = CHARS[P.g + "/skeleton"], gr = new THREE.Group(), body = THREE.SkeletonUtils.clone(sk.scene); body.scale.setScalar(sk.k); gr.add(body); // the skeleton at full height
+  const B = {}; body.traverse((o) => { if (o.name && !B[o.name]) B[o.name] = o; }); const holder = body.getObjectByName("RootNode") || body; // bones by name, and where pieces hang
+  for (const slot of SLOTS) { const c = CHARS[P.g + "/" + slot + "-" + P[slot]]; if (!c || c.state !== "ready") continue; // each piece
+    const mk = (o) => { const m = new THREE.SkinnedMesh(o.geometry, partMat(o.material, pieceColour(slot, o.material.name || "", c.main, L))); m.position.copy(o.position); m.quaternion.copy(o.quaternion); m.scale.copy(o.scale); m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; m.bind(new THREE.Skeleton(o.skeleton.bones.map((b) => B[b.name]), o.skeleton.boneInverses), o.bindMatrix); return m; }; // a recoloured copy driven by this body's bones (sharing the shape)
+    if (c.node.isSkinnedMesh) holder.add(mk(c.node)); else { const gp = new THREE.Group(); gp.position.copy(c.node.position); gp.quaternion.copy(c.node.quaternion); gp.scale.copy(c.node.scale); for (const ch of c.node.children) if (ch.isSkinnedMesh) gp.add(mk(ch)); holder.add(gp); } // one mesh, or one per colour
+  }
+  const mixer = new THREE.AnimationMixer(body), act = {}; for (const n of ["Idle", "Walk", "Run"]) if (sk.clips[n]) act[n] = mixer.clipAction(sk.clips[n]); let cur = null, last = performance.now(); // the walk cycle and breathing
+  const play = (n) => { const a = act[n]; if (!a || cur === a) return; a.reset().play(); if (cur) a.crossFadeFrom(cur, 0.2, false); cur = a; }; play("Idle"); // smooth changes between clips
+  const parts = { legL: new THREE.Object3D(), legR: new THREE.Object3D(), armL: new THREE.Object3D(), armR: new THREE.Object3D() }; // the pose code turns these
+  const LIMB = { armL: "UpperArmR", armR: "UpperArmL", legL: "UpperLegR", legR: "UpperLegL" }; // "left" in the game is the side at -x, the model's right
+  const down = new THREE.Vector3(0, -1, 0), d = new THREE.Vector3(), qf = new THREE.Quaternion(), qb = new THREE.Quaternion(), qp = new THREE.Quaternion(), e = new THREE.Euler(); // scratch
+  const sync = (moving, posed) => { // run the clips, and when posing or dancing bend the limbs where the game asks
+    const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000); last = now; play(posed ? "Idle" : moving ? "Walk" : "Idle"); mixer.update(dt); // walk or stand
+    if (!posed) return; body.updateMatrixWorld(true); body.getWorldQuaternion(qb); // posing: overwrite the four limbs
+    const aim = (name, dir) => { const bn = B[name], r = sk.limbs[name]; qf.setFromUnitVectors(r.dir, dir); bn.parent.getWorldQuaternion(qp); bn.quaternion.copy(qp.invert().multiply(qb).multiply(qf).multiply(r.q)); bn.updateMatrixWorld(true); }; // point a bone along a direction in body space
+    for (const k in LIMB) { e.copy(parts[k].rotation); aim(LIMB[k], d.copy(down).applyEuler(e)); } // aim each limb where the pose wants it
+    for (const [k, shin] of [["legL", "LowerLegR"], ["legR", "LowerLegL"]]) { const x = parts[k].rotation.x; if (x < -0.6) { e.set(Math.max(0, -x - 1.5) * 0.5 + 0.12, 0, 0); aim(shin, d.copy(down).applyEuler(e)); } } // thighs forward (sitting, crouching): knees bend so the shins hang down
+  }; // end sync
+  const hold = (bone, m) => { const h = new THREE.Object3D(); h.matrixAutoUpdate = false; h.matrix.copy(m); B[bone].add(h); return h; }, hh = sk.headH; // upright anchors on the head and chest
+  if (L.cap || L.shades || L.role === "tourist") { const h = hold("Head", sk.headHold); // things on the head
+    if (L.cap) { box(hh * 0.95, hh * 0.22, hh * 0.95, L.cap, 0, hh * 0.92, 0, h); box(hh * 0.7, hh * 0.05, hh * 0.4, L.cap, 0, hh * 0.84, hh * 0.6, h); } // cap with a peak
+    if (L.shades) box(hh * 0.78, hh * 0.13, hh * 0.05, "#101214", 0, hh * 0.48, hh * 0.47, h); // sunglasses
+    if (L.role === "tourist" && !L.cap) { cyl(hh * 0.85, hh * 0.85, hh * 0.04, "#e9d49a", 0, hh * 0.98, 0, h, 16); cyl(hh * 0.45, hh * 0.5, hh * 0.25, "#d9bf7a", 0, hh * 1.1, 0, h, 12); } } // straw sun hat
+  if (L.role === "student") { const h = hold("Chest", sk.chestHold); box(hh * 0.8, hh * 0.9, hh * 0.35, "#1d2a36", 0, 0, -hh * 0.55, h); } // backpack
+  gr.traverse((o) => { if (o.isMesh && !o.isSkinnedMesh) o.castShadow = false; }); // small extras cast no shadow
+  return { g: gr, parts, sync, hip: sk.hip }; // same shape as a simple person, plus the clips
 } // end makeModelPerson
-function makePerson(L) { // a real model when its body has loaded, else the simple shapes for now
-  const base = charBase(L), c = loadChar(base); if (c.state === "ready") return makeModelPerson(L, c); // the real thing
-  const p = makeSimplePerson(L); if (c.state === "loading") p.wait = base; return p; // swapped once the body arrives
+function makePerson(L) { // a real model when its pieces have loaded, else the simple shapes for now
+  const P = pieceSet(L), files = [P.g + "/skeleton", ...SLOTS.map((k) => P.g + "/" + k + "-" + P[k])], cs = files.map(loadChar); // what this look needs
+  if (cs.every((c) => c.state === "ready") || (cs[0].state === "ready" && cs.every((c) => c.state !== "loading" && c.state !== "new"))) { try { return makeModelPerson(L, P); } catch (e) { console.warn("could not build a person", e); return makeSimplePerson(L); } } // everything here (a failed piece is just left off; any error falls back to the simple shapes)
+  const p = makeSimplePerson(Object.assign({}, L, { shirt: L.shirt || "#8a8f96", pants: L.pants || "#34404c" })); if (cs.some((c) => c.state === "loading")) p.wait = files; return p; // swapped once the pieces arrive
 } // end makePerson
+function charPreview(L) { // a slowly turning 3D preview of a look, on one shared canvas (for the create screen and the Wardrobe)
+  if (!R.ok) return null; // no 3D here: the caller draws the flat picture instead
+  const P = R.pv || (R.pv = (() => { const cv2 = document.createElement("canvas"); cv2.width = 260; cv2.height = 340; cv2.className = "pv3d"; const r = new THREE.WebGLRenderer({ canvas: cv2, antialias: true, alpha: true }); r.outputEncoding = THREE.sRGBEncoding; // its own small renderer
+    const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xffffff, 0x8a7a60, 0.95)); const dl = new THREE.DirectionalLight(0xfff1d6, 0.75); dl.position.set(2, 4, 5); sc.add(dl); // soft studio light
+    const cam = new THREE.PerspectiveCamera(28, 260 / 340, 0.1, 20); cam.position.set(0, 0.95, 4.3); cam.lookAt(0, 0.8, 0); return { cv: cv2, r, sc, cam, key: "", p: null, ang: 0, L: null }; })()); // a full-length portrait
+  const set = (look) => { if (P.p) P.sc.remove(P.p.g); P.p = makePerson(look); P.sc.add(P.p.g); }; // (re)build the person
+  const key = JSON.stringify(L); if (P.key !== key) { P.key = key; P.L = L; set(L); } // the look changed
+  if (!P.loop) { const tick = () => { if (!P.cv.isConnected) { P.loop = 0; return; } // stop when the screen closes
+    if (P.p.wait && P.p.wait.every((f) => CHARS[f].state !== "loading")) set(P.L); // the real pieces arrived
+    P.ang += 0.015; P.p.g.rotation.y = Math.sin(P.ang) * 0.8; if (P.p.sync) P.p.sync(false, false); P.r.render(P.sc, P.cam); P.loop = requestAnimationFrame(tick); }; P.loop = requestAnimationFrame(tick); } // breathe, turn, draw
+  return P.cv;
+} // end charPreview
 function makeSimplePerson(L) { // a low-poly person built from a look
   const gr = new THREE.Group(), fem = L.g === "f", tw = fem ? 0.28 : 0.32, parts = {}; // body group and torso width
   for (const i of [-1, 1]) { const pv = new THREE.Group(); pv.position.set(i * 0.09, 0.52, 0); box(0.12, 0.48, 0.13, L.skin, 0, -0.24, 0, pv); box(0.13, 0.07, 0.2, "#2a2320", 0, -0.48, 0.03, pv); gr.add(pv); parts[i < 0 ? "legL" : "legR"] = pv; } // legs swing from the hips, with sandals
@@ -2817,12 +2948,12 @@ function makeSimplePerson(L) { // a low-poly person built from a look
 } // end makeSimplePerson
 function personAt(id, L, x, z, face, moving, opt) { // show one person this frame (models are cached per person)
   const key = JSON.stringify(L); let p = PP[id]; // look as text, and this person's model
-  if (!p || p.key !== key || (p.wait && CHARS[p.wait].state !== "loading")) { const old = p; if (old) R.dyn.remove(old.g); p = PP[id] = makePerson(L); p.key = key; p.ang = old ? old.ang : 0; if (old) { p.label = old.label; p.bub = old.bub; p.arrow = old.arrow; } R.dyn.add(p.g); } // build or rebuild when the look changes or the real body arrives (keeping the name tag, bubble and arrow)
+  if (!p || p.key !== key || (p.wait && p.wait.every((f) => CHARS[f].state !== "loading"))) { const old = p; if (old) R.dyn.remove(old.g); p = PP[id] = makePerson(L); p.key = key; p.ang = old ? old.ang : 0; if (old) { p.label = old.label; p.bub = old.bub; p.arrow = old.arrow; } R.dyn.add(p.g); } // build or rebuild when the look changes or the real body arrives (keeping the name tag, bubble and arrow)
   p.seen = R.frame; p.g.visible = true; p.g.position.set(x, opt && opt.swim ? -0.62 : 0, z); // place it (sunk to the chest when swimming)
   p.g.rotation.x = 0; p.g.rotation.z = 0; p.g.scale.y = 1; const want = [0, Math.PI, -Math.PI / 2, Math.PI / 2][face | 0]; let da = want - p.ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; p.ang += da * 0.25; p.g.rotation.y = p.ang; // turn smoothly to face the way you walk
   const ph = moving ? performance.now() / 110 + x : 0, sw = Math.sin(ph); p.parts.legL.rotation.x = sw * 0.6; p.parts.legR.rotation.x = -sw * 0.6; p.parts.armL.rotation.x = -sw * 0.5; p.parts.armR.rotation.x = sw * 0.5; p.parts.armL.rotation.z = 0; p.parts.armR.rotation.z = 0; // walking swing
   if (opt && opt.pose && POSES.includes(opt.pose.k)) applyPose(p, opt.pose); else if (opt && GENRES[opt.dance]) danceMoves(p, opt.dance, x + z); // dancing replaces the walk
-  if (p.sync) { p.sync(); const lx = p.parts.legL.rotation.x; if (lx < -1) p.g.position.y += (0.52 - p.hip) * Math.min(1, -lx / 1.5); } // real models: move the arm bones, and lift seated people whose legs are shorter than the simple ones
+  if (p.sync) { p.sync(moving, !!(opt && ((opt.pose && POSES.includes(opt.pose.k)) || GENRES[opt.dance]))); const lx = p.parts.legL.rotation.x; if (lx < -1) p.g.position.y += (0.52 - p.hip) * Math.min(1, -lx / 1.5); } // real models: move the arm bones, and lift seated people whose legs are shorter than the simple ones
   const tag = (opt && opt.name) || ""; if (tag) { if (!p.label) { p.label = sprite(textTex(" ", null, "#ffffff"), 0.26, true); R.dyn.add(p.label); } setSpriteText(p.label, tag, "rgba(6,28,40,0.75)", opt.real ? "#ffd23c" : "#ffffff", 0.26); { const lk = R.lk || 1; p.label.scale.set(0.26 * p.label.material.map.userData.aspect * lk, 0.26 * lk, 1); } p.label.position.set(x, 1.85, z); p.label.visible = true; } else if (p.label) p.label.visible = false; // name above the head
   const bub = (opt && opt.bubble) || ""; if (bub) { if (!p.bub) { p.bub = sprite(textTex(" ", "#ffffff", "#14181c"), 0.3, true); R.dyn.add(p.bub); } setSpriteText(p.bub, bub.length > 30 ? bub.slice(0, 29) + "…" : bub, "#ffffff", "#14181c", 0.3); p.bub.position.set(x, 2.2, z); p.bub.visible = true; } else if (p.bub) p.bub.visible = false; // speech bubble
   if (opt && opt.me) { if (!p.arrow) { p.arrow = mesh(new THREE.ConeGeometry(0.1, 0.2, 4), new THREE.MeshBasicMaterial({ color: 0xffa733 }), 0, 0, 0, R.dyn, false); p.arrow.rotation.x = Math.PI; } p.arrow.position.set(x, 1.72 + Math.sin(performance.now() / 300) * 0.05, z); p.arrow.visible = true; } // orange arrow over you
@@ -2987,7 +3118,7 @@ function render3d(dt) { // draw one 3D frame
     for (const id of ["fb", "bb"]) R[id === "fb" ? "fball" : "bball"].visible = false; for (const m of R.carM || []) m.visible = false; if (R.rideM) R.rideM.visible = false; for (const m of R.dogM || []) m.visible = false; // hide outdoor things
     pets3d(); hideUnused(); R.renderer.render(R.scene, R.camera); return; // draw the room
   } // end inside
-  syncEstate(); scaleLabels(); fadeBuildings(); R.homeTV.visible = !!s.tv; R.mattress.material = mat(s.bed ? "#d9482b" : "#9aa3a8"); // estate houses, your TV and mattress
+  syncEstate(); scaleLabels(); fadeBuildings(); // estate houses
   for (const mk of R.marks) { // markers on usable things
     const o = mk.o, show = !o.show || o.show(), d = Math.hypot(o.x - s.x, o.y - s.y), on = near === o; mk.ring.visible = show; if (mk.icon) { mk.icon.visible = show && d < 22; mk.icon.position.y = 1.5 + Math.sin(now / 400 + o.x) * 0.07; mk.icon.scale.setScalar(on ? 0.7 : 0.55); } // ring and bobbing icon
     mk.ring.material.color.set(on ? 0xffa733 : 0xffffff); mk.label.visible = show && (on || (o.icon && d < 3.5)); if (mk.label.visible) setSpriteText(mk.label, o.name, "rgba(6,28,40,0.85)", "#ffffff", 0.3); // highlight and name when close
@@ -3045,7 +3176,10 @@ function buildLandmark() { // big white letters on the grass: FLIC EN FLAC
   const m = mesh(new THREE.PlaneGeometry(16, 3.1), new THREE.MeshLambertMaterial({ map: tx, transparent: true, depthWrite: false }), 35.5, 0.03, 2.9, R.world, false); m.rotation.x = -Math.PI / 2; // laid flat on the grass
   for (let i = 0; i < 22; i++) for (const [z, k] of [[1.0, 0], [4.9, 2]]) sph(0.16, ["#ef6f9c", "#ffd23c", "#ffffff", "#e4572e"][(i + k) % 4], 27.6 + i * 0.75, 0.12, z, R.world, 6); // flower borders
 } // end buildLandmark
-function buildHouse() { // your small room is now a closed little house on Coral Street: inside is its own room
+function buildApts() { // the apartment block for players who arrive after every estate plot is taken
+  const gr = buildingGroup({ x: APTS.x, y: APTS.y, w: APTS.w, h: APTS.h, name: APTS.name, col: "#f1e4d0", roof: "flat", roofCol: "#c2457a", sign: "#7a2fd1", door: "S", tall: 5.2 }); R.world.add(gr); // a tall block with a pink roof
+} // end buildApts
+function buildHouse() { // (old) the shared small house on Coral Street, no longer built: everyone has their own home now
   const hg = new THREE.Group(); R.world.add(hg); const col = "#efe0c4"; // group and wall colour
   box(8, 2.4, 7, col, 23, 1.2, 6.5, hg); box(8.1, 0.22, 7.1, shade(col, 0.7), 23, 0.11, 6.5, hg); // walls and plinth
   const roof = mesh(geo("pyr", () => { const g2 = new THREE.ConeGeometry(1, 1, 4); g2.rotateY(Math.PI / 4); return g2; }), mat("#b5482f", { flatShading: true }), 23, 2.4 + 0.7, 6.5, hg); roof.scale.set(8.5 / Math.SQRT2, 1.4, 7.5 / Math.SQRT2); // tiled roof
@@ -4010,7 +4144,7 @@ function deliverCheck() { // the order gets ready, then the driver waits outside
   if (s.driverWait && Date.now() - s.driverWait.at > 300000) { const g = s.driverWait.food || {}; s.hunger = clamp(s.hunger + (g.h || 0)); if (g.meals) s.meals += g.meals; s.driverWait = null; toast("🛵 You took too long — the driver left your order at the door."); save(); } // left at the door if you never came
   if (!s.deliverMs || Date.now() < s.deliverMs) return; // not ready yet
   s.driverWait = { food: s.deliverFood || {}, at: Date.now() }; s.deliverMs = 0; s.deliverFood = null; // the rider is now waiting outside
-  toast("🛵 Your " + (s.driverWait.food.n || "order") + " has arrived! The driver is outside your home on Coral Street — go collect it."); save(); // notify the player
+  toast("🛵 Your " + (s.driverWait.food.n || "order") + " has arrived! The driver is outside your front door — go collect it."); save(); // notify the player
 } // end deliverCheck
 
 // ================= receptionists / staff behind the desks =================
@@ -4035,7 +4169,7 @@ function collectDelivery() { // pick up the order the driver brought to your doo
 function driverLook() { return { g: "m", skin: SKINS[2], hair: "#17100c", hs: "fade", shirt: "#e4151c", cap: "#15171a", pants: "#2a2e35", role: "resident" }; } // the delivery rider's look
 function drawDriver() { // show the rider waiting outside your home
   if (s.inside || !R.ok || !s.driverWait) return; // only outdoors, in 3D, and only when one is waiting
-  personAt("driver", driverLook(), 24.5, 10.8, 1, false, { name: "🛵 Delivery" }); // stand on Coral Street by your door, facing you
+  const d = myDoor(); personAt("driver", driverLook(), d.x + 1.2, d.y + 0.3, 1, false, { name: "🛵 Delivery" }); // stand by your front door, facing you
 } // end drawDriver
 let bannerT = 0; // the banner's hide timer
 function banner(title, sub) { // a big celebratory banner across the top
@@ -4296,7 +4430,7 @@ function tapWorld(e) { // tap or click the world
   if (decorMode && s.inside === "home") { handleDecorTap(wx, wy); return; } // arranging your furniture
   if (s.pet && petPos.in === (s.inside || "") && Math.hypot(petPos.x - wx, petPos.y - wy) < 0.7 && !busy && !ride) { petMenu(); return; } // tapped your pet
   pending = (s.inside ? ROOM[s.inside].filter((q) => q.use) : OBJ).find((o) => (!o.show || o.show()) && Math.hypot(o.x - wx, o.y - wy) < 0.9) || null; // did you tap a usable thing?
-  if (!pending && !s.inside) { const b = BUILD.find((q) => wx >= q.x && wx < q.x + q.w && wy >= q.y - 1 && wy < q.y + q.h); if (b) { previewBuilding(b.id); return; } if (wx >= 19 && wx < 27 && wy >= 2 && wy < 10) pending = OBJ.find((o) => o.name === "Front door"); } // tapping a building walks you to its door and in
+  if (!pending && !s.inside) { const b = BUILD.find((q) => wx >= q.x && wx < q.x + q.w && wy >= q.y - 1 && wy < q.y + q.h); if (b) { previewBuilding(b.id); return; } } // tapping a building walks you to its door and in
   path = findPath(s.x, s.y, pending ? pending.x : wx, pending ? pending.y : wy); // walk there
 } // end tapWorld
 $("goBtn").onclick = useNear; // yellow use button
@@ -4320,7 +4454,8 @@ function start(data) { // boot the game
   if (!s.zv) { s.zoom = 0.5; s.zv = 1; } if (!s.mv2) { s.radio = true; s.mv2 = 1; } // older saves: start zoomed out, with music on
   for (const o of OBJ) if (["Bed", "Shower", "Toilet", "Stove", "TV"].includes(o.name)) o.show = () => false; // these now live inside your home
   s.t = worldMin(); if (!s.timeReal || !s.day0 || s.day0 > day()) { s.timeReal = 1; s.day0 = day(); if (s.made) s.permit = day() + permDays(); } s.invDay = day(); s.incomeDay = day(); if (!s.permit && s.made) s.permit = day() + permDays(); lastSky = weather().k; // sync to real Mauritius time (migrate old saves to the new clock)
-  buildMap(); if (!s.inside && solid[Math.floor(s.y) * W + Math.floor(s.x)]) { s.inside = "home"; s.ox = 22.5; s.oy = 10.8; s.x = 6; s.y = 6; } // older saves standing in the old open room
+  buildMap(); if (!s.inside && solid[Math.floor(s.y) * W + Math.floor(s.x)]) { s.inside = "home"; s.ox = 22.5; s.oy = 10.8; s.x = 6; s.y = 6; } // older saves standing somewhere now built over
+  if (s.inside === "visit") { s.inside = ""; s.x = s.ox; s.y = s.oy; } // a visit does not survive a reload: you are back on their doorstep
   R.ok = init3d(); if (!R.ok) g = cv.getContext("2d"); resize(); hud(); // prepare the world in 3D, or 2D if this device cannot
   netStart(); // look for other players
   dbStart(); // connect the richest list, houses and money transfers
