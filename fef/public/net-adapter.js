@@ -1,0 +1,85 @@
+// net-adapter.js — makes the self-hosted backend look exactly like the page host the game expects.
+// Load this BEFORE the game script. It defines window.claude = { use } so the game's
+// claude.use("user" | "room" | "db") calls work against your own server over WebSocket.
+(function () {
+  "use strict";
+  // this browser's player id and the signed key that proves it; the server issues both on first visit
+  var uid = "", token = "", accountName = "";
+  try { uid = localStorage.getItem("fef_uid") || ""; token = localStorage.getItem("fef_token") || ""; } catch (e) {}
+  function remember(id, key) { uid = id; token = key; try { localStorage.setItem("fef_uid", id); localStorage.setItem("fef_token", key); } catch (e) {} } // keep them for next time
+
+  var proto = location.protocol === "https:" ? "wss:" : "ws:";   // secure socket on https pages
+  var URL = proto + "//" + location.host;                         // same origin as the page
+  var ws = null, open = false, myPeer = "";                       // the socket, its state, and this tab's id
+  var readyQ = [];                                                // callbacks waiting for the first connection
+  function whenReady() { return new Promise(function (res) { if (open) res(); else readyQ.push(res); }); } // resolves once connected
+
+  var peersCb = null, peersCloseCb = null;                        // the room listener
+  var snaps = {};                                                 // active db subscriptions: id -> { col, limit, where, cb }
+  var pending = {};                                               // db writes waiting for an ack: rid -> { resolve, reject, timer }
+  var ridN = 0, subN = 0;                                         // counters for request ids and subscription ids
+
+  function connect() {
+    try { ws = new WebSocket(URL); } catch (e) { setTimeout(connect, 2000); return; } // retry if the socket cannot be created
+    ws.onopen = function () { ws.send(JSON.stringify({ t: "hello", uid: uid, token: token || undefined })); }; // identify with our key
+    ws.onmessage = function (ev) {
+      var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.t === "welcome") { myPeer = m.peer; remember(m.uid, m.token); accountName = m.account || ""; open = true; for (var id in snaps) sendSub(id); var q = readyQ; readyQ = []; q.forEach(function (r) { r(); }); } // accepted: the server says who we are, then restore subscriptions
+      else if (m.t === "account") { var ar = asks[m.rid]; if (ar) { clearTimeout(ar.timer); delete asks[m.rid]; ar.resolve(m); } } // a login answer
+      else if (m.t === "peers") { if (peersCb) peersCb({ peers: m.peers.map(function (p) { return { peer: p.peer, presence: p.presence, kind: p.kind || "viewer", isMe: p.peer === myPeer, sameTab: p.peer === myPeer }; }) }); } // room update
+      else if (m.t === "snap") { var s = snaps[m.id]; if (s && s.cb) s.cb({ docs: m.docs.map(function (d) { return { id: d.id, data: function () { return d.data; } }; }) }); } // a collection's data
+      else if (m.t === "ack") { var pr = pending[m.rid]; if (pr) { clearTimeout(pr.timer); pr.resolve(); delete pending[m.rid]; } } // a write landed
+    };
+    ws.onclose = function () { open = false; if (peersCloseCb) peersCloseCb(); setTimeout(connect, 1500); }; // drop to solo and reconnect
+    ws.onerror = function () { try { ws.close(); } catch (e) {} };
+  }
+  connect();
+
+  function req(obj) { // a db write that resolves when the server acknowledges it (so .then/.catch behave)
+    return whenReady().then(function () {
+      return new Promise(function (resolve, reject) {
+        var rid = ++ridN; obj.rid = rid;
+        pending[rid] = { resolve: resolve, reject: reject, timer: setTimeout(function () { delete pending[rid]; reject(new Error("timeout")); }, 8000) };
+        try { ws.send(JSON.stringify(obj)); } catch (e) { clearTimeout(pending[rid].timer); delete pending[rid]; reject(e); }
+      });
+    });
+  }
+  var asks = {};                                                  // login requests waiting for an answer: rid -> { resolve, timer }
+  function ask(obj) { // a request whose answer comes back as a message (resolves with { ok, error, ... })
+    return whenReady().then(function () {
+      return new Promise(function (resolve) {
+        var rid = ++ridN; obj.rid = rid;
+        asks[rid] = { resolve: resolve, timer: setTimeout(function () { delete asks[rid]; resolve({ ok: false, error: "No answer from the server. Try again." }); }, 15000) };
+        try { ws.send(JSON.stringify(obj)); } catch (e) { clearTimeout(asks[rid].timer); delete asks[rid]; resolve({ ok: false, error: "Not connected." }); }
+      });
+    });
+  }
+  function sendSub(id) { var s = snaps[id]; if (open && s) { try { ws.send(JSON.stringify({ t: "sub", id: id, col: s.col, limit: s.limit, where: s.where })); } catch (e) {} } } // start watching a collection
+  function subscribe(col, limit, where, cb) { var id = "s" + (++subN); snaps[id] = { col: col, limit: limit, where: where, cb: cb }; whenReady().then(function () { sendSub(id); }); return function () { delete snaps[id]; if (open) try { ws.send(JSON.stringify({ t: "unsub", id: id })); } catch (e) {} }; } // returns an unsubscribe function
+
+  function collection(col) {
+    return {
+      limit: function (n) { return { onSnapshot: function (cb) { return subscribe(col, n, null, cb); } }; },               // .limit(n).onSnapshot
+      where: function (f, op, v) { return { onSnapshot: function (cb) { return subscribe(col, 0, { field: f, value: v }, cb); } }; }, // .where(f,"==",v).onSnapshot
+      onSnapshot: function (cb) { return subscribe(col, 0, null, cb); },                                                   // whole-collection watch
+      add: function (data) { return req({ t: "col.add", col: col, data: data }); },                                       // add a new document
+      doc: function (id) { return { set: function (data) { return req({ t: "doc.set", path: col + "/" + id, data: data }); }, delete: function () { return req({ t: "doc.delete", col: col, id: id }); } }; } // one document in the collection
+    };
+  }
+  function docRef(path) { return { set: function (data) { return req({ t: "doc.set", path: path, data: data }); } }; }     // db.doc("players/<uid>")
+
+  // the object the game asks for
+  window.claude = {
+    use: function (name) {
+      if (name === "user") return Promise.resolve({ id: function () { return whenReady().then(function () { return uid; }); } }); // who you are
+      if (name === "room") return Promise.resolve({ onPeers: function (cb, closeCb) { peersCb = cb; peersCloseCb = closeCb; }, presence: function (patch) { if (open) try { ws.send(JSON.stringify({ t: "presence", patch: patch })); } catch (e) {} return Promise.resolve(); } }); // live players
+      if (name === "db") return Promise.resolve({ collection: collection, doc: docRef }); // the shared database
+      return Promise.resolve(null); // anything else: not provided (the game falls back gracefully)
+    },
+    account: { // optional username + password, so a character can be played on other devices
+      name: function () { return accountName; },                                  // this character's login, or "" if none
+      register: function (name, pass) { return ask({ t: "account.register", name: name, pass: pass }).then(function (r) { if (r.ok) accountName = r.name; return r; }); }, // add a login to this character
+      login: function (name, pass) { return ask({ t: "account.login", name: name, pass: pass }).then(function (r) { if (r.ok) remember(r.uid, r.token); return r; }); } // switch this browser to that character (reload afterwards)
+    }
+  };
+})();

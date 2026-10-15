@@ -1,0 +1,16 @@
+{
+  "name": "flic-en-flac-life-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted multiplayer backend for Flic en Flac Life (serves the game and runs the realtime room + database).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

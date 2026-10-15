@@ -1,0 +1,9 @@
+# dependencies
+node_modules/
+
+# player saves and the login secret: never commit these
+data.json
+auth-secret.txt
+
+# local tooling
+.claude/
