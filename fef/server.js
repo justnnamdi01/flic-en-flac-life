@@ -50,8 +50,8 @@ function pruneMail() { // keep the mail collection from growing without bound
 
 // ---------- the little Firestore-like database (collections of documents) ----------
 const dict = (o) => Object.assign(Object.create(null), o || {}); // a lookup table with no prototype (so "__proto__" is just a key)
-let db = { players: {}, mail: {}, homes: dict(), auth: { bound: dict(), accounts: dict(), names: dict() }, invites: dict() }; // public collections, plus private login data and home invites
-try { const loaded = JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); db.players = loaded.players || {}; db.mail = loaded.mail || {}; db.homes = dict(loaded.homes); const a = loaded.auth || {}; db.auth = { bound: dict(a.bound), accounts: dict(a.accounts), names: dict(a.names) }; db.invites = dict(); for (const k in loaded.invites || {}) db.invites[k] = dict(loaded.invites[k]); } catch (e) {} // load last state (known collections only)
+let db = { players: {}, mail: {}, homes: dict(), auth: { bound: dict(), accounts: dict(), names: dict() }, invites: dict(), news: [] }; // public collections, plus private login data, home invites and town gossip
+try { const loaded = JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); db.players = loaded.players || {}; db.mail = loaded.mail || {}; db.news = Array.isArray(loaded.news) ? loaded.news.slice(-60) : []; db.homes = dict(loaded.homes); const a = loaded.auth || {}; db.auth = { bound: dict(a.bound), accounts: dict(a.accounts), names: dict(a.names) }; db.invites = dict(); for (const k in loaded.invites || {}) db.invites[k] = dict(loaded.invites[k]); } catch (e) {} // load last state (known collections only)
 const PUBLIC_COLS = ["players", "mail", "homes"];      // the only collections a tab may read (homes: which player lives at which address)
 let saveTimer = null;                                  // debounce disk writes
 const BACKUP_DIR = path.join(path.dirname(DATA_FILE), "backups"); // daily copies of everyone's progress, kept for two weeks
@@ -154,6 +154,7 @@ async function account(ws, me, m) { // create a login for this character, or log
 const server = http.createServer((req, res) => {
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end("method not allowed"); } // read-only static server
   let url = decodeURIComponent((req.url || "/").split("?")[0]);   // the path only
+  if (url === "/api/stats") { res.writeHead(200, { "content-type": "application/json", "cache-control": "no-cache" }); return res.end(JSON.stringify({ total: playedCount() })); } // the welcome screen's population
   if (url === "/") url = "/index.html";                           // default page
   const file = path.join(PUBLIC, path.normalize(url).replace(/^(\.\.[\/\\])+/, "")); // block path escapes
   if (file !== PUBLIC && !file.startsWith(PUBLIC + path.sep)) { res.writeHead(403); return res.end("forbidden"); } // stay inside public/
@@ -174,6 +175,24 @@ function send(ws, obj) { if (ws && ws.readyState === 1) { try { ws.send(JSON.str
 const AWAY_MS = 5 * 60000;                             // a player whose connection drops (phone screen off) stays in the world as "away" this long
 function roomList() { const out = []; for (const [peer, p] of peers) if (p.uid) out.push({ peer, kind: "viewer", presence: p.away ? Object.assign({}, p.presence, { away: 1, mv: false }) : p.presence || {} }); return out; } // everyone in town (away players marked)
 function playedCount() { return Object.keys(db.players).length; } // everyone who has ever made a character
+
+// ---------- town gossip: cheaters and people caught doing something bad get exposed to everyone ----------
+const EXPOSE = { // what each kind of scandal says ({o} the offender, {v} the victim)
+  cheat: ["💔", "{o} was caught cheating on {v}!"], sneak: ["🫣", "{o} got caught with a sneak link behind {v}'s back!"],
+  pickpocket: ["🚓", "{o} was caught pickpocketing {v}!"], robbery: ["🚔", "Police tracked down {o} for robbing {v}!"],
+  bag: ["👜", "{o} was caught snatching a tourist's bag on the beach!"], zaza: ["🚬", "{o} got busted smoking zaza at the res!"],
+  race: ["🏁", "{o} got busted street racing on Coastal Road!"], fridge: ["🍗", "{o} was caught raiding the shared fridge at SLR!"],
+  permit: ["👮", "{o} was caught without a valid permit!"]
+};
+const cleanName = (v) => String(v || "").replace(/[<>\n\r\t]/g, "").trim().slice(0, 16); // names are shown as text, but keep them short and tidy
+function expose(me, m) { // a player was caught: tell the whole town and remember it
+  const t = EXPOSE[m.kind]; if (!t) return;
+  const now = Date.now(); if (now - (me.exposedAt || 0) < 20000) return; me.exposedAt = now; // at most one scandal every 20 seconds per tab
+  const doc = db.players[me.uid] || {}, who = cleanName(doc.name || (me.presence || {}).name) || "Someone", vic = cleanName(m.victim) || "their partner";
+  const item = { id: crypto.randomBytes(6).toString("hex"), kind: m.kind, icon: t[0], text: t[1].replace("{o}", who).replace("{v}", vic), who, uid: me.uid, vuid: UID_RE.test(String(m.vuid || "")) ? String(m.vuid) : "", at: now };
+  db.news.push(item); if (db.news.length > 60) db.news.splice(0, db.news.length - 60); persist(); // keep the latest 60
+  for (const [, p] of peers) send(p.ws, { t: "news", item }); // everyone online sees it now
+}
 function broadcastPeers() { const list = roomList(), total = playedCount(); for (const [, p] of peers) send(p.ws, { t: "peers", peers: list, total }); } // tell every tab who is here
 setInterval(() => { const now = Date.now(); for (const [id, p] of peers) if (p.away && now - p.away > AWAY_MS) { peers.delete(id); peersDirty = true; } }, 15000); // away too long: they have really gone
 setInterval(() => { for (const [, p] of peers) { if (!p.ws || p.away) continue; if (p.alive === false) { try { p.ws.terminate(); } catch (e) {} continue; } p.alive = false; try { p.ws.ping(); } catch (e) {} } }, 25000); // a heartbeat: sockets that stop answering are closed (and their player turns "away")
@@ -204,9 +223,10 @@ wss.on("connection", (ws) => {
     if (m.t === "hello") { // who this tab is: checked against its key, then welcomed (once per connection)
       if (me.uid) return; clearTimeout(helloTimer); me.uid = whoIs(m);
       for (const [id, p] of peers) if (p.away && p.uid === me.uid) { if (!Object.keys(me.presence).length) me.presence = p.presence; peers.delete(id); } peersDirty = true; // back from "away": take your old spot
-      send(ws, { t: "welcome", peer: peerId, uid: me.uid, token: sign(me.uid), account: db.auth.names[me.uid] || "" }); return; // its id, key and login name
+      send(ws, { t: "welcome", peer: peerId, uid: me.uid, token: sign(me.uid), account: db.auth.names[me.uid] || "", news: db.news.slice(-25) }); return; // its id, key, login name and the latest gossip
     }
     if (!me.uid) return;                                  // nothing else until hello
+    if (m.t === "expose") { expose(me, m); return; }      // someone got caught
     if (m.t === "account.register" || m.t === "account.login") { account(ws, me, m); return; } // logins
     if (m.t === "relay") { // a game message for one other player (football moves, chess moves, challenges)
       const to = String(m.to || ""), now = Date.now(); me.rt = Math.min(60, (me.rt == null ? 60 : me.rt) + (now - (me.rl || now)) / 1000 * 30); me.rl = now; // its own allowance: about 30 a second

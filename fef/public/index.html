@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#07171f">
 <style>html,body{height:100%;margin:0;background:#07171f;overflow:hidden}.game{border:0!important;border-radius:0!important}</style>
-<script src="net-adapter.js?v=6"></script>
+<script src="net-adapter.js?v=7"></script>
 </head>
 <body>
 <title>Flic en Flac Life</title>
@@ -91,6 +91,13 @@ button:focus-visible { outline: 3px solid var(--mango); outline-offset: 2px; }
 .banner b { font-family: var(--display); font-size: 1.3rem; display: block; line-height: 1.1; }
 .banner span { font-size: 0.85rem; font-weight: 700; }
 .banner.pop { animation: bannerPop 0.5s ease; }
+.exposed { position: absolute; left: 50%; top: 34%; z-index: 31; transform: translateX(-50%) rotate(-2deg); width: min(420px, calc(100% - 32px)); background: #fff8d6; color: #1a1a1a; border: 4px solid #d62828; border-radius: 6px; padding: 12px 18px 14px; text-align: center; box-shadow: 0 14px 50px rgba(0,0,0,0.55); display: grid; gap: 4px; pointer-events: none; }
+.exposed i { font-style: normal; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em; color: #555; border-bottom: 2px solid #1a1a1a; padding-bottom: 4px; }
+.exposed b { font-family: var(--display); font-size: clamp(1.7rem, 6vw, 2.4rem); line-height: 1; color: #fff; background: #d62828; padding: 6px 10px 4px; letter-spacing: 0.04em; justify-self: center; transform: rotate(1.5deg); }
+.exposed span { font-size: 1rem; font-weight: 800; line-height: 1.25; }
+.exposed.pop { animation: exposedPop 0.55s cubic-bezier(.2,1.6,.4,1); }
+@keyframes exposedPop { from { transform: translateX(-50%) rotate(-12deg) scale(0.3); opacity: 0; } to { transform: translateX(-50%) rotate(-2deg) scale(1); opacity: 1; } }
+.gossip { display: grid; gap: 8px; } .gossip .g { background: #fff8d6; color: #1a1a1a; border-left: 5px solid #d62828; border-radius: 8px; padding: 9px 11px; font-weight: 700; font-size: 0.86rem; line-height: 1.3; } .gossip .g small { display: block; font-weight: 500; color: #6b6b6b; margin-top: 3px; font-size: 0.72rem; } .gossip .g.me { border-left-color: #f08a00; }
 @keyframes bannerPop { 0% { transform: translateX(-50%) scale(0.6); opacity: 0; } 60% { transform: translateX(-50%) scale(1.08); } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
 .whot { position: absolute; inset: 0; z-index: 25; background: radial-gradient(120% 90% at 50% 0%, #123a2b, #07171f 70%); display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 8px; padding: 10px; overflow: hidden; }
 .wtop { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
@@ -460,6 +467,7 @@ button.prow { transition: transform 0.1s ease; } button.prow:active { transform:
   <div class="hud shout" id="shout" hidden></div>
   <div class="hud deliv" id="deliv" hidden></div>
   <div class="banner" id="banner" hidden></div>
+  <div class="exposed" id="exposed" hidden aria-live="polite"></div>
   <div class="hud matchhud" id="matchhud" hidden></div>
   <div class="hud busy" id="busy" hidden><span id="busyText"></span><div class="bar"><i id="busyBar"></i></div></div>
   <div class="decghost" id="decghost" hidden>✨</div>
@@ -530,7 +538,7 @@ button.prow { transition: transform 0.1s ease; } button.prow:active { transform:
     <div class="introText">
       <p class="introEyebrow">Welcome to</p>
       <h1 class="introTitle"><span style="--i:0">F</span><span style="--i:1">l</span><span style="--i:2">i</span><span style="--i:3">c</span><span style="--i:4">&nbsp;</span><span style="--i:5">e</span><span style="--i:6">n</span><span style="--i:7">&nbsp;</span><span style="--i:8">F</span><span style="--i:9">l</span><span style="--i:10">a</span><span style="--i:11">c</span><em>Life</em></h1>
-      <p class="introPlace">Mauritius · West Coast · Population: you</p>
+      <p class="introPlace">Mauritius · West Coast · Population: <span id="introPop">…</span></p>
       <p class="introTag" id="introTag">Work a shift. Pay your rent.</p>
       <button class="introGo" id="introGo" type="button">Tap to start</button>
     </div>
@@ -1625,6 +1633,7 @@ function netSend() { // tell everyone where you are
 let netDown = false, playedTotal = 0; // connection lost for a moment?, and how many people have ever played
 function netPeers(ch) { // the list of players changed
   netDown = false; if (ch.total) playedTotal = ch.total; // connected again; the server counts everyone who ever played
+  if (introOn) introPop(playedTotal); // keep the welcome screen's population live
   const here = {}; // who is present in this update
   for (const p of ch.peers) { // every open game
     if (p.isMe) { if (p.sameTab) myPeer = p.peer; continue; } // that is you
@@ -1826,7 +1835,7 @@ $("chatForm").onsubmit = (e) => { e.preventDefault(); const v = $("chatBox").val
 // ================= phone =================
 let pv = { app: "home", arg: "" }; // which phone screen is open
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }; // make an element safely (text is never HTML)
-const APPS = [["msgs", "💬", "Messages", "#1f8f4e"], ["maps", "🗺️", "Maps", "#3d9be9"], ["wardrobe", "👕", "Wardrobe", "#7a4fd1"], ["people", "👥", "People", "#c2457a"], ["ride", "🚕", "Rides", "#f2b430"], ["cars", "🚗", "Cars", "#3d9be9"], ["delivery", "🛵", "Delivery", "#1f8f4e"], ["wallet", "💳", "Wallet", "#7a4fd1"], ["jobs", "💼", "Jobs", "#d9482b"], ["goals", "🎯", "Goals", "#e4572e"], ["events", "🎉", "Events", "#c2457a"], ["health", "❤️", "Health", "#ef4f6a"], ["juice", "🧃", "Juice", "#c8102e"], ["campus", "🎓", "Campus", "#7a2f2f"], ["rich", "🏆", "Rich list", "#d4a017"], ["players", "👥", "Players", "#2a9d8f"], ["house", "🏠", "Home", "#b5482f"], ["games", "🎮", "Games", "#8e44ad"], ["alerts", "🔔", "Alerts", "#e4572e"], ["invite", "📨", "Invite", "#2a9d8f"], ["settings", "⚙️", "Settings", "#6c7781"]]; // apps on the home screen
+const APPS = [["msgs", "💬", "Messages", "#1f8f4e"], ["maps", "🗺️", "Maps", "#3d9be9"], ["wardrobe", "👕", "Wardrobe", "#7a4fd1"], ["people", "👥", "People", "#c2457a"], ["ride", "🚕", "Rides", "#f2b430"], ["cars", "🚗", "Cars", "#3d9be9"], ["delivery", "🛵", "Delivery", "#1f8f4e"], ["wallet", "💳", "Wallet", "#7a4fd1"], ["jobs", "💼", "Jobs", "#d9482b"], ["goals", "🎯", "Goals", "#e4572e"], ["events", "🎉", "Events", "#c2457a"], ["health", "❤️", "Health", "#ef4f6a"], ["juice", "🧃", "Juice", "#c8102e"], ["campus", "🎓", "Campus", "#7a2f2f"], ["rich", "🏆", "Rich list", "#d4a017"], ["players", "👥", "Players", "#2a9d8f"], ["gossip", "🗞️", "Gossip", "#d62828"],["house", "🏠", "Home", "#b5482f"], ["games", "🎮", "Games", "#8e44ad"], ["alerts", "🔔", "Alerts", "#e4572e"], ["invite", "📨", "Invite", "#2a9d8f"], ["settings", "⚙️", "Settings", "#6c7781"]]; // apps on the home screen
 function openPhone(app, arg) { pv = { app: app || "home", arg: arg || "" }; $("phone").hidden = false; phoneRender(); } // take the phone out
 function closePhone() { $("phone").hidden = true; } // put it away
 function phoneStat() { // the phone's status bar
@@ -1876,7 +1885,7 @@ function phoneRender() { // draw the current phone screen
     f.append(inp, go); f.onsubmit = (e) => { e.preventDefault(); sendMsg(id, inp.value); inp.value = ""; }; sc.append(f); // send on Enter or the button
     return; // done
   } // end thread
-  const names = { games: "Games", alerts: "Alerts", delivery: "Delivery", deliverfrom: "Delivery", invite: "Invite friends", players: "Players", player: "Player", house: "Home", cars: "Cars", msgs: "Messages", maps: "Maps", wallet: "Wallet", jobs: "Jobs", goals: "Goals", events: "Events", health: "Health", campus: "Campus", juice: "MCB Juice", invest: "Invest", history: "Bank history", rich: "Rich list", send: "Send money", sendto: "Send money", settings: "Settings", wardrobe: "Wardrobe", people: "People" }; // app titles
+  const names = { games: "Games", alerts: "Alerts", delivery: "Delivery", deliverfrom: "Delivery", invite: "Invite friends", players: "Players", gossip: "Town Gossip", player: "Player", house: "Home", cars: "Cars", msgs: "Messages", maps: "Maps", wallet: "Wallet", jobs: "Jobs", goals: "Goals", events: "Events", health: "Health", campus: "Campus", juice: "MCB Juice", invest: "Invest", history: "Bank history", rich: "Rich list", send: "Send money", sendto: "Send money", settings: "Settings", wardrobe: "Wardrobe", people: "People" }; // app titles
   phead(sc, names[pv.app]); const box = el("div", "pbody"); sc.append(box); // title bar and content area
   if (pv.app === "msgs") { // chat list
     unread = 0; setBadge(); // you have seen the list
@@ -1975,10 +1984,16 @@ function phoneRender() { // draw the current phone screen
     box.append(el("p", "pnote", "They get it the next time they have the game open.")); // delivery note
   } // end sendto
   const link = (label, sub, fn) => { const r = el("button", "prow"), l = el("span", "", label); if (sub) l.append(el("small", "", sub)); r.type = "button"; r.append(l, el("b", "", "›")); r.onclick = fn; box.append(r); }; // a tappable row
+  if (pv.app === "gossip") { // who got exposed lately
+    box.append(el("p", "pnote", "Cheat on your partner or get caught by the police and the whole town hears about it.")); const g = el("div", "gossip"); box.append(g);
+    if (!NEWS.length) g.append(el("p", "pnote", "No scandals yet. Everyone's behaving… for now 😇"));
+    for (const it of NEWS.slice(0, 40)) { const c = el("div", "g" + (it.uid === uid ? " me" : ""), it.icon + " " + it.text); c.append(el("small", "", (it.uid === uid ? "That's you · " : "") + agoText(it.at))); g.append(c); } // newest first
+    if (s.scandals) box.append(el("p", "pnote", "You've been exposed " + s.scandals + " time" + (s.scandals === 1 ? "" : "s") + ".")); // your record
+  } // end gossip
   if (pv.app === "players") { // everyone online now, then everyone who has played
     if (playedTotal) { const st = el("div", "playedbig"); st.append(el("b", "", playedTotal.toLocaleString()), el("span", "", "people have played Flic en Flac Life")); box.append(st); } // the all-time player count
     box.append(el("p", "pnote", room ? (Object.keys(others).length + 1) + " in town now, you included (💤 = phone asleep). Tap someone to message or interact." : "You are offline. Players appear here when the game is open with a live connection.")); // count
-    for (const k in others) { const o = others[k], b = BUILD.find((q) => q.id === o.p.in) || ROOMDEF[o.p.in], P = peerLook(o.p); link((o.p.away ? "💤 " : "🟢 ") + peerName(o) + relTag(o), ROLE[P.role].label + clsTag(o.p.cls) + " · " + (GENRES[o.p.dn] ? "💃 dancing" + (b ? " at " + b.name : "") : o.p.in === "houseparty" ? "at a house party" : b ? "at " + b.name : "out in town") + (o.p.hp > Date.now() ? " · 🎉 hosting" : ""), () => openPhone("player", k)); } // each player online
+    for (const k in others) { const o = others[k], b = BUILD.find((q) => q.id === o.p.in) || ROOMDEF[o.p.in], P = peerLook(o.p); link((o.p.away ? "💤 " : "🟢 ") + peerName(o) + relTag(o) + (NEWS.some((q) => q.uid && q.uid === o.p.uid && Date.now() - q.at < 864e5) ? " 🚩" : ""), ROLE[P.role].label + clsTag(o.p.cls) + " · " + (GENRES[o.p.dn] ? "💃 dancing" + (b ? " at " + b.name : "") : o.p.in === "houseparty" ? "at a house party" : b ? "at " + b.name : "out in town") + (o.p.hp > Date.now() ? " · 🎉 hosting" : ""), () => openPhone("player", k)); } // each player online
     const off = players.filter((p) => p.id !== uid && !Object.values(others).some((o) => o.p.uid === p.id)); // offline players
     if (off.length) { box.append(el("p", "pnote", "Offline · tap to send money")); for (const p of off.slice(0, 40)) link("⚪ " + p.name, ROLE[p.role].label + clsTag(p.cls) + " · worth " + rs(p.money), () => openPhone("sendto", p.id)); } // with a way to pay them
   } // end players
@@ -3391,6 +3406,8 @@ function endIntro(sound) { if (!introOn) return; introOn = false; if (sound) chi
 function playIntro() { introOn = true; R.introT0 = 0; $("intro").hidden = false; $("intro").classList.remove("hide"); $("intro").classList.toggle("solo", !R.ok); document.querySelector(".game").classList.add("introOn"); let k = 0; clearInterval(playIntro.t); playIntro.t = setInterval(() => { if (!introOn) { clearInterval(playIntro.t); return; } const tg = $("introTag"); tg.classList.add("out"); setTimeout(() => { k = (k + 1) % INTRO_TAGS.length; tg.textContent = INTRO_TAGS[k]; tg.classList.remove("out"); }, 400); }, 2400); } // start (or replay) the intro
 $("introGo").onclick = () => endIntro(true); // start playing
 $("introSkip").onclick = () => endIntro(false); // skip straight in
+function introPop(total) { const p = $("introPop"); if (!p || !total) return; p.textContent = total.toLocaleString() + " player" + (total === 1 ? "" : "s"); } // the real population on the welcome screen
+fetch("/api/stats", { cache: "no-store" }).then((r) => r.json()).then((j) => introPop(j.total | 0)).catch(() => { $("introPop").textContent = "growing"; }); // ask the server straight away
 
 // ================= building icons, previews, the Flic en Flac letters =================
 const BICON = { motors: "🚗", club69: "🎶", jamal: "🎉", slr: "🎓", yasmina1: "🏢", yasmina2: "🏢", sugar: "🏖️", coq: "🍗", burgo: "🍔", immig: "🛂", snack: "🍜", cafe: "☕", shop: "🛒", gelato: "🍨", dive: "🤿", bar: "🍹", gym: "🏋️", jumbo: "🛍️", sapphire: "🍸", saxo: "🎧", tigers: "🍺", hospital: "🏥", uni: "🎓", mall: "🏬", salon: "💇", maravan: "🍔", mcb: "🏦", resort: "🏨", police: "👮" }; // an emoji for every building
@@ -3494,14 +3511,15 @@ const nearPolice = () => { const d = doorOf("police"); return !s.inside && d && 
 const caughtChance = () => Math.max(0.15, 0.35 + (isNight() ? -0.1 : 0.05) - Math.min(s.fit, 10) * 0.015 + (nearPolice() ? 0.25 : 0)); // chance a pickpocket gets caught
 const jailClock = () => { const h = Math.floor(s.jail % 1440 / 60), m = Math.floor(s.jail % 60); return DAYS[Math.floor(s.jail / 1440) % 7] + " " + String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0"); }; // when you get out
 const bail = () => 300 + 100 * Math.min(6, s.jailN || 0); // a small bail that grows a little with your record
-function goJail(min, why) { // the police take you to a cell
+function goJail(min, why, kind, victim, vuid) { // the police take you to a cell (and, with a kind, the whole town hears about it)
+  if (kind) exposeMe(kind, victim, vuid); // exposed
   stopDance(); if (ride) ride = null; const d = doorOf("police"); s.jail = s.t + 2 + Math.floor(Math.random() * 2); s.jailN = (s.jailN || 0) + 1; // a short 2-3 minute sentence s.ox = d.x; s.oy = d.y; s.inside = "police"; s.x = 9; s.y = 3.6; s.face = 0; path = []; pending = null; save(); // into the cell
   const text = "🚓 " + why + " You're in a cell for a couple of minutes — wait it out, or pay bail (" + rs(bail()) + ") at the cell to walk out now."; toast(text); return text; // tell you
 } // end goJail
 function pickpocket(id) { // try to steal from another player
   const o = others[id]; if (!o) return; if (s.jail > s.t) { toast("You are in a cell."); return; } // must be free
   if ((o.p.in || "") !== (s.inside || "") || Math.hypot(o.x - s.x, o.y - s.y) > 2.5) { toast("Get right next to " + peerName(o) + " first."); return; } closePhone(); // must be close
-  if (Math.random() < caughtChance()) { sendSig(id, "caught", ""); goJail(360, "Caught pickpocketing " + peerName(o) + "!"); return; } // busted
+  if (Math.random() < caughtChance()) { sendSig(id, "caught", ""); goJail(360, "Caught pickpocketing " + peerName(o) + "!", "pickpocket", peerName(o), o.p.uid); return; } // busted
   sendSig(id, "steal", ""); s.stole = (s.stole || 0) + 1; toast("You slipped your hand into " + peerName(o) + "'s pocket..."); // their game takes the money and sends it to you
 } // end pickpocket
 function reportTheft() { // tell the police who robbed you
@@ -3531,7 +3549,7 @@ function gotSig2(id, o, sg) { // hangouts, treats and crime between players (tru
   } // end steal
   if (t === "loot") { const amt = Math.max(0, Math.min(3000, Math.floor(Number(sg.kind) || 0))); if (amt) { s.money += amt; txn("Pickpocketed " + nm, amt); } save(); toast(amt ? "You got away with " + rs(amt) + " from " + nm + ". They might report you..." : nm + "'s pockets were empty."); return true; } // what you got
   if (t === "caught") { toast("🚓 " + nm + " tried to pickpocket you, but the police grabbed them!"); return true; } // they failed
-  if (t === "arrest") { const f = Math.min(s.money, Math.max(0, Math.floor(Number(sg.kind) || 0))); if (f) { s.money -= f; txn("Stolen money returned", -f); } goJail(480, "The police tracked you down for robbing " + nm + "."); return true; } // reported and caught
+  if (t === "arrest") { const f = Math.min(s.money, Math.max(0, Math.floor(Number(sg.kind) || 0))); if (f) { s.money -= f; txn("Stolen money returned", -f); } goJail(480, "The police tracked you down for robbing " + nm + ".", "robbery", nm, o.p.uid); return true; } // reported and caught
   return false; // not one of these
 } // end gotSig2
 
@@ -3745,7 +3763,7 @@ function race(stake) { // run one street race for a stake
   if (!hasCar()) { toast("Rent or buy a car first."); return; } // need wheels
   if (s.money < stake) { toast("You need " + rs(stake) + " for the pot."); return; } // need the buy-in
   closeMenu(); s.money -= stake; s.races = (s.races || 0) + 1; save(); // pay into the pot and count the race
-  if (Math.random() < raceCaught()) { s.money += stake; const fine = 2000 + stake; toast(goJail(360, "🚓 Police raided the street race!")); if (s.money >= fine) { s.money -= fine; txn("Street-racing fine", -fine); } save(); return; } // busted: pot refunded, then jailed and fined
+  if (Math.random() < raceCaught()) { s.money += stake; const fine = 2000 + stake; toast(goJail(360, "🚓 Police raided the street race!", "race")); if (s.money >= fine) { s.money -= fine; txn("Street-racing fine", -fine); } save(); return; } // busted: pot refunded, then jailed and fined
   if (Math.random() < raceWinChance()) { const win = Math.round(stake * 1.9); s.money += win; txn("Street race win", win - stake); s.fit += Math.random() < 0.3 ? 1 : 0; toast("🏁 You won the race! +" + rs(win) + "."); } // win: pay out
   else { txn("Street race loss", -stake); toast("🏁 You lost the race. " + rs(stake) + " gone."); } // lose the pot
   save(); // store the result
@@ -3934,7 +3952,7 @@ function socResult(row, ok, name, rel) { // apply one interaction; returns what 
 function socialActs(name, key, onDo, extra, after, peerId) { // the interaction menu for a person (a neighbour or a real player): shortcuts first, then interactions, then extras
   const rel = relOf(key), acts = []; // how you know them
   for (const row of SOC) { const [id, icon, label, mins, , , needF, needR, , kind] = row; const why = rel.f < needF ? "Needs friendship " + needF + " (now " + rel.f + ")" : rel.r < needR ? "Needs romance " + needR + " (now " + rel.r + ")" : ""; // locked until you know them better
-    const pct = Math.round(socChance(row, rel) * 100); acts.push(A(icon + " " + label, kind === "mean" ? "Hurts the friendship" : pct + "% chance it goes well", mins, 0, {}, { why, icon, tag: kind === "mean" ? "Mean" : pct + "% ✓", tagCls: kind === "mean" ? "cost" : pct >= 70 ? "earn" : "free", run() { const ok = kind === "mean" || Math.random() < socChance(row, rel); const msg = socResult(row, ok, name, rel); if (onDo) onDo(row, ok); save(); return msg; } })); } // each one
+    const pct = Math.round(socChance(row, rel) * 100); acts.push(A(icon + " " + label, kind === "mean" ? "Hurts the friendship" : pct + "% chance it goes well", mins, 0, {}, { why, icon, tag: kind === "mean" ? "Mean" : pct + "% ✓", tagCls: kind === "mean" ? "cost" : pct >= 70 ? "earn" : "free", run() { const ok = kind === "mean" || Math.random() < socChance(row, rel); const msg = socResult(row, ok, name, rel); if (onDo) onDo(row, ok); const busted = kind === "romantic" ? cheatRisk(key, id) : ""; save(); return msg + busted; } })); } // each one (flirting behind your partner's back is risky)
   return (extra || []).concat(acts, relSpecialActs(name, key, onDo, peerId), after || []);
 } // end socialActs
 function socialNote(key) { const r = relOf(key); return (r.partner ? "💍 Partner" : relWords(r)) + " · ❤️ friendship " + r.f + " · 💕 romance " + r.r; } // the menu subtitle
@@ -3955,6 +3973,54 @@ function gotSoc(id, o, kind) { // a real player did something to you
   toast(icon + " " + nm + ": " + label.toLowerCase() + (ok || cat === "mean" ? "" : " (it didn't land)") + " · " + relWords(rel));
 } // end gotSoc
 
+// ================= exposed: cheaters and people caught doing something bad =================
+let NEWS = []; // the town's latest scandals, newest first
+const UIDRX = /^[a-z0-9]{6,40}$/; // what a player id looks like
+function uidName(id) { const o = Object.values(others).find((q) => q.p.uid === id); if (o) return peerName(o); const p = players.find((q) => q.id === id); return p ? p.name : ""; } // a player's name from their id
+function myPartner() { // your partner, from either kind of relationship: { name, key (in s.rel), k2 (in s.rels2), uid }
+  for (const k in s.rel || {}) if (s.rel[k].kind === "partner") return { name: s.rel[k].name || uidName(k) || "their partner", key: k, k2: "p:" + k, uid: UIDRX.test(k) ? k : "" };
+  for (const k in s.rels2 || {}) if (s.rels2[k].partner) { const u = k.startsWith("p:") && UIDRX.test(k.slice(2)) ? k.slice(2) : ""; return { name: u ? uidName(u) || "their partner" : k.replace(/^(npc|p):/, ""), key: u, k2: k, uid: u }; }
+  return null;
+} // end myPartner
+function exposeMe(kind, victim, vuid) { // you got caught: the whole town hears about it
+  s.scandals = (s.scandals || 0) + 1; addMoodlet("exposed", "Everyone's talking about you", -2, 240, "tense"); // it stings
+  if (window.claude && window.claude.news && room) window.claude.news.expose(kind, victim || "", vuid || ""); // the server tells everyone
+  else gotNews([{ id: "l" + Date.now(), kind, icon: "🗞️", text: (s.name || "You") + " got caught! (offline, so only you saw it)", who: s.name, uid, at: Date.now() }], false); // offline: just you
+} // end exposeMe
+function caughtCheating(kind, pt) { // your partner found out: dumped, embarrassed and exposed
+  if (pt.key && s.rel[pt.key]) { delete s.rel[pt.key]; if (pt.uid) { const o = Object.entries(others).find(([, q]) => q.p.uid === pt.uid); if (o) sendSig(o[0], "bye", "partner"); } } // the official relationship ends
+  const r2 = (s.rels2 || {})[pt.k2]; if (r2) { r2.partner = false; r2.r = Math.max(0, r2.r - 40); r2.f = Math.max(-100, r2.f - 35); } // and the feelings take a hit
+  s.cha = Math.max(0, (s.cha || 0) - 2); addMoodlet("busted", "Caught cheating on " + pt.name, -4, 720, "sad"); exposeMe(kind, pt.name, pt.uid); save(); // shame
+  return "💔 BUSTED! " + pt.name + " found out you were cheating and dumped you. You've been exposed to the whole town. -2 charisma.";
+} // end caughtCheating
+function cheatRisk(targetKey, act) { // flirting or kissing someone who is not your partner: did anyone see?
+  const pt = myPartner(); if (!pt || targetKey === pt.k2 || targetKey === "p:" + pt.key) return ""; // single, or it is your partner
+  let c = act === "kiss" ? 0.3 : 0.15; const o = pt.uid && Object.values(others).find((q) => q.p.uid === pt.uid); // base risk, and is your partner around?
+  if (o && (o.p.in || "") === (s.inside || "") && Math.hypot(o.x - s.x, o.y - s.y) < 12) c += 0.5; // right there: very likely
+  if (Math.random() < c) return " " + caughtCheating("cheat", pt); // caught
+  return " 🤫 Careful, you have a partner…"; // got away with it, this time
+} // end cheatRisk
+function gotNews(items, backlog) { // scandals arrived from the server (the backlog on connect, or one live)
+  for (const it of items) { if (!it || !it.id || NEWS.some((q) => q.id === it.id)) continue; NEWS.unshift(it); // new ones only
+    if (backlog) continue; // old gossip just fills the app
+    const mine = it.uid === uid; (threads.town = threads.town || []).push({ from: "🗞️ EXPOSED", text: " " + it.icon + " " + it.text, me: false }); if (!chatOpen) chatUnread++; chatRender(); // into the town chat
+    showExposed(it, mine);
+    if (!mine && it.vuid === uid && (it.kind === "cheat" || it.kind === "sneak")) { // it was YOU they cheated on
+      if (s.rel[it.uid]) delete s.rel[it.uid]; const r2 = (s.rels2 || {})["p:" + it.uid]; if (r2) { r2.partner = false; r2.r = Math.max(0, r2.r - 50); r2.f = Math.max(-100, r2.f - 40); } // it's over
+      addMoodlet("betrayed", it.who + " cheated on you", -4, 720, "angry"); save(); setTimeout(() => banner("💔 BETRAYED", it.who + " was cheating on you. You're single again."), 4500);
+    }
+  }
+  NEWS.sort((a, b) => b.at - a.at); NEWS = NEWS.slice(0, 60); if (!$("phone").hidden && pv.app === "gossip") phoneRender(); // keep it tidy
+} // end gotNews
+const exposeQ = []; let exposeT = 0; // scandals waiting their turn on screen
+function showExposed(it, mine) { exposeQ.push([it, mine]); if (!exposeT) nextExposed(); } // queue one
+function nextExposed() { // the tabloid card, one scandal at a time
+  const box = $("exposed"), q = exposeQ.shift(); if (!q) { exposeT = 0; box.hidden = true; return; } const [it, mine] = q;
+  box.innerHTML = ""; box.append(el("i", "", "🗞️ FLIC EN FLAC GOSSIP"), el("b", "", mine ? "YOU'VE BEEN EXPOSED!" : "EXPOSED!"), el("span", "", it.icon + " " + it.text)); // text only, never HTML
+  box.hidden = false; box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop"); exposeT = setTimeout(nextExposed, 5500);
+} // end nextExposed
+if (window.claude && window.claude.news) window.claude.news.on(gotNews); // listen for scandals
+const agoText = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + "h ago" : Math.round(m / 1440) + "d ago"; }; // real time since
 // ================= deeper relationships: milestones, gifts, partners, drifting apart, and the People app =================
 const REL_MS = [["friends", (r) => r.f >= 40, "🤝", "FRIENDS!", "You and {n} are friends now"], ["best", (r) => r.f >= 70, "💛", "BEST FRIENDS!", "{n} is your best friend"], ["crush", (r) => r.r >= 30, "💘", "A CRUSH!", "You have a crush on {n}"], ["sweet", (r) => r.r >= 60, "💕", "SWEETHEARTS!", "You and {n} are sweethearts"]]; // milestones worth celebrating
 function relTouch(rel, name) { // after anything that changes a relationship: remember when, and celebrate milestones (once each)
@@ -3962,6 +4028,7 @@ function relTouch(rel, name) { // after anything that changes a relationship: re
 } // end relTouch
 function relDrift() { // once a game day: friendships you ignore fade a little, like real life
   if (s.relDay === day()) return; const first = !s.relDay; s.relDay = day(); if (first) return; // the first time just starts the clock
+  const pt = myPartner(), sneak = pt && Object.keys(s.rel || {}).find((k) => s.rel[k].kind === "sneak" && k !== pt.key); if (sneak && Math.random() < 0.25) { toast(caughtCheating("sneak", pt)); } // a sneak link on the side gets found out sooner or later
   for (const k in (s.rels2 || {})) { const r = s.rels2[k], idle = s.t - (r.last || 0); if (idle > 2880 && Math.abs(r.f) > 10 && !r.partner) r.f -= Math.sign(r.f); if (idle > 4320 && r.r > 0 && !r.partner) r.r = Math.max(0, r.r - 2); } // two quiet days: -1 friendship; three: -2 romance (partners stay)
 } // end relDrift
 function relSpecialActs(name, key, onDo, peerId) { // gifts and asking to be partners, added to the interaction menu
@@ -4806,7 +4873,7 @@ function yasminaActs(name) { // what you can do inside a Yasmina block
 // ================= Student Life Residence (SLR) =================
 function slrActs() { // the common-room menu, some of it risky
   const acts = []; // build the list
-  if (Object.values(s.rel || {}).some((r) => r.kind === "partner")) acts.push(A("😏 Cheat on your partner", "Risky · a cheeky link · they might find out", 30, 0, {}, { run: cheatPartner })); // only if you have a partner
+  if (myPartner()) acts.push(A("😏 Cheat on your partner", "Risky · a cheeky link · they might find out", 30, 0, {}, { run: cheatPartner })); // only if you have a partner
   acts.push(A("🍗 Steal food from the shared fridge", "Risky · a free meal if nobody catches you", 15, 0, {}, { run: stealFood })); // petty theft
   acts.push(A("🚬 Smoke zaza with the crew", "Illegal here · chill, but the police may catch you", 25, 0, { fun: 22, energy: -8, hygiene: -5, hunger: -8 }, { run: smokeZaza })); // risky vice
   acts.push(A("🍺 Drink and get wasted", "Big fun · if your health is low you will pass out", 40, 0, { fun: 25, social: 15, energy: -15, hygiene: -8, bladder: -20 }, { run: drinkWasted })); // heavy drinking
@@ -4816,16 +4883,16 @@ function slrActs() { // the common-room menu, some of it risky
   return acts; // the menu
 } // end slrActs
 function cheatPartner() { // flirt behind your partner's back (non-explicit drama)
-  const key = Object.keys(s.rel || {}).find((k) => s.rel[k].kind === "partner"); if (!key) return "You don't have a partner to cheat on."; // need a partner
-  if (Math.random() < 0.4) { const nm = s.rel[key].name || "Your partner"; delete s.rel[key]; s.cha = Math.max(0, s.cha - 2); save(); return "💔 " + nm + " found out you cheated and dumped you. Word's going round town."; } // caught
+  const pt = myPartner(); if (!pt) return "You don't have a partner to cheat on."; // need a partner
+  if (Math.random() < 0.4) return caughtCheating("cheat", pt); // caught, dumped and exposed
   s.fun = clamp(s.fun + 20); s.social = clamp(s.social + 8); save(); return "😏 A cheeky link at the res. Nobody found out… this time."; // got away with it
 } // end cheatPartner
 function stealFood() { // raid the shared fridge
-  if (Math.random() < 0.3) { s.money = Math.max(0, s.money - 400); txn("Caught stealing food", -400); s.cha = Math.max(0, s.cha - 1); save(); return "🚨 Caught raiding the fridge! Rs 400 fine and a warning."; } // caught
+  if (Math.random() < 0.3) { s.money = Math.max(0, s.money - 400); txn("Caught stealing food", -400); s.cha = Math.max(0, s.cha - 1); exposeMe("fridge"); save(); return "🚨 Caught raiding the fridge! Rs 400 fine and a warning. Everyone in town heard about it."; } // caught
   s.hunger = clamp(s.hunger + 55); s.fun = clamp(s.fun + 6); save(); return "🍗 You raided the shared fridge. Free meal, nobody saw."; // got away
 } // end stealFood
 function smokeZaza() { // smoke (abstract; illegal, so there is a police risk)
-  if (Math.random() < Math.min(0.5, caughtChance() * 0.7)) { goJail(300, "🚬 Caught with zaza — the police raided the res!"); return ""; } // busted
+  if (Math.random() < Math.min(0.5, caughtChance() * 0.7)) { goJail(300, "🚬 Caught with zaza — the police raided the res!", "zaza"); return ""; } // busted
   save(); return "🚬 You lit up and chilled with the crew. Mellow vibes, strong munchies."; // fine
 } // end smokeZaza
 function drinkWasted() { // get drunk; pass out if your health is low
@@ -4844,7 +4911,7 @@ function passOutDrunk() { // collapse and wake at the hospital
 function stealBeach() { // a risky snatch, like a pickpocket
   return A("👜 Snatch a handbag from the tourists", "Risky · Rs 300 to 2,000 · the police may catch you", 5, 0, {}, { run() {
     if (s.jail > s.t) return "You're in a cell."; // must be free
-    if (Math.random() < caughtChance()) { goJail(360, "👜 A beachgoer screamed — you were caught snatching a bag!"); return ""; } // caught
+    if (Math.random() < caughtChance()) { goJail(360, "👜 A beachgoer screamed — you were caught snatching a bag!", "bag"); return ""; } // caught
     const take = rnd(300, 2000); s.money += take; txn("Snatched a tourist's bag", take); s.cha = Math.max(0, s.cha - 1); save(); // the loot
     return "👜 You grabbed a handbag and bolted. +" + rs(take) + ". That was cold."; // got away
   } }); // the action
@@ -4854,7 +4921,7 @@ function stealBeach() { // a risky snatch, like a pickpocket
 function policeStop() { // the officers ask for your papers
   const left = permLeft(); // days left on your permit
   if (left >= 0) toast("👮 Police document check — your " + permDocName() + " is valid. Carry on."); // all good
-  else { s.money = Math.max(0, s.money - 600); txn("No valid permit — fine", -600); goJail(180, "👮 Document check failed — no valid " + permDocName() + "!"); } // overstayed: fine and a short cell
+  else { s.money = Math.max(0, s.money - 600); txn("No valid permit — fine", -600); goJail(180, "👮 Document check failed — no valid " + permDocName() + "!", "permit"); } // overstayed: fine and a short cell
   save(); // keep it
 } // end policeStop
 function maybePoliceStop(dt) { // once in a while, outdoors, the police stop you

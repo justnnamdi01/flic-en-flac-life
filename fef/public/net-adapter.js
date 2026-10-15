@@ -30,6 +30,8 @@
       var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (m.t === "welcome") { myPeer = m.peer; remember(m.uid, m.token); accountName = m.account || ""; open = true; if (myPres) try { ws.send(JSON.stringify({ t: "presence", patch: myPres })); } catch (e) {} /* back online: tell everyone where you are again */ for (var id in snaps) sendSub(id); var q = readyQ; readyQ = []; q.forEach(function (r) { r(); }); } // accepted: the server says who we are, then restore subscriptions
       else if (m.t === "account" || m.t === "homes") { var ar = asks[m.rid]; if (ar) { clearTimeout(ar.timer); delete asks[m.rid]; ar.resolve(m); } } // an answer to a login or home request
+      if (m.t === "welcome" && m.news) newsBack = m.news, newsCbs.forEach(function (cb) { try { cb(m.news, true); } catch (e) {} }); // the latest gossip, on every (re)connect
+      if (m.t === "news") { newsCbs.forEach(function (cb) { try { cb([m.item], false); } catch (e) {} }); } // someone just got exposed
       else if (m.t === "relay") { relayCbs.forEach(function (cb) { try { cb(m.from, m.d); } catch (e) {} }); } // a game message from another player
       else if (m.t === "invited" || m.t === "kicked") { (homeCbs[m.t] || []).forEach(function (cb) { try { cb(m); } catch (e) {} }); } // someone invited you, or you were sent out of a home
       else if (m.t === "peers") { if (peersCb) peersCb({ total: m.total | 0, peers: m.peers.map(function (p) { return { peer: p.peer, presence: p.presence, kind: p.kind || "viewer", isMe: p.peer === myPeer, sameTab: p.peer === myPeer }; }) }); } // room update (and how many people have ever played)
@@ -53,6 +55,7 @@
   var asks = {};                                                  // login requests waiting for an answer: rid -> { resolve, timer }
   var homeCbs = {};                                               // listeners for "invited" and "kicked"
   var relayCbs = [];                                              // listeners for game messages from other players
+  var newsCbs = [], newsBack = null;                                             // listeners for town gossip (people getting exposed)
   function ask(obj) { // a request whose answer comes back as a message (resolves with { ok, error, ... })
     return whenReady().then(function () {
       return new Promise(function (resolve) {
@@ -92,6 +95,10 @@
     relay: { // quick messages to one other player, for two-player games
       send: function (to, d) { if (open) try { ws.send(JSON.stringify({ t: "relay", to: to, d: d })); } catch (e) {} }, // to their player id
       on: function (cb) { relayCbs.push(cb); }                                                                        // cb(fromUid, data)
+    },
+    news: { // town gossip: cheaters and people caught doing something bad
+      expose: function (kind, victim, vuid) { if (open) try { ws.send(JSON.stringify({ t: "expose", kind: kind, victim: victim || "", vuid: vuid || "" })); } catch (e) {} }, // you got caught: the server tells everyone
+      on: function (cb) { newsCbs.push(cb); if (newsBack) try { cb(newsBack, true); } catch (e) {} }                   // cb(items, isBacklog); gets the backlog if it already arrived
     },
     homes: { // private homes: your address, and who may come in
       claim: function () { return ask({ t: "home.claim" }); },                                   // your address number (given once, kept forever)
