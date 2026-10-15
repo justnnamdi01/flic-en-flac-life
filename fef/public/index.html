@@ -1646,6 +1646,7 @@ async function homesStart() { // get your address and your invites from the serv
   db.collection("homes").onSnapshot((snap) => { const m = {}; for (const d of snap.docs) { const v = d.data() || {}; if (typeof v.uid === "string") m[d.id] = v.uid; } homesMap = m; }, () => {}); // who lives where, live
   api.on("invited", (m) => { myInvites[m.owner] = m.until; const p = players.find((q) => q.id === m.owner); toast("🏠 " + (p ? p.name : "A neighbour") + " invited you to their home. Knock on their door to go in."); }); // an invite arrived
   api.on("kicked", () => { if (s.inside === "visit" || s.inside === "houseparty") { leaveBuilding(); toast("You're not invited in any more, so you headed back outside."); } }); // the invite ended
+  while (!s.made) await new Promise((ok) => setTimeout(ok, 3000)); // only real players (with a character) get an address
   const r = await api.claim(); if (r && r.ok) { myHomeIdx = r.index; const d = doorAt(myHomeIdx); if (s.inside === "home" || s.inside === "") { s.ox = d.x; s.oy = d.y; } if (!s.inside && Math.hypot(s.x - 22.5, s.y - 10.8) < 1.5) { s.x = d.x; s.y = d.y; } save(); } // your address (and step out at your own door)
   const iv = await api.invites(); if (iv && iv.ok) for (const q of iv.list) myInvites[q.owner] = q.until; // invites you already have
 } // end homesStart
