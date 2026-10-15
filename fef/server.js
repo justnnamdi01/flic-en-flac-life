@@ -199,6 +199,11 @@ wss.on("connection", (ws) => {
     }
     if (!me.uid) return;                                  // nothing else until hello
     if (m.t === "account.register" || m.t === "account.login") { account(ws, me, m); return; } // logins
+    if (m.t === "relay") { // a game message for one other player (football moves, chess moves, challenges)
+      const to = String(m.to || ""), now = Date.now(); me.rt = Math.min(60, (me.rt == null ? 60 : me.rt) + (now - (me.rl || now)) / 1000 * 30); me.rl = now; // its own allowance: about 30 a second
+      if (!UID_RE.test(to) || to === me.uid || me.rt < 1 || !sizeOk(m.d, 2048)) return; me.rt -= 1; // bad target, too fast or too big: dropped
+      tellUid(to, { t: "relay", from: me.uid, d: m.d }); return; // passed straight on, never stored
+    }
     if (m.t === "home.claim" || m.t === "home.invites" || m.t === "home.invite" || m.t === "home.uninvite" || m.t === "home.party") { homes(ws, me, m); return; } // homes and invites
     if (m.t === "presence") { if (sizeOk(m.patch, MAX_PRESENCE)) { // merge a small presence patch
       me.presence = Object.assign(me.presence || {}, m.patch || {}); me.presence.uid = me.uid; // nobody can pose as another player

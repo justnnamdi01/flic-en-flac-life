@@ -26,6 +26,7 @@
       var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (m.t === "welcome") { myPeer = m.peer; remember(m.uid, m.token); accountName = m.account || ""; open = true; for (var id in snaps) sendSub(id); var q = readyQ; readyQ = []; q.forEach(function (r) { r(); }); } // accepted: the server says who we are, then restore subscriptions
       else if (m.t === "account" || m.t === "homes") { var ar = asks[m.rid]; if (ar) { clearTimeout(ar.timer); delete asks[m.rid]; ar.resolve(m); } } // an answer to a login or home request
+      else if (m.t === "relay") { relayCbs.forEach(function (cb) { try { cb(m.from, m.d); } catch (e) {} }); } // a game message from another player
       else if (m.t === "invited" || m.t === "kicked") { (homeCbs[m.t] || []).forEach(function (cb) { try { cb(m); } catch (e) {} }); } // someone invited you, or you were sent out of a home
       else if (m.t === "peers") { if (peersCb) peersCb({ peers: m.peers.map(function (p) { return { peer: p.peer, presence: p.presence, kind: p.kind || "viewer", isMe: p.peer === myPeer, sameTab: p.peer === myPeer }; }) }); } // room update
       else if (m.t === "snap") { var s = snaps[m.id]; if (s && s.cb) s.cb({ docs: m.docs.map(function (d) { return { id: d.id, data: function () { return d.data; } }; }) }); } // a collection's data
@@ -47,6 +48,7 @@
   }
   var asks = {};                                                  // login requests waiting for an answer: rid -> { resolve, timer }
   var homeCbs = {};                                               // listeners for "invited" and "kicked"
+  var relayCbs = [];                                              // listeners for game messages from other players
   function ask(obj) { // a request whose answer comes back as a message (resolves with { ok, error, ... })
     return whenReady().then(function () {
       return new Promise(function (resolve) {
@@ -82,6 +84,10 @@
       name: function () { return accountName; },                                  // this character's login, or "" if none
       register: function (name, pass) { return ask({ t: "account.register", name: name, pass: pass }).then(function (r) { if (r.ok) accountName = r.name; return r; }); }, // add a login to this character
       login: function (name, pass) { return ask({ t: "account.login", name: name, pass: pass }).then(function (r) { if (r.ok) remember(r.uid, r.token); return r; }); } // switch this browser to that character (reload afterwards)
+    },
+    relay: { // quick messages to one other player, for two-player games
+      send: function (to, d) { if (open) try { ws.send(JSON.stringify({ t: "relay", to: to, d: d })); } catch (e) {} }, // to their player id
+      on: function (cb) { relayCbs.push(cb); }                                                                        // cb(fromUid, data)
     },
     homes: { // private homes: your address, and who may come in
       claim: function () { return ask({ t: "home.claim" }); },                                   // your address number (given once, kept forever)

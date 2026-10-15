@@ -167,6 +167,26 @@ button:focus-visible { outline: 3px solid var(--mango); outline-offset: 2px; }
 .mk { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; align-items: start; }
 .mk canvas { width: 110px; height: 140px; background: #103646; border-radius: 12px; cursor: default; }
 .mk .pvbox { position: sticky; top: 0; }
+.arena { position: fixed; inset: 0; z-index: 8000; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); background: radial-gradient(circle at 50% 0%, #1f4a5a, #0a1a22 70%); color: #fff; font-family: Figtree, system-ui, sans-serif; }
+.arena[hidden] { display: none; }
+.arhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.artitle { display: grid; gap: 2px; min-width: 0; } .artitle b { font-size: 1.1rem; font-weight: 800; } .artitle span { font-size: 0.78rem; color: #9fc4cf; }
+.arbtns { display: flex; gap: 8px; }
+.arresign, .arx { border: 0; border-radius: 12px; padding: 9px 12px; font: 700 0.85rem/1 Figtree, system-ui, sans-serif; cursor: pointer; background: rgba(255, 255, 255, 0.12); color: #fff; }
+.arx { width: 38px; padding: 9px 0; }
+.arscore { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.07); border-radius: 14px; padding: 8px 12px; }
+.arscore .side { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 700; font-size: 0.9rem; } .arscore .side.r { justify-content: flex-end; text-align: right; }
+.arscore .side i { width: 14px; height: 14px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.arscore .side span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arscore .mid { font: 800 1.35rem/1 var(--mono, monospace); text-align: center; } .arscore .mid small { display: block; font-size: 0.7rem; color: #ffd23c; margin-top: 3px; }
+.arscore .side.turn span { color: #ffd23c; }
+.arwrap { flex: 1; min-height: 0; display: grid; place-items: center; touch-action: none; }
+.arwrap canvas { border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); touch-action: none; }
+.armsg { min-height: 1.3em; text-align: center; font-weight: 700; font-size: 0.92rem; color: #ffe08a; }
+.arctrl { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.arctrl button { border: 0; border-radius: 14px; padding: 12px 18px; font: 800 0.95rem/1 Figtree, system-ui, sans-serif; cursor: pointer; background: #ffa733; color: #10232c; }
+.arctrl button.sec { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.arctrl .kick { min-width: 120px; background: linear-gradient(180deg, #ffd23c, #ff8a3d); font-size: 1.05rem; }
 .tut { position: fixed; inset: 0; z-index: 9000; }
 .tutspot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 4px #ffa733, 0 0 0 9999px rgba(4, 16, 22, 0.62); transition: all 0.35s ease; pointer-events: none; }
 .tutspot.none { left: 50% !important; top: 42% !important; width: 0 !important; height: 0 !important; box-shadow: 0 0 0 9999px rgba(4, 16, 22, 0.62); }
@@ -265,11 +285,23 @@ canvas.pv3d { width: 130px; height: 170px; background: radial-gradient(circle at
 .online i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--muted); vertical-align: 1px; }
 .online.live { color: var(--reef); }
 .online.live i { background: #2bd46a; box-shadow: 0 0 6px #2bd46a; }
-.quest { left: 10px; bottom: 64px; max-width: min(240px, 60%); text-align: left; display: grid; gap: 2px; color: var(--ink); cursor: pointer; }
-.quest small { font-size: 0.64rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mango); }
-.quest b { font-size: 0.86rem; line-height: 1.25; }
-.quest span { font-family: var(--mono); font-size: 0.74rem; color: var(--reef); }
-.chat { left: 10px; bottom: 156px; width: min(300px, 64%); padding: 0; display: grid; overflow: hidden; }
+.quest { left: 10px; bottom: 64px; width: min(290px, calc(100% - 92px)); text-align: left; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px 10px 10px !important; color: #fff; cursor: pointer; border-radius: 16px !important;
+  background: linear-gradient(135deg, #ff8a3d 0%, #ff5f6d 55%, #c2457a 100%) !important; border: 1px solid rgba(255, 255, 255, 0.35) !important; box-shadow: 0 8px 22px rgba(194, 69, 122, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35); animation: qglow 2.6s ease-in-out infinite; }
+@keyframes qglow { 0%, 100% { box-shadow: 0 8px 22px rgba(194, 69, 122, 0.45), 0 0 0 0 rgba(255, 167, 51, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35); } 50% { box-shadow: 0 8px 22px rgba(194, 69, 122, 0.45), 0 0 0 7px rgba(255, 167, 51, 0), inset 0 1px 0 rgba(255, 255, 255, 0.35); } }
+.quest.pop { animation: qpop 0.7s cubic-bezier(.2, 1.6, .4, 1), qglow 2.6s ease-in-out 0.7s infinite; }
+@keyframes qpop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.quest:hover { filter: brightness(1.06); }
+.quest .qi { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; background: rgba(255, 255, 255, 0.22); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.quest .qb { display: grid; gap: 3px; min-width: 0; }
+.quest small { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); }
+.quest b { font-size: 0.88rem; line-height: 1.22; color: #fff; text-shadow: 0 1px 2px rgba(80, 10, 40, 0.35); }
+.quest .qbar { display: block; height: 7px; border-radius: 6px; background: rgba(60, 8, 30, 0.3); overflow: hidden; margin-top: 2px; }
+.quest .qbar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #fff6c9, #ffd23c); background-size: 200% 100%; animation: qshine 1.8s linear infinite; transition: width 0.6s ease; }
+@keyframes qshine { 0% { background-position: 200% 0; } 100% { background-position: 0 0; } }
+.quest .qp { font-family: var(--mono); font-size: 0.7rem; color: rgba(255, 255, 255, 0.92); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quest .qpay { align-self: start; font: 800 0.72rem/1 Figtree, system-ui, sans-serif; color: #5a2a00; background: linear-gradient(180deg, #ffe680, #ffc24a); padding: 6px 8px; border-radius: 10px; white-space: nowrap; box-shadow: 0 2px 0 rgba(120, 50, 0, 0.35); }
+@media (prefers-reduced-motion: reduce) { .quest, .quest.pop, .quest .qbar i { animation: none; } }
+.chat { left: 10px; bottom: 172px; width: min(300px, 64%); padding: 0; display: grid; overflow: hidden; }
 .chathead { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: transparent; border: 0; padding: 7px 12px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mango); }
 .chathead b { background: var(--warn); color: #ffffff; border-radius: 9px; padding: 0 6px; font-size: 0.7rem; }
 .chathead b:empty { display: none; }
@@ -429,6 +461,13 @@ button.prow { transition: transform 0.1s ease; } button.prow:active { transform:
     <div class="whand" id="wHand"></div>
     <div class="wbtns"><button class="pill" id="wDrawBtn" type="button">Draw</button><button class="pill" id="wConcede" type="button">Concede</button><button class="go" id="wDone" type="button" hidden>Collect / Leave</button></div>
     <div class="wshape" id="wShape" hidden></div>
+  </div>
+  <div class="arena" id="arena" hidden>
+    <div class="arhead"><div class="artitle"><b id="arTitle"></b><span id="arSub"></span></div><div class="arbtns"><button class="arresign" id="arResign" type="button">Resign</button><button class="arx" id="arClose" type="button" aria-label="Close">✕</button></div></div>
+    <div class="arscore" id="arScore"></div>
+    <div class="arwrap" id="arWrap"><canvas id="arCv"></canvas></div>
+    <div class="armsg" id="arMsg"></div>
+    <div class="arctrl" id="arCtrl"></div>
   </div>
   <div class="pool" id="pool" hidden>
     <div class="poolhead">
@@ -703,15 +742,16 @@ const COURSES = { // courses at Middlesex University: name, short name, class da
   law: { name: "LLB Law", short: "Law", days: [0, 3], h: 13 }, // Mon, Thu after lunch
   psy: { name: "BSc Psychology", short: "Psychology", days: [1, 4], h: 9 } // Tue, Fri mornings
 }; // end COURSES
-const timetable = () => COURSES[s.course].days.map((d) => DAYS[d]).join(", ") + " at " + COURSES[s.course].h + ":00"; // your class times as text
+const CLASS_OPEN = 9, CLASS_LAST = 19.5; // on your class days, lectures run all day: start one any time from 09:00 to 19:30
+const timetable = () => COURSES[s.course].days.map((d) => DAYS[d]).join(", ") + " · any time 09:00–19:30"; // your class days as text
 function classWhy() { // reason you cannot attend a lecture right now, or ""
   const c = COURSES[s.course], h = hour(); // your course and the time
   if (s.role !== "student") return "Enrolled students only"; // not a student
   if (s.grad) return "You have graduated"; // degree finished
   if (!c.days.includes((day() - 1) % 7)) return "No class today. Yours: " + timetable(); // wrong day
   if (s.lastClass === day()) return "You already attended today"; // one lecture a day
-  if (h < c.h - 0.5) return "Doors open at " + (c.h - 1) + ":30"; // too early
-  if (h > c.h + 0.5) return "Too late. Class started at " + c.h + ":00"; // more than 30 minutes late
+  if (h < CLASS_OPEN) return "Lectures start at 09:00"; // too early
+  if (h > CLASS_LAST) return "Lectures finished at 19:30. Come back on your next class day"; // too late
   return ""; // you can go in
 } // end classWhy
 function addCredit(text) { // earn one credit and check for graduation
@@ -720,7 +760,7 @@ function addCredit(text) { // earn one credit and check for graduation
   return text + " Credits: " + s.credits + "/12."; // progress
 } // end addCredit
 function courseMenu() { // pick or change your course at the student office
-  openMenu("Choose your course", Object.keys(COURSES).map((k) => A(COURSES[k].name, COURSES[k].days.map((d) => DAYS[d]).join(", ") + " at " + COURSES[k].h + ":00" + (k === s.course ? " · your course" : ""), 0, 0, {}, { run() { s.course = k; return "Enrolled in " + COURSES[k].name + ". Classes: " + timetable() + "."; } })), "Your credits carry over."); // list every course with its timetable
+  openMenu("Choose your course", Object.keys(COURSES).map((k) => A(COURSES[k].name, COURSES[k].days.map((d) => DAYS[d]).join(", ") + " · 09:00–19:30" + (k === s.course ? " · your course" : ""), 0, 0, {}, { run() { s.course = k; return "Enrolled in " + COURSES[k].name + ". Classes: " + timetable() + "."; } })), "Your credits carry over."); // list every course with its timetable
 } // end courseMenu
 
 // ================= things you can use =================
@@ -814,7 +854,8 @@ OBJ.push({ x: 17.5, y: 11.5, icon: "🚏", stop: true, name: "Beach bus stop", a
 OBJ.push({ x: 17.5, y: 27.5, icon: "🚏", stop: true, name: "Wolmar bus stop", acts: busActs }); // bus stop for the hotels
 OBJ.push({ x: 46.5, y: 27.5, icon: "🚏", stop: true, name: "Jumbo bus stop", acts: busActs }); // bus stop by the hypermarket
 OBJ.push({ x: 28.5, y: 23.5, icon: "⛲", name: "Park fountain", acts: () => [A("Sit by the fountain", "45 min · +18 fun, +10 people", 45, 0, { fun: 18, social: 10, energy: 5 }, { msg: "Kids on bikes, old men playing dominoes." }), A("Picnic", "Uses 1 grocery meal · +40 food, +15 fun", 40, 0, { hunger: 40, fun: 15 }, { why: s.meals > 0 ? "" : "No groceries", run() { s.meals--; return "Picnic on the grass."; } })] }); // chill in the park
-OBJ.push({ x: 42.5, y: 37, icon: "⚽", name: "Football bench", acts: footballMenu }); // pick a team and start a match
+OBJ.push({ x: 42.5, y: 37, icon: "⚽", name: "Football bench", acts: () => footballMenu() }); // play a 2D match against the computer or a player
+OBJ.push({ x: 30.5, y: 25.5, icon: "♟️", name: "Chess table", acts: () => gameMenuFor("ch") }); // chess in the park
 OBJ.push({ x: 11, y: 26, icon: "👜", name: "Elderly tourists on the beach", acts: () => [stealBeach()] }); // a risky snatch
 OBJ.push({ get x() { return myDoor().x + 1.2; }, get y() { return myDoor().y + 0.3; }, icon: "🛵", name: "Delivery driver", show: () => !!s.driverWait, acts: () => [A("Collect your delivery", "Take your order from the rider", 0, 0, {}, { run: collectDelivery })] }); // the rider waiting outside your home
 OBJ.push({ x: 81.5, y: 44.5, icon: "✈️", name: "SSR Airport (closed)", acts: () => [A("Look through the fence", "The airport is closed to the public", 0, 0, {}, { msg: "Planes come and go over Flic en Flac, but the airport is closed to the public. No boarding today." })] }); // closed-airport marker
@@ -1022,7 +1063,7 @@ function driveJob() { // student driver gig: pick someone up and drop them off, 
 function driveWhy() { // reason you cannot go on duty, or ""
   const h = hour(), weekend = (day() - 1) % 7 >= 5; // time and weekend flag
   if (!hasCar()) return "Your car rental has ended. Rent or buy a car at Flic Motors, near Cascavelle"; // no car
-  if (s.role === "student" && !s.grad && !classWhy()) return "Your lecture is on right now. Drive after class"; // not during your own class
+  if (s.role === "student" && !s.grad && busy && busy.a && /^Attend/.test(busy.a.label)) return "You are in a lecture. Drive after class"; // not while sitting in class
   if (s.money < 80) return "You need Rs 80 for fuel"; // fuel money
   return s.energy < 20 ? "Too tired to drive" : ""; // tired or fine
 } // end driveWhy
@@ -1626,7 +1667,7 @@ function estateHouses() { // turn the plots into drawable houses
     const h = list[i]; // who lives here
     if (!h) return { x: p.x, y: p.y, w: 3, h: 3, lot: true }; // nobody yet
     const tier = h.money < 10000 ? ["#b9b2a3", "flat", "#8d949a"] : h.money < 50000 ? ["#efe6d2", "tile", "#b5482f"] : h.money < 150000 ? ["#f4f1e8", "tile", "#1f6fa8"] : ["#fff8e6", "thatch", "#c9a45a"]; // shack, house, big house or villa by wealth
-    return { x: p.x, y: p.y, w: 3, h: 3, name: h.name, col: tier[0], roof: tier[1], roofCol: tier[2], sign: h.shirt }; // their house, signed in their colour
+    return { x: p.x, y: p.y, w: 3, h: 3, name: h.name, col: tier[0], roof: tier[1], roofCol: tier[2], sign: h.shirt, mine: h.id === (uid || "me") }; // their house, signed in their colour (and marked if it is yours)
   }); // end houses
 } // end estateHouses
 function guestActs(owner, name) { // knocking on someone else's door
@@ -1874,7 +1915,7 @@ function phoneRender() { // draw the current phone screen
   } // end health
   if (pv.app === "campus") { // university
     if (s.role !== "student") box.append(el("p", "pnote", "Middlesex University is at Cascavelle. Start a new life as a student to enrol on a course.")); // not enrolled
-    else { prow(box, "Course", COURSES[s.course].short, COURSES[s.course].name); prow(box, "Timetable", COURSES[s.course].h + ":00", COURSES[s.course].days.map((d) => DAYS[d]).join(", ") + " · 2 hours"); prow(box, "Credits", s.grad ? "Graduated" : s.credits + " / 12"); prow(box, "Library sessions", String(s.study), "Every 3 earn a credit"); prow(box, "Missed this week", String(s.skips), "Rs 300 off your allowance each"); prow(box, "Parents", parentsMood(), s.parents >= 70 ? "Full allowance" : s.parents >= 40 ? "Half allowance until you attend" : "No allowance until you attend"); prow(box, "Failed class tests", String(s.fails), "Missing 2 lectures in a week fails it"); { const r = el("button", "prow"); r.type = "button"; r.append(el("span", "", "Message Mum & Dad"), el("b", "", "›")); r.onclick = () => openPhone("thread", "parents"); box.append(r); } box.append(el("p", "pnote", "Classes are required. Arrive within 30 minutes of the start. Graduating raises all your pay by 20%.")); } // your studies
+    else { prow(box, "Course", COURSES[s.course].short, COURSES[s.course].name); prow(box, "Timetable", "09:00–19:30", COURSES[s.course].days.map((d) => DAYS[d]).join(", ") + " · one 2-hour lecture, start it any time"); prow(box, "Credits", s.grad ? "Graduated" : s.credits + " / 12"); prow(box, "Library sessions", String(s.study), "Every 3 earn a credit"); prow(box, "Missed this week", String(s.skips), "Rs 300 off your allowance each"); prow(box, "Parents", parentsMood(), s.parents >= 70 ? "Full allowance" : s.parents >= 40 ? "Half allowance until you attend" : "No allowance until you attend"); prow(box, "Failed class tests", String(s.fails), "Missing 2 lectures in a week fails it"); { const r = el("button", "prow"); r.type = "button"; r.append(el("span", "", "Message Mum & Dad"), el("b", "", "›")); r.onclick = () => openPhone("thread", "parents"); box.append(r); } box.append(el("p", "pnote", "Classes are required. Arrive within 30 minutes of the start. Graduating raises all your pay by 20%.")); } // your studies
   } // end campus
   if (pv.app === "rich") { // the richest players in the country
     const list = richList(); // top 20
@@ -1909,6 +1950,7 @@ function phoneRender() { // draw the current phone screen
     link("👋 Wave", "They get a wave in their messages", () => { sendMsg(pv.arg, "👋 waves at you"); toast("You waved at " + nm + "."); }); // wave
     link("💸 Send money", "From your Juice balance", () => { if (typeof o.p.uid === "string" && o.p.uid) openPhone("sendto", o.p.uid); else toast("They cannot receive money right now."); }); // pay
     link("💞 Relationship", "Partner or sneak link", () => relMenu(pv.arg)); // relationship
+    if (typeof o.p.uid === "string" && o.p.uid && relayApi()) { link("⚽ Challenge to football", "Live 2D match · winner gets Rs 500", () => challengePlayer("fb", o.p.uid)); link("♟️ Challenge to chess", "Live game · winner gets Rs 500", () => challengePlayer("ch", o.p.uid)); } // play them now
     link("🗓️ Ask " + nm + " out", "Food, drinks, ice cream, cinema · buy each other treats", () => askOut(pv.arg)); // hang out
     if (s.plan && s.plan.peer === pv.arg && !s.plan.met) link("🚕 Ride to " + doorOf(s.plan.place).name, "Your plan with " + nm, () => { closePhone(); rideModes(doorOf(s.plan.place)); }); // get to the date
     link("🫣 Pickpocket " + nm, "Stand right next to them · about " + Math.round(caughtChance() * 100) + "% chance the police catch you", () => pickpocket(pv.arg)); // crime
@@ -2138,12 +2180,12 @@ const clsTag = (c) => (CLASSES[c] ? " · " + CLASSES[c].icon + " " + CLASSES[c].
 
 // ================= starter goals =================
 const QUESTS = [ // the first things every player is asked to do, in order
-  { t: "Say hey in the public chat", hint: "Type in the Public chat box (or press T) and say hey to everyone online.", prog: () => (s.saidHey ? "Done" : "Not yet"), done: () => !!s.saidHey, pay: 500 }, // break the ice
-  { t: "Make 3 real online friends", hint: "Message players who are online and get a reply. Phone, then Messages.", prog: () => Math.min(3, Object.keys(s.realFriends).length) + " / 3 friends", done: () => Object.keys(s.realFriends).length >= 3, pay: 1000 }, // social first
-  { t: "Get active: play football or basketball with someone", hint: "Go to the Sports ground and score while another player is there.", prog: () => "Score with a player nearby", done: () => s.qActive, pay: 1500 }, // play together
-  { t: "Go to the beach with someone", hint: "Hang out on the sand or in the lagoon next to another player.", prog: () => Math.min(30, Math.floor(s.beachMin)) + " / 30 min together", done: () => s.beachMin >= 30, pay: 1500 }, // beach time
-  { t: "Go to the next big party", hint: "WTF MAURITIUS on Friday, AFTER on Saturday, or any house party.", prog: () => "Next: " + EVENTS.map((e) => DAYS[e.d] + " " + e.h + ":00").join(" or "), done: () => s.parties > s.qParty0, pay: 3000 }, // party
-  { t: "Chill with the big boys at Maravan Burgers", hint: "Once you have Rs 10,000, sit at the Big Boys table inside Maravan Burgers, in the middle of town.", prog: () => (s.money >= 10000 ? "You can afford it now" : rs(s.money) + " / Rs 10,000"), done: () => !!s.bigBoys, pay: 1000 } // flex
+  { i: "👋", pct: () => (s.saidHey ? 1 : 0), t: "Say hey in the public chat", hint: "Type in the Public chat box (or press T) and say hey to everyone online.", prog: () => (s.saidHey ? "Done" : "Not yet"), done: () => !!s.saidHey, pay: 500 }, // break the ice
+  { i: "🤝", pct: () => Math.min(3, Object.keys(s.realFriends).length) / 3, t: "Make 3 real online friends", hint: "Message players who are online and get a reply. Phone, then Messages.", prog: () => Math.min(3, Object.keys(s.realFriends).length) + " / 3 friends", done: () => Object.keys(s.realFriends).length >= 3, pay: 1000 }, // social first
+  { i: "⚽", pct: () => (s.qActive ? 1 : 0), t: "Get active: play a sport with someone", hint: "Challenge a player to football or chess from their profile, or score at the Sports ground while another player is there.", prog: () => "Play a match with a player", done: () => s.qActive, pay: 1500 }, // play together
+  { i: "🏖️", pct: () => Math.min(1, s.beachMin / 30), t: "Go to the beach with someone", hint: "Hang out on the sand or in the lagoon next to another player.", prog: () => Math.min(30, Math.floor(s.beachMin)) + " / 30 min together", done: () => s.beachMin >= 30, pay: 1500 }, // beach time
+  { i: "🎉", pct: () => (s.parties > s.qParty0 ? 1 : 0), t: "Go to the next big party", hint: "WTF MAURITIUS on Friday, AFTER on Saturday, or any house party.", prog: () => "Next: " + EVENTS.map((e) => DAYS[e.d] + " " + e.h + ":00").join(" or "), done: () => s.parties > s.qParty0, pay: 3000 }, // party
+  { i: "🍔", pct: () => (s.bigBoys ? 1 : Math.min(0.95, s.money / 10000)), t: "Chill with the big boys at Maravan Burgers", hint: "Once you have Rs 10,000, sit at the Big Boys table inside Maravan Burgers, in the middle of town.", prog: () => (s.money >= 10000 ? "You can afford it now" : rs(s.money) + " / Rs 10,000"), done: () => !!s.bigBoys, pay: 1000 } // flex
 ]; // end QUESTS
 const realNear = (r) => Object.values(others).some((o) => !o.p.in && !o.p.hid && Math.hypot(o.x - s.x, o.y - s.y) < r); // is a real player close to you outdoors?
 const realOnGround = () => Object.values(others).some((o) => !o.p.in && o.x > 34 && o.x < 56 && o.y > 36 && o.y < 45); // is a real player on the sports ground?
@@ -2151,10 +2193,24 @@ function checkRealFriend(id) { const o = others[id]; if (o && spoke[id] && spoke
 function questCheck() { // reward the current goal when it is done
   const q = QUESTS[s.quest]; if (!q || !s.made) return; // all done, or not playing yet
   if (!q.done()) return; // not yet
-  s.money += q.pay; s.fun = clamp(s.fun + 15); toast("Goal complete: " + q.t + ". +" + rs(q.pay) + "."); s.quest++; // reward and move on
+  s.money += q.pay; s.fun = clamp(s.fun + 15); txn("Goal: " + q.t, q.pay); toast("Goal complete: " + q.t + ". +" + rs(q.pay) + "."); banner("🎯 GOAL COMPLETE!", q.i + " " + q.t + " · +" + rs(q.pay)); s.quest++; questPop(); // reward, celebrate and move on
   if (s.quest === 4) s.qParty0 = s.parties; save(); // the party goal counts parties from now on
 } // end questCheck
-function questSkip() { s.quest++; if (s.quest === 4) s.qParty0 = s.parties; save(); } // skip a goal (no reward)
+function questSkip() { s.quest++; if (s.quest === 4) s.qParty0 = s.parties; save(); questPop(); } // skip a goal (no reward)
+let questKey = ""; // what the goal card shows, so it is only redrawn when something changes
+function nextGoal() { // the goal to show: a starter goal, then the next step of your life ambition
+  const q = QUESTS[s.quest]; if (q) return { k: "Goal " + (s.quest + 1) + " of " + QUESTS.length, i: q.i, t: q.t, p: q.prog(), pct: q.pct(), pay: "+" + rs(q.pay) }; // starter goals first
+  if (s.ambClaimed) return null; const A2 = myAmb(), i = A2.steps.findIndex((st) => !st[1]()); // then your ambition
+  if (i < 0) return { k: "Life ambition complete", i: "🏆", t: "Claim your reward: " + A2.title, p: "Tap to claim it in Goals", pct: 1, pay: rs(A2.pay) }; // all steps done
+  return { k: "Life ambition · step " + (i + 1) + " of " + A2.steps.length, i: "🏆", t: A2.steps[i][0], p: A2.title, pct: ambDone() / A2.steps.length, pay: rs(A2.pay) }; // the next step
+} // end nextGoal
+function questCard() { // the glowing goal card above the chat: icon, goal, progress bar and reward
+  const qc = $("quest"), g = s.made ? nextGoal() : null; qc.hidden = !g || !$("phone").hidden || (typeof introOn !== "undefined" && introOn); if (!g) return; // nothing to show
+  const key = JSON.stringify(g); if (key === questKey) return; questKey = key; qc.innerHTML = ""; // unchanged: leave it
+  const body = el("span", "qb"), bar = el("span", "qbar"), fill = el("i"); fill.style.width = Math.max(4, Math.round(g.pct * 100)) + "%"; bar.append(fill); // progress
+  body.append(el("small", "", g.k + " · tap for tips"), el("b", "", g.t), bar, el("span", "qp", g.p)); qc.append(el("span", "qi", g.i), body, el("span", "qpay", g.pay)); // icon, text and reward
+} // end questCard
+function questPop() { const qc = $("quest"); qc.classList.remove("pop"); void qc.offsetWidth; qc.classList.add("pop"); questKey = ""; } // bounce the card when a new goal arrives
 
 // ================= house parties =================
 const hostingNow = () => s.hostEnd > Date.now(); // is your party still on?
@@ -2217,7 +2273,7 @@ function useNear() { // press E or the yellow button
   if (near.npc) { openMenu(near.npc.name, chatActs(near.npc)); return; } // talk to a person
   if (near.enter) { enterBuilding(near.enter); return; } // go inside a building
   if (near.exit) { leaveBuilding(); return; } // leave the building
-  const acts = near.acts(); // what this thing offers
+  const acts = near.acts(); if (!Array.isArray(acts)) return; // what this thing offers (some open their own screen)
   openMenu(near.name, acts, acts.length ? "" : "Nothing on here right now. Party times are on your phone."); // show the menu
 } // end useNear
 
@@ -2332,9 +2388,10 @@ function advance(min, decay) { // move the clock forward
   for (const ev of EVENTS) if (mark(Math.floor(before / 10080) * 10080 + evStart(ev) - 180)) toast("Tonight: " + ev.org + " at " + doorOf(ev.venue).name + ". Doors " + ev.h + ":00."); // party reminder three hours before
   if (mark(Math.floor(before / 1440) * 1440 + 1200) && hash(day(), 7) % 3 !== 0) toast("🎉 Word is Jamal's is going off tonight — pull up after 21:00!"); // a surprise party on most nights
   if (s.role === "student" && !s.grad) for (const d of COURSES[s.course].days) { // your class days this week
-    const at = Math.floor(before / 10080) * 10080 + d * 1440 + COURSES[s.course].h * 60; // minute the lecture starts
-    if (mark(at - 60)) toast("Class in 1 hour: " + COURSES[s.course].short + " at Middlesex University."); // reminder
-    if (mark(at + 31) && s.lastClass !== day() && !(busy && busy.a.label.startsWith("Attend"))) { missClass(); } // skipped class
+    const at = Math.floor(before / 10080) * 10080 + d * 1440 + CLASS_OPEN * 60; // minute lectures open that day
+    if (mark(at)) toast("🎓 Class day: " + COURSES[s.course].short + " at Middlesex University. Go any time before 19:30."); // reminder in the morning
+    if (mark(at + 16 * 60) && s.lastClass !== day()) toast("🎓 Last call: lectures close at 19:30 today. Head to Middlesex University."); // reminder in the afternoon
+    if (mark(at + (CLASS_LAST - CLASS_OPEN) * 60 + 1) && s.lastClass !== day() && !(busy && busy.a.label.startsWith("Attend"))) { missClass(); } // skipped class
   } // end classes
   petTime(min);
   if (s.jail && s.t >= s.jail) { s.jail = 0; toast("You served your time. You are free to go."); } // released
@@ -2596,7 +2653,7 @@ function hud() { // refresh the text panels
   $("busy").hidden = !busy; // progress panel
   if (ride) { $("busy").hidden = false; $("busyText").textContent = ride.text; $("busyBar").style.width = "100%"; } // show the trip status
   if (busy) { $("busyText").textContent = busy.a.doing || busy.a.label; $("busyBar").style.width = (100 - busy.left / busy.total * 100) + "%"; } // progress bar
-  { const nb = $("navbar"); if (nb) nb.hidden = !s.made || !$("sheet").hidden || !$("phone").hidden || !$("pool").hidden || (typeof introOn !== "undefined" && introOn); const nh = $("navHome"); if (nh) { const lab = nh.querySelector(".navl"); if (lab) lab.textContent = decorMode ? "Done" : s.inside === "home" ? "Decorate" : "Home"; } } // hide the bar behind menus; Home becomes Decorate inside your house
+  { const nb = $("navbar"); if (nb) nb.hidden = !s.made || !$("sheet").hidden || !$("phone").hidden || !$("pool").hidden || !$("arena").hidden || (typeof introOn !== "undefined" && introOn); const nh = $("navHome"); if (nh) { const lab = nh.querySelector(".navl"); if (lab) lab.textContent = decorMode ? "Done" : s.inside === "home" ? "Decorate" : "Home"; } } // hide the bar behind menus; Home becomes Decorate inside your house
   const left = 360 - (s.t - s.bitten); // minutes left to treat a bite
   planCheck(); const st = s.jail > s.t ? "🔒 In a cell until " + jailClock() + " · pay bail or wait" : dancing ? "💃 Dancing to " + GENRES[dancing].n + " · move to stop" : s.plan && !s.plan.met ? "🗓️ Meet " + s.plan.name + " at " + doorOf(s.plan.place).name : run ? "Run: checkpoint " + run.i + " / " + (RUN_ROUTE.length - 1) + " · " + Math.max(0, Math.ceil(60 - (performance.now() - run.t0) / 1000)) + "s left" : chased() ? "Dog chasing you. Run!" : s.sick ? "Infected bite: you are slow. Go to the Hospital." : s.bitten ? "Dog bite: Hospital within " + Math.floor(left / 60) + "h " + Math.floor(left % 60) + "m" : s.debt > 0 ? "Kicked out: owe the landlord " + rs(s.debt) : ""; // what to warn about
   $("status").hidden = !st; $("status").textContent = st; // show or hide the warning
@@ -2605,8 +2662,7 @@ function hud() { // refresh the text panels
   $("online").className = "online" + (room ? " live" : ""); $("online").innerHTML = "<i></i>"; $("online").append(room ? String(on) : "solo"); // live counter with a green dot
   $("online").title = room ? "Tap to see who is online" : "No live connection: you are playing alone"; // tooltip
   const mcl = myClass(); if (s.made && mcl !== s.cls) { if (mcl) toast("New class: " + CLASSES[mcl].icon + " " + CLASSES[mcl].name + ". " + CLASSES[mcl].perk + "."); s.cls = mcl; save(); } // class changes
-  questCheck(); const q = QUESTS[s.quest]; $("quest").hidden = !q || !s.made || !$("phone").hidden; // the goal card
-  if (q) { $("quest").innerHTML = "<small>Goal " + (s.quest + 1) + " of " + QUESTS.length + "</small>"; $("quest").append(el("b", "", q.t), el("span", "", q.prog())); } // goal title and progress
+  questCheck(); questCard(); // the goal card
   const liveM = match.on && Date.now() < match.end + 2000; $("matchhud").hidden = !liveM; // show the scoreboard only during a match
   if (liveM) { const mh = $("matchhud"); mh.innerHTML = ""; const dot = (c) => { const i = el("i"); i.style.background = c; return i; }; mh.append(dot(KIT.W), el("span", "", "West " + BALL.fb.a), el("span", "", "–"), el("span", "", BALL.fb.b + " East"), dot(KIT.E), el("span", "clk", "⏱ " + fmtClock(match.end - Date.now())), el("span", "", s.team ? "· You: " + teamName(s.team) : "· tap ⚽ to join")); } // score, clock and your side
   if (performance.now() > toastUntil) $("toast").hidden = true; // hide old toasts
@@ -2803,7 +2859,7 @@ function buildingGroup(b) { // one building as a 3D block with roof, windows, do
   if (b.awn) { const aw = box(w * 0.92, 0.05, 0.7, b.awn, w / 2, 1.62, h + 0.32, gr); aw.rotation.x = 0.35; } // awning over the shop front
   const signH = 0.38, sp = mesh(geo("plane", () => new THREE.PlaneGeometry(1, 1)), new THREE.MeshBasicMaterial({ map: textTex(b.name, b.sign || "#14222b", "#ffffff", 64) }), w / 2, floors >= 2 ? H3 - 0.4 : Math.min(H3 - 0.32, 2.05), h + 0.09, gr, false); // sign board facing the street
   sp.scale.set(Math.min(w * 0.9, signH * sp.material.map.userData.aspect), signH, 1); // keep the lettering in proportion
-  const home = !b.id && !b.icon, tag = nameTag(b.name, b.icon || BICON[b.id] || "🏠", b.sign || b.roofCol || "#1f6fa8", home ? 26 : 34, home ? 16 : 0); tag.position.set(w / 2, top + 0.25, h / 2); gr.add(tag); gr.userData.tag = tag; // its name tag, pointing at the roof (players' houses only show theirs when you are close)
+  const home = !b.id && !b.icon, tag = b.mine ? nameTag("Your home", "⭐", "#ff9f1a", 38, 0) : nameTag(b.name, b.icon || BICON[b.id] || "🏠", b.sign || b.roofCol || "#1f6fa8", home ? 26 : 34, home ? 16 : 0); tag.position.set(w / 2, top + (b.mine ? 1.9 : 0.25), h / 2); gr.add(tag); gr.userData.tag = tag; if (b.mine) gr.userData.beacon = homeBeacon(gr, w / 2, top + 0.9, h / 2, h); // its name tag, pointing at the roof (players' houses only show theirs when you are close)
   gr.userData.box = { x: b.x, y: b.y, w, h }; gr.traverse((m) => { if (m.isMesh && m.material !== R.winMat && !m.material.map) m.material = m.material.clone(); }); // remember the footprint and give it its own materials so it can fade
   return gr; // finished building
 } // end buildingGroup
@@ -2817,7 +2873,7 @@ function fadeBuildings() { // see-through buildings that stand between the camer
 } // end fadeBuildings
 function buildTown() { for (const b of BUILD) R.world.add(buildingGroup(b)); for (const tx of [31, 35]) { cyl(0.45, 0.45, 0.05, "#f4f1e8", tx, 0.75, 24.7, R.world, 14); cyl(0.04, 0.04, 2.2, "#3a3a3a", tx, 1.1, 24.7, R.world, 6); const um = mesh(new THREE.ConeGeometry(1.1, 0.5, 8), mat("#ffc72c"), tx, 2.2, 24.7, R.world); for (const i of [-1, 1]) cyl(0.17, 0.17, 0.45, "#c8102e", tx + i * 0.75, 0.23, 24.7, R.world, 10); } /* Maravan terrace: tables, chairs and parasols */ R.estate = new THREE.Group(); R.world.add(R.estate); R.estateKey = ""; } // all the fixed buildings, and a slot for players' houses
 function syncEstate() { // rebuild the players' houses when residents or their wealth tiers change
-  const hs = estateHouses(), key = JSON.stringify(hs.map((q) => [q.name, q.roof, q.col, q.sign])); // what the estate should look like
+  const hs = estateHouses(), key = JSON.stringify(hs.map((q) => [q.name, q.roof, q.col, q.sign, q.mine])); // what the estate should look like
   if (key === R.estateKey) return; R.estateKey = key; // unchanged
   while (R.estate.children.length) R.estate.remove(R.estate.children[0]); // clear old houses
   for (const q of hs) R.estate.add(buildingGroup(q)); // build the new ones
@@ -2890,7 +2946,9 @@ function buildMarkers() { // a glowing ring and a floating icon for every usable
   }); // end markers
 } // end buildMarkers
 
-function buildSports() { // goals, hoop and scoreboards
+function buildSports() { // goals, hoop and scoreboards (and the park's chess table)
+  cyl(0.06, 0.14, 0.7, "#4a3424", 30.5, 0.35, 24.8, R.world, 8); box(0.9, 0.06, 0.9, "#6b4a2f", 30.5, 0.72, 24.8, R.world); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) box(0.19, 0.012, 0.19, (i + j) % 2 ? "#3a2614" : "#f0d9b5", 30.215 + i * 0.19, 0.756, 24.515 + j * 0.19, R.world); // a stone chess table with its board
+  for (const x of [29.8, 31.2]) cyl(0.17, 0.17, 0.42, "#7a5a3a", x, 0.21, 24.8, R.world, 10); // two stools
   for (const gx of [FB.x0 + 0.08, FB.x1 - 0.08]) { cyl(0.05, 0.05, 1.1, "#ffffff", gx, 0.55, FB.gy0, R.world, 8); cyl(0.05, 0.05, 1.1, "#ffffff", gx, 0.55, FB.gy1, R.world, 8); box(0.08, 0.08, FB.gy1 - FB.gy0, "#ffffff", gx, 1.1, (FB.gy0 + FB.gy1) / 2, R.world); box(0.02, 1.1, FB.gy1 - FB.gy0, new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 }), gx + (gx < 40 ? -0.3 : 0.3), 0.55, (FB.gy0 + FB.gy1) / 2, R.world); } // two goals with nets
   cyl(0.07, 0.07, 2.6, "#3a4147", CT.hx, 1.3, CT.y0 + 0.05, R.world, 8); box(1.1, 0.7, 0.05, "#f4f4f4", CT.hx, 2.7, CT.hy - 0.18, R.world); const rim = mesh(new THREE.TorusGeometry(0.22, 0.025, 6, 20), mat("#ff6a1a"), CT.hx, 2.45, CT.hy + 0.05, R.world); rim.rotation.x = Math.PI / 2; // pole, backboard and orange rim
   R.fbScore = sprite(textTex("WEST 0 : 0 EAST", "rgba(6,28,40,0.85)", "#ffffff"), 0.45); R.fbScore.position.set(42.5, 2.0, FB.y0 - 0.3); R.world.add(R.fbScore); // football scoreboard
@@ -3253,8 +3311,20 @@ function buildLandmark() { // big white letters on the grass: FLIC EN FLAC
   for (let i = 0; i < 22; i++) for (const [z, k] of [[1.0, 0], [4.9, 2]]) sph(0.16, ["#ef6f9c", "#ffd23c", "#ffffff", "#e4572e"][(i + k) % 4], 27.6 + i * 0.75, 0.12, z, R.world, 6); // flower borders
 } // end buildLandmark
 function buildApts() { // the apartment block for players who arrive after every estate plot is taken
-  const gr = buildingGroup({ x: APTS.x, y: APTS.y, w: APTS.w, h: APTS.h, name: APTS.name, icon: "🏢", col: "#f1e4d0", roof: "flat", roofCol: "#c2457a", sign: "#7a2fd1", door: "S", tall: 5.2 }); R.world.add(gr); // a tall block with a pink roof
+  const gr = buildingGroup({ x: APTS.x, y: APTS.y, w: APTS.w, h: APTS.h, name: APTS.name, icon: "🏢", col: "#f1e4d0", roof: "flat", roofCol: "#c2457a", sign: "#7a2fd1", door: "S", tall: 5.2 }); R.world.add(gr); R.apts = gr; // a tall block with a pink roof
 } // end buildApts
+function homeBeacon(gr, x, y, z, depth) { // a bobbing gold arrow over your roof and a glowing ring at your front door
+  const gold = new THREE.MeshBasicMaterial({ color: 0xffc53d, fog: false }); gold.userData.keep = true; const b = new THREE.Group(); b.position.set(x, y, z); b.userData.base = y; gr.add(b); // the arrow's holder
+  const cone = mesh(new THREE.ConeGeometry(0.62, 1.1, 4), gold, 0, 0, 0, b, false); cone.rotation.x = Math.PI; mesh(new THREE.BoxGeometry(0.32, 0.75, 0.32), gold, 0, 0.9, 0, b, false); // a big arrow pointing down at the house
+  const ring = mesh(new THREE.RingGeometry(0.55, 0.75, 32), new THREE.MeshBasicMaterial({ color: 0xffb020, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false }), x, 0.05, depth + 0.5, gr, false); ring.rotation.x = -Math.PI / 2; b.userData.ring = ring; // ring on your doorstep
+  return b;
+} // end homeBeacon
+function syncMyFlat() { // in the apartment block: gold tag and arrow when your flat is in there
+  if (!R.apts) return; const mine = !!(homesApi() && myHomeIdx >= PLOTS.length); if (R.apts.userData.mine === mine) return; R.apts.userData.mine = mine; // unchanged
+  const gr = R.apts, old = gr.userData.tag, y = old.position.y; gr.remove(old); // swap the tag
+  const tag = mine ? nameTag("Your flat · " + addrName(myHomeIdx).split(",")[0], "⭐", "#ff9f1a", 38, 0) : nameTag(APTS.name, "🏢", "#7a2fd1", 34, 0); tag.position.set(APTS.w / 2, y + (mine ? 1.6 : 0), APTS.h / 2); gr.add(tag); gr.userData.tag = tag; // gold when it is yours
+  if (mine && !gr.userData.beacon) gr.userData.beacon = homeBeacon(gr, APTS.w / 2, y + 0.6, APTS.h / 2, APTS.h); // and the arrow
+} // end syncMyFlat
 function buildHouse() { // (old) the shared small house on Coral Street, no longer built: everyone has their own home now
   const hg = new THREE.Group(); R.world.add(hg); const col = "#efe0c4"; // group and wall colour
   box(8, 2.4, 7, col, 23, 1.2, 6.5, hg); box(8.1, 0.22, 7.1, shade(col, 0.7), 23, 0.11, 6.5, hg); // walls and plinth
@@ -3266,7 +3336,9 @@ function buildHouse() { // (old) the shared small house on Coral Street, no long
 const _lp = typeof THREE !== "undefined" ? new THREE.Vector3() : null; // scratch for label positions
 function scaleLabels() { // keep every building's name tag the same readable size on screen at any zoom
   const vh = (R.renderer.domElement.clientHeight || innerHeight), per = 2 * Math.tan(R.camera.fov * Math.PI / 360) / vh, big = Math.min(innerWidth, innerHeight) < 700 ? 1.08 : 1; // world size of one screen pixel per unit distance (a touch bigger on phones)
-  for (const gr of R.world.children.concat(R.estate ? R.estate.children : [])) { const sp = gr.userData.tag; if (!sp || !sp.userData.px) continue; // only the new tags
+  syncMyFlat(); const t = performance.now() / 1000; // your flat's marker, and a clock for the bobbing
+  for (const gr of R.world.children.concat(R.estate ? R.estate.children : [])) { const bc = gr.userData.beacon; if (bc) { bc.position.y = bc.userData.base + Math.sin(t * 3) * 0.18; bc.rotation.y = t * 1.2; const k = 1 + (Math.sin(t * 3) + 1) * 0.12; bc.userData.ring.scale.set(k, k, k); } // bob and spin your home's arrow, pulse its ring
+    const sp = gr.userData.tag; if (!sp || !sp.userData.px) continue; // only the new tags
     sp.getWorldPosition(_lp); if (sp.userData.near) sp.visible = !introOn && Math.hypot(_lp.x - s.x, _lp.z - s.y) < sp.userData.near; if (!sp.visible) continue; // houses and plots: only when you are near
     const hgt = sp.userData.px * big * per * R.camera.position.distanceTo(_lp); sp.scale.set(hgt * sp.material.map.userData.aspect, hgt, 1); } // constant pixel height
 } // end scaleLabels
@@ -3629,17 +3701,270 @@ function matchTick() { // called each frame: run the clock
   if (match.host === meId()) { if (Date.now() > match.end) finishMatchLocal(); } // the host blows the whistle at full time
   else if (Date.now() > match.end + 4000) finishMatchLocal();    // the host went offline: end it on our side so you still get your reward
 } // end matchTick
-function footballMenu() { // the team bench: pick a side and start a match
-  const live = match.on && Date.now() < match.end + 2000;        // is a match on right now?
-  const acts = [ // join or leave a team
-    { label: s.team === "W" ? "✓ You are on West (teal)" : "Join West (teal)", info: "Attack the east goal", go: () => { s.team = "W"; save(); closeMenu(); toast("You joined West. Pull on the teal shirt on the pitch."); } },
-    { label: s.team === "E" ? "✓ You are on East (gold)" : "Join East (gold)", info: "Attack the west goal", go: () => { s.team = "E"; save(); closeMenu(); toast("You joined East. Pull on the gold shirt on the pitch."); } }
-  ];
-  if (s.team) acts.push({ label: "Leave your team", info: "Go back to a kickabout", go: () => { s.team = ""; save(); closeMenu(); toast("You left your team."); } }); // drop out
-  if (live) acts.push(A("Match in progress", "West " + BALL.fb.a + " – " + BALL.fb.b + " East · " + fmtClock(match.end - Date.now()) + " left", 0, 0, {}, { msg: "Get on the pitch and play! Run into the ball to dribble, press Kick to shoot." })); // live match info
-  else for (const mins of [3, 5, 7]) acts.push({ label: "⚽ Start a " + mins + "-minute match", info: s.team ? "West vs East · everyone online can join" : "Join a team first", why: s.team ? "" : "Pick a side first", go: () => startMatch(mins) }); // start options
-  openMenu("⚽ Football match", acts, "Team vs team. Join a side, then start a match — your friends who are online pick West or East and play live. Most goals at full time wins Rs 3,000."); // show it
-} // end footballMenu
+function footballMenu() { gameMenuFor("fb"); } // the pitch: 2D matches against the computer or a player
+
+// ================= two-player games (football and chess): against the computer, or live against another player =================
+const ARENA = { on: false, game: "", vs: "", opp: "", oppName: "", id: "", host: false, last: 0, hb: 0, over: false, raf: 0, sc: 1, W: 360, H: 560 }; // the open game
+const relayApi = () => window.claude && window.claude.relay; // live messages to one player (self-hosted server only)
+const CHAL = { out: null }; // the challenge you sent
+const nameOfUid = (u) => { const o = Object.values(others).find((q) => q.p.uid === u); if (o) return peerName(o); const p = players.find((q) => q.id === u); return p ? p.name : "A player"; }; // a player's name from their id
+function relaySend(d) { if (relayApi() && ARENA.opp) relayApi().send(ARENA.opp, Object.assign({ id: ARENA.id, game: ARENA.game }, d)); } // a message to your opponent in this game
+function arenaOpen(game, title, sub) { // show the game screen
+  Object.assign(ARENA, { on: true, game, over: false, last: Date.now(), hb: 0 }); closeMenu(); closePhone(); // reset
+  $("arTitle").textContent = title; $("arSub").textContent = sub; $("arMsg").textContent = ""; $("arCtrl").innerHTML = ""; $("arena").hidden = false; $("arResign").hidden = false; // header
+  arenaFit(); cancelAnimationFrame(ARENA.raf); let t0 = performance.now(); // size the canvas, then run
+  const loop = (now) => { if (!ARENA.on) return; const dt = Math.min(0.05, (now - t0) / 1000); t0 = now; // time since last frame
+    if (ARENA.vs === "p" && !ARENA.over) { if (Date.now() - ARENA.hb > 2500) { ARENA.hb = Date.now(); relaySend({ g: "hb" }); } if (Date.now() - ARENA.last > 12000) arenaForfeit(); } // keep in touch; a silent opponent has left
+    if (ARENA.game === "fb") fbFrame(dt); else if (ARENA.game === "ch") chDraw(); ARENA.raf = requestAnimationFrame(loop); };
+  ARENA.raf = requestAnimationFrame(loop);
+} // end arenaOpen
+function arenaFit() { // size the canvas to the screen, keeping the game's shape
+  if (!ARENA.on) return; const cv2 = $("arCv"), box = $("arWrap").getBoundingClientRect(), dpr = window.devicePixelRatio || 1, W = ARENA.game === "ch" ? 400 : 360, H = ARENA.game === "ch" ? 400 : 560; ARENA.W = W; ARENA.H = H; // logical size
+  const sc = Math.max(0.3, Math.min((box.width - 4) / W, (box.height - 4) / H)); ARENA.sc = sc; cv2.width = Math.round(W * sc * dpr); cv2.height = Math.round(H * sc * dpr); cv2.style.width = W * sc + "px"; cv2.style.height = H * sc + "px"; // fit
+  ARENA.ctx = cv2.getContext("2d"); ARENA.ctx.setTransform(sc * dpr, 0, 0, sc * dpr, 0, 0); // draw in logical units
+} // end arenaFit
+function arenaClose() { // leave the game screen
+  if (ARENA.vs === "p" && !ARENA.over) { relaySend({ g: "bye" }); arenaResult("lose", "You left the game."); } // leaving a live game hands your opponent the win
+  ARENA.on = false; cancelAnimationFrame(ARENA.raf); $("arena").hidden = true; fbKeys = {}; // close
+} // end arenaClose
+function arenaForfeit() { if (!ARENA.over) arenaResult("win", ARENA.oppName + " left the game. You win!"); } // the other player went away
+function arenaResult(res, text) { // the game is over: say so and reward you once
+  if (ARENA.over) return; ARENA.over = true; $("arMsg").textContent = text; $("arResign").hidden = true; // stop
+  const vsP = ARENA.vs === "p", g = ARENA.game, lvl = ARENA.level || "normal"; // who you played
+  const prize = res === "win" ? (vsP ? 500 : { easy: 150, normal: 400, hard: 1000 }[lvl] || 0) : res === "draw" ? (vsP ? 150 : 100) : 0; // a little money for winning
+  if (prize) { s.money += prize; txn((g === "fb" ? "Football" : "Chess") + (res === "win" ? " win" : " draw"), prize); } // pay
+  s.fun = clamp(s.fun + (res === "win" ? 25 : 12)); s.social = clamp(s.social + (vsP ? 15 : 0)); if (vsP) { s.qActive = true; if (res === "win") s.cha++; } if (g === "fb") s.fit = s.fit + (Math.random() < 0.25 ? 1 : 0); // how it made you feel
+  const k = g === "fb" ? "fbGames" : "chGames"; s[k] = (s[k] || 0) + 1; if (res === "win") s[k + "W"] = (s[k + "W"] || 0) + 1; save(); // records
+  if (res === "win") banner(g === "fb" ? "⚽ YOU WIN!" : "♟️ CHECKMATE!", text + (prize ? " +" + rs(prize) : "")); // celebrate
+  toast(text + (prize ? " +" + rs(prize) + "." : "")); // tell you
+  const c = $("arCtrl"); c.innerHTML = ""; const again = el("button", "", "Play again"), leave = el("button", "sec", "Leave"); again.type = leave.type = "button"; // after the game
+  again.onclick = () => { if (vsP) { arenaClose(); challengePlayer(g, ARENA.opp); } else if (g === "fb") fbStart("c", "", lvl); else chStart("c", "", lvl); }; leave.onclick = arenaClose; c.append(again, leave);
+} // end arenaResult
+function challengePlayer(game, oppUid) { // send a live challenge to an online player
+  if (!relayApi()) { toast("Live challenges need the online version of the game."); return; } if (!oppUid) { toast("They are offline."); return; } // only online
+  const id = Math.random().toString(36).slice(2, 10); CHAL.out = { game, to: oppUid, id, at: Date.now() }; relayApi().send(oppUid, { g: "inv", game, id, name: s.name }); // ask them
+  toast((game === "fb" ? "⚽ Football" : "♟️ Chess") + " challenge sent to " + nameOfUid(oppUid) + ". Waiting for them to accept…"); closePhone(); closeMenu(); // tell you
+} // end challengePlayer
+function onRelay(from, d) { // a game message from another player
+  if (!d || typeof d !== "object" || (d.game !== "fb" && d.game !== "ch")) return; const nm = String(d.name || nameOfUid(from)).slice(0, 14), gname = d.game === "fb" ? "⚽ football" : "♟️ chess"; // which game
+  if (d.g === "inv") { // someone challenged you
+    if (ARENA.on && !ARENA.over) { relayApi().send(from, { g: "dec", id: d.id, game: d.game, busy: 1 }); return; } // already playing
+    toast(nm + " challenges you to " + gname + "!"); openMenu(nm + " challenges you to " + gname, [ // answer
+      { label: "✅ Accept and play", info: "Live, right now", go: () => { relayApi().send(from, { g: "acc", id: d.id, game: d.game, name: s.name }); if (d.game === "fb") fbStart("p", from, "", false, d.id, nm); else chStart("p", from, "", false, d.id, nm); } },
+      { label: "❌ Not now", info: "They'll be told", go: () => { relayApi().send(from, { g: "dec", id: d.id, game: d.game }); closeMenu(); } }], "Friendly match. The winner gets Rs 500 and +1 charisma."); return;
+  }
+  if (d.g === "acc" && CHAL.out && CHAL.out.id === d.id && CHAL.out.to === from) { const c2 = CHAL.out; CHAL.out = null; if (c2.game === "fb") fbStart("p", from, "", true, c2.id, nm); else chStart("p", from, "", true, c2.id, nm); return; } // accepted: you host
+  if (d.g === "dec" && CHAL.out && CHAL.out.id === d.id) { CHAL.out = null; toast(nm + (d.busy ? " is already in a game." : " said not now.")); return; } // declined
+  if (!ARENA.on || d.id !== ARENA.id || from !== ARENA.opp) return; ARENA.last = Date.now(); // only your current game from here on
+  if (d.g === "bye") { arenaForfeit(); return; } if (d.g === "resign") { arenaResult("win", ARENA.oppName + " resigned. You win!"); return; } // they left or gave up
+  if (d.game === "fb") fbNet(d); else chNet(d); // the game itself
+} // end onRelay
+function gameMenuFor(game) { // the menu at the pitch or the chess table
+  const fb = game === "fb", start = (lvl) => (fb ? fbStart("c", "", lvl) : chStart("c", "", lvl)), online = Object.keys(others).filter((k) => typeof others[k].p.uid === "string" && others[k].p.uid); // who you can challenge
+  const acts = [["easy", "Easy", fb ? "Rs 150 for a win" : "Rs 150 for a win"], ["normal", "Normal", "Rs 400 for a win"], ["hard", "Hard", "Rs 1,000 for a win"]].map(([k, n, i]) => ({ label: "🤖 Play the computer · " + n, info: i, go: () => start(k) })); // three levels
+  for (const k of online.slice(0, 8)) acts.push({ label: "🆚 Challenge " + peerName(others[k]), info: "Live match · winner gets Rs 500", go: () => challengePlayer(game, others[k].p.uid) }); // players online
+  if (!online.length) acts.push(A("No players online to challenge", "Invite friends from the phone's Invite screen", 0, 0, {}, { msg: "When other players are online you can challenge them here or from their profile." })); // nobody around
+  if (fb) acts.push(A("Just kick a ball around", "Run into the ball on the pitch", 0, 0, {}, { msg: "Walk into the ball on the 3D pitch to dribble it, and press Kick to shoot." })); // the old kickabout still works
+  openMenu(fb ? "⚽ Football" : "♟️ Chess", acts, fb ? "Two-minute 2D matches: you and your keeper against theirs. Joystick or arrow keys to move, Kick or Space to shoot." : "Full chess rules. Tap a piece, then where it should go. Pawns promote to a queen."); // show it
+} // end gameMenuFor
+
+// --- 2D football: top-down pitch, a striker and a keeper per side ---
+const FB2 = { b: null, p: [], sc: [0, 0], t: 0, kick: [0, 0], inp: [{ mx: 0, my: 0, k: 0 }, { mx: 0, my: 0, k: 0 }], pause: 0, ev: "", sendT: 0, tgt: null, face: [[0, -1], [0, 1]] }; // ball, players, score, clock, inputs
+let fbKeys = {}, fbJoy = null; // keyboard and touch joystick
+const FB_GW = 120, FB_PR = 13, FB_BR = 7, FB_LEN = 120; // goal width, player and ball radius, match length in seconds
+function fbStart(vs, opp, level, host, id, oppName) { // kick off a new match
+  Object.assign(ARENA, { vs, opp: opp || "", oppName: oppName || "Computer", id: id || "", host: vs === "c" ? true : !!host, level: level || "" }); // who and how
+  fbReset(); FB2.sc = [0, 0]; FB2.t = FB_LEN; FB2.ev = "Kick off!"; FB2.pause = 1.2; FB2.tgt = null; // fresh match
+  arenaOpen("fb", "⚽ Football", vs === "p" ? "Live vs " + ARENA.oppName + (ARENA.host ? " · you host" : "") : "vs Computer · " + (level || "normal")); // show it
+  const c = $("arCtrl"), kb = el("button", "kick", "⚽ KICK"); kb.type = "button"; const press = (e) => { e.preventDefault(); FB2.kickMe = 1; }; kb.addEventListener("pointerdown", press); c.append(kb); // the kick button
+  $("arMsg").textContent = "Move: drag on the pitch, or arrows / WASD · Kick: button or Space"; fbHud(); arenaFit(); // size the pitch now the controls are in
+} // end fbStart
+function fbReset() { // everyone back to their spots, ball in the middle
+  const W = 360, H = 560; FB2.b = { x: W / 2, y: H / 2, vx: 0, vy: 0 }; // ball
+  FB2.p = [{ x: W / 2, y: H * 0.68, vx: 0, vy: 0, t: 0 }, { x: W / 2, y: H - 30, vx: 0, vy: 0, t: 0, gk: 1 }, { x: W / 2, y: H * 0.32, vx: 0, vy: 0, t: 1 }, { x: W / 2, y: 30, vx: 0, vy: 0, t: 1, gk: 1 }]; // two strikers, two keepers
+} // end fbReset
+function fbMyTeam() { return ARENA.host ? 0 : 1; } // host plays up the screen (team 0), guest down (team 1)
+function fbLocalInput() { // read the keyboard and the touch joystick, in your own view
+  let mx = (fbKeys.ArrowRight || fbKeys.d ? 1 : 0) - (fbKeys.ArrowLeft || fbKeys.a ? 1 : 0), my = (fbKeys.ArrowDown || fbKeys.s ? 1 : 0) - (fbKeys.ArrowUp || fbKeys.w ? 1 : 0); // keys
+  if (fbJoy && fbJoy.on) { const dx = fbJoy.x - fbJoy.ox, dy = fbJoy.y - fbJoy.oy, d = Math.hypot(dx, dy); if (d > 6) { mx = dx / Math.max(d, 40); my = dy / Math.max(d, 40); } } // touch drag
+  const d = Math.hypot(mx, my); if (d > 1) { mx /= d; my /= d; } const k = FB2.kickMe ? 1 : 0; FB2.kickMe = 0; return { mx, my, k }; // capped, plus a kick
+} // end fbLocalInput
+function fbFrame(dt) { // one frame of football
+  const me = fbMyTeam(), li = fbLocalInput(); // your input
+  if (ARENA.vs === "p" && !ARENA.host) { // the guest: send input, draw what the host sends
+    if (!ARENA.over && (performance.now() - FB2.sendT > 60 || li.k)) { FB2.sendT = performance.now(); relaySend({ g: "in", mx: -li.mx, my: -li.my, k: li.k }); } // turned round into the host's view
+    if (FB2.tgt) { const T = FB2.tgt, f = Math.min(1, dt * 14); FB2.b.x += (T.b[0] - FB2.b.x) * f; FB2.b.y += (T.b[1] - FB2.b.y) * f; FB2.p.forEach((q, i) => { q.x += (T.p[i][0] - q.x) * f; q.y += (T.p[i][1] - q.y) * f; }); } // glide to the latest positions
+    fbDraw(); fbHud(); return;
+  }
+  FB2.inp[me] = { mx: li.mx, my: li.my, k: li.k }; // your control
+  if (ARENA.vs === "c") FB2.inp[1] = fbAI(1); // the computer's striker
+  if (!ARENA.over) fbStep(dt); // physics and rules
+  if (ARENA.vs === "p" && performance.now() - FB2.sendT > 66) { FB2.sendT = performance.now(); const r = (v) => Math.round(v); relaySend({ g: "st", b: [r(FB2.b.x), r(FB2.b.y)], p: FB2.p.map((q) => [r(q.x), r(q.y)]), sc: FB2.sc, t: Math.ceil(FB2.t), ev: FB2.ev, et: FB2.evT | 0 }); } // the guest sees this ~15 times a second
+  fbDraw(); fbHud();
+} // end fbFrame
+function fbAI(t) { // the computer's striker: get behind the ball and shoot at the bottom goal
+  const lv = { easy: 0.62, normal: 0.85, hard: 1.05 }[ARENA.level] || 0.85, b = FB2.b, p = FB2.p[2], gx = 180, gy = t === 1 ? 560 : 0; // skill, ball, striker, the goal it attacks
+  const dx = b.x - gx, dy = b.y - gy, d = Math.hypot(dx, dy) || 1, bx = b.x + dx / d * 20, by = b.y + dy / d * 20; // a spot just behind the ball
+  let mx = bx - p.x, my = by - p.y; if (b.y > 400 && Math.random() < 0.02) { mx = b.x - p.x; my = b.y - p.y; } const m = Math.hypot(mx, my) || 1; // run there
+  const close = Math.hypot(b.x - p.x, b.y - p.y) < FB_PR + FB_BR + 9, aligned = (b.y - p.y) > 2; // near the ball and facing the goal
+  return { mx: mx / m * lv, my: my / m * lv, k: close && aligned && Math.random() < 0.35 * lv ? 1 : 0 };
+} // end fbAI
+function fbStep(dt) { // move everyone, the ball, and check for goals
+  const W = 360, H = 560, B = FB2.b, gl = W / 2 - FB_GW / 2, gr = W / 2 + FB_GW / 2; // pitch and goal mouth
+  if (FB2.pause > 0) { FB2.pause -= dt; if (FB2.pause <= 0) FB2.ev = ""; return; } // a moment after a goal
+  FB2.t -= dt; if (FB2.t <= 0) { FB2.t = 0; fbFull(); return; } // full time
+  FB2.p.forEach((q, i) => { // each player
+    if (q.gk) { const home = q.t === 0 ? H - 30 : 30, tx = Math.max(gl + 8, Math.min(gr - 8, B.x)); q.vx = Math.sign(tx - q.x) * Math.min(130, Math.abs(tx - q.x) * 8); q.vy = (home - q.y) * 6; } // keepers track the ball along their line
+    else { const inp = FB2.inp[q.t], sp = 175; q.vx = inp.mx * sp; q.vy = inp.my * sp; if (Math.hypot(inp.mx, inp.my) > 0.2) FB2.face[q.t] = [inp.mx, inp.my]; } // strikers follow their controls
+    q.x = Math.max(FB_PR, Math.min(W - FB_PR, q.x + q.vx * dt)); q.y = Math.max(FB_PR, Math.min(H - FB_PR, q.y + q.vy * dt)); // stay on the pitch
+    const dx = B.x - q.x, dy = B.y - q.y, d = Math.hypot(dx, dy) || 1, reach = FB_PR + FB_BR; // touching the ball?
+    if (d < reach) { B.x = q.x + dx / d * reach; B.y = q.y + dy / d * reach; B.vx = q.vx * 1.15 + dx / d * 40; B.vy = q.vy * 1.15 + dy / d * 40; if (q.gk) { const up = q.t === 0 ? -1 : 1; B.vx = (Math.random() - 0.5) * 260; B.vy = up * (330 + Math.random() * 90); } } // dribble, or the keeper clears it
+    if (!q.gk && FB2.inp[q.t].k && d < reach + 12) { const tg = q.t === 0 ? 0 : H, f = FB2.face[q.t], ax = (W / 2 - q.x) / H * 0.6 + f[0], ay = (tg - q.y) / H * 0.6 + f[1], m = Math.hypot(ax, ay) || 1; B.vx = ax / m * 470; B.vy = ay / m * 470; } // a kick: where you face, bent toward their goal
+  });
+  FB2.inp.forEach((q) => { q.k = 0; }); // a kick lasts one frame
+  B.x += B.vx * dt; B.y += B.vy * dt; const fr = Math.exp(-1.1 * dt); B.vx *= fr; B.vy *= fr; // roll and slow down
+  if (B.x < FB_BR) { B.x = FB_BR; B.vx = Math.abs(B.vx) * 0.8; } if (B.x > W - FB_BR) { B.x = W - FB_BR; B.vx = -Math.abs(B.vx) * 0.8; } // side walls
+  const inMouth = B.x > gl && B.x < gr; // between the posts?
+  if (B.y < FB_BR && !inMouth) { B.y = FB_BR; B.vy = Math.abs(B.vy) * 0.8; } if (B.y > H - FB_BR && !inMouth) { B.y = H - FB_BR; B.vy = -Math.abs(B.vy) * 0.8; } // end walls
+  if (B.y < -4 && inMouth) fbGoal(0); else if (B.y > H + 4 && inMouth) fbGoal(1); // in the net
+} // end fbStep
+function fbGoal(team) { FB2.sc[team]++; FB2.ev = "GOAL!"; FB2.evT = team; fbReset(); FB2.pause = 1.6; } // count it and restart
+function fbFull() { // the final whistle
+  const me = fbMyTeam(), a = FB2.sc[me], b = FB2.sc[1 - me], res = a > b ? "win" : a < b ? "lose" : "draw"; // result for you
+  if (ARENA.vs === "p") relaySend({ g: "end", sc: FB2.sc }); // tell the guest
+  arenaResult(res, "Full time " + a + " – " + b + ". " + (res === "win" ? "You win!" : res === "lose" ? "You lost." : "A draw.")); // and you
+} // end fbFull
+function fbNet(d) { // football messages between host and guest
+  if (ARENA.host) { if (d.g === "in") { FB2.inp[1] = { mx: Math.max(-1, Math.min(1, +d.mx || 0)), my: Math.max(-1, Math.min(1, +d.my || 0)), k: d.k ? 1 : FB2.inp[1].k }; } return; } // the guest's controls
+  if (d.g === "st" && Array.isArray(d.b) && Array.isArray(d.p) && d.p.length === 4) { FB2.tgt = d; FB2.sc = [d.sc[0] | 0, d.sc[1] | 0]; FB2.t = +d.t || 0; FB2.ev = String(d.ev || "").slice(0, 40); FB2.evT = d.et | 0; } // where everything is
+  if (d.g === "end" && Array.isArray(d.sc)) { FB2.sc = [d.sc[0] | 0, d.sc[1] | 0]; const a = FB2.sc[1], b = FB2.sc[0]; arenaResult(a > b ? "win" : a < b ? "lose" : "draw", "Full time " + a + " – " + b + ". " + (a > b ? "You win!" : a < b ? "You lost." : "A draw.")); } // final whistle
+} // end fbNet
+function fbHud() { // the score bar
+  const me = fbMyTeam(), you = s.name || "You", them = ARENA.vs === "p" ? ARENA.oppName : "Computer", el2 = $("arScore"), t = Math.ceil(FB2.t); // names and time
+  el2.innerHTML = ""; const side = (cls, col, n) => { const d = el("div", "side " + cls), i = el("i"); i.style.background = col; d.append(i, el("span", "", n)); return d; }; // one side
+  const mid = el("div", "mid", FB2.sc[me] + " – " + FB2.sc[1 - me]); mid.append(el("small", "", Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"))); el2.append(side("", "#3d9be9", you), mid, side("r", "#ff5f6d", them)); // you are always blue
+} // end fbHud
+function fbDraw() { // the pitch, from your side (your goal at the bottom)
+  const c = ARENA.ctx, W = 360, H = 560, flip = !ARENA.host, X = (x) => (flip ? W - x : x), Y = (y) => (flip ? H - y : y); // the guest sees it turned round
+  for (let i = 0; i < 10; i++) { c.fillStyle = i % 2 ? "#3f9a4c" : "#46a653"; c.fillRect(0, i * H / 10, W, H / 10); } // mown stripes
+  c.strokeStyle = "rgba(255,255,255,0.85)"; c.lineWidth = 2.5; c.strokeRect(6, 6, W - 12, H - 12); c.beginPath(); c.moveTo(6, H / 2); c.lineTo(W - 6, H / 2); c.stroke(); c.beginPath(); c.arc(W / 2, H / 2, 46, 0, 7); c.stroke(); // lines and centre circle
+  for (const top of [0, 1]) { const y0 = top ? 6 : H - 6, dir = top ? 1 : -1; c.strokeRect(W / 2 - 90, top ? 6 : H - 6 - 70, 180, 70); c.fillStyle = "rgba(255,255,255,0.9)"; c.fillRect(W / 2 - FB_GW / 2, top ? 0 : H - 6, FB_GW, 6); c.fillStyle = "rgba(255,255,255,0.18)"; c.fillRect(W / 2 - FB_GW / 2, top ? -14 : H, FB_GW, 14); } // boxes and goals
+  const me = fbMyTeam(); // your team is blue
+  FB2.p.forEach((q) => { const x = X(q.x), y = Y(q.y), mine = q.t === me; c.fillStyle = "rgba(0,0,0,0.25)"; c.beginPath(); c.ellipse(x + 2, y + 4, FB_PR, FB_PR * 0.6, 0, 0, 7); c.fill(); // shadow
+    c.fillStyle = mine ? (q.gk ? "#1f6fa8" : "#3d9be9") : (q.gk ? "#b5302a" : "#ff5f6d"); c.beginPath(); c.arc(x, y, FB_PR, 0, 7); c.fill(); c.lineWidth = 2.5; c.strokeStyle = "#fff"; c.stroke(); // body
+    c.fillStyle = "#fff"; c.font = "800 11px Figtree, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(q.gk ? "GK" : mine ? "YOU" : "", x, y + 0.5); }); // label
+  const bx = X(FB2.b.x), by = Y(FB2.b.y); c.fillStyle = "rgba(0,0,0,0.3)"; c.beginPath(); c.ellipse(bx + 2, by + 3, FB_BR, FB_BR * 0.6, 0, 0, 7); c.fill(); c.fillStyle = "#fff"; c.beginPath(); c.arc(bx, by, FB_BR, 0, 7); c.fill(); c.strokeStyle = "#222"; c.lineWidth = 1.5; c.stroke(); c.fillStyle = "#222"; c.beginPath(); c.arc(bx, by, 2.6, 0, 7); c.fill(); // the ball
+  if (fbJoy && fbJoy.on) { c.strokeStyle = "rgba(255,255,255,0.6)"; c.lineWidth = 3; c.beginPath(); c.arc(fbJoy.ox, fbJoy.oy, 40, 0, 7); c.stroke(); c.fillStyle = "rgba(255,255,255,0.5)"; c.beginPath(); const dx = fbJoy.x - fbJoy.ox, dy = fbJoy.y - fbJoy.oy, d = Math.hypot(dx, dy), k = d > 40 ? 40 / d : 1; c.arc(fbJoy.ox + dx * k, fbJoy.oy + dy * k, 16, 0, 7); c.fill(); } // the joystick
+  if (FB2.ev) { const txt = FB2.ev === "GOAL!" ? (FB2.evT === me ? "GOAL! You scored!" : "GOAL! " + (ARENA.vs === "p" ? ARENA.oppName : "Computer") + " scored") : FB2.ev; c.fillStyle = "rgba(10,26,34,0.75)"; c.fillRect(0, H / 2 - 30, W, 60); c.fillStyle = "#ffd23c"; c.font = "800 24px Figtree, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(txt, W / 2, H / 2); } // GOAL! and kick-off banners, worded for whoever is watching
+} // end fbDraw
+
+// --- chess: full rules, a computer opponent with three levels, or a live player ---
+const CH = { st: null, me: "w", sel: -1, moves: [], last: null, thinking: false, msg: "" }; // the game
+const CH_VAL = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 0 }, CH_GLYPH = { K: "♚", Q: "♛", R: "♜", B: "♝", N: "♞", P: "♟" }; // piece values and symbols
+function chNew() { const b = Array(64).fill(""), back = "RNBQKBNR"; for (let i = 0; i < 8; i++) { b[i] = "b" + back[i]; b[8 + i] = "bP"; b[48 + i] = "wP"; b[56 + i] = "w" + back[i]; } return { b, turn: "w", cs: { wK: 1, wQ: 1, bK: 1, bQ: 1 }, ep: -1 }; } // the starting position (square 0 = a8)
+const chOpp = (c) => (c === "w" ? "b" : "w"); // the other colour
+function chAttacked(st, sq, by) { // is a square attacked by this colour?
+  const b = st.b, r = sq >> 3, f = sq & 7, at = (rr, ff) => (rr >= 0 && rr < 8 && ff >= 0 && ff < 8 ? b[rr * 8 + ff] : null); // board lookup
+  const pr = by === "w" ? r + 1 : r - 1; for (const df of [-1, 1]) if (at(pr, f + df) === by + "P") return true; // pawns
+  for (const [dr, df] of [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]]) if (at(r + dr, f + df) === by + "N") return true; // knights
+  for (let dr = -1; dr <= 1; dr++) for (let df = -1; df <= 1; df++) if ((dr || df) && at(r + dr, f + df) === by + "K") return true; // king
+  for (const [dr, df, kinds] of [[1, 0, "RQ"], [-1, 0, "RQ"], [0, 1, "RQ"], [0, -1, "RQ"], [1, 1, "BQ"], [1, -1, "BQ"], [-1, 1, "BQ"], [-1, -1, "BQ"]]) { let rr = r + dr, ff = f + df; while (rr >= 0 && rr < 8 && ff >= 0 && ff < 8) { const p = b[rr * 8 + ff]; if (p) { if (p[0] === by && kinds.includes(p[1])) return true; break; } rr += dr; ff += df; } } // sliders
+  return false;
+} // end chAttacked
+const chKing = (st, c) => st.b.indexOf(c + "K"); // where a king stands
+const chInCheck = (st, c) => chAttacked(st, chKing(st, c), chOpp(c)); // is this side in check?
+function chPseudo(st) { // every move for the side to move, before checking for check
+  const b = st.b, c = st.turn, out = [], push = (f, t, x) => out.push(Object.assign({ f, t }, x || {})); // moves
+  for (let sq = 0; sq < 64; sq++) { const p = b[sq]; if (!p || p[0] !== c) continue; const r = sq >> 3, f = sq & 7, k = p[1]; // each piece
+    const to = (rr, ff) => (rr >= 0 && rr < 8 && ff >= 0 && ff < 8 ? rr * 8 + ff : -1), free = (t) => t >= 0 && !b[t], foe = (t) => t >= 0 && b[t] && b[t][0] !== c; // helpers
+    if (k === "P") { const d = c === "w" ? -1 : 1, start = c === "w" ? 6 : 1, last = c === "w" ? 0 : 7, one = to(r + d, f); // pawns
+      const add = (t, x) => (t >> 3 === last ? push(sq, t, Object.assign({ p: "Q" }, x)) : push(sq, t, x)); // promote on the last rank
+      if (free(one)) { add(one); const two = to(r + 2 * d, f); if (r === start && free(two)) push(sq, two, { dbl: 1 }); } // forward
+      for (const df of [-1, 1]) { const t = to(r + d, f + df); if (foe(t)) add(t); else if (t >= 0 && t === st.ep) push(sq, t, { e: 1 }); } // captures, en passant
+    } else if (k === "N" || k === "K") { for (const [dr, df] of k === "N" ? [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const t = to(r + dr, f + df); if (free(t) || foe(t)) push(sq, t); } // jumps and steps
+      if (k === "K" && !chInCheck(st, c)) { const row = c === "w" ? 56 : 0, o = chOpp(c); if (st.cs[c + "K"] && !b[row + 5] && !b[row + 6] && b[row + 7] === c + "R" && !chAttacked(st, row + 5, o)) push(sq, row + 6, { c: "K" }); if (st.cs[c + "Q"] && !b[row + 3] && !b[row + 2] && !b[row + 1] && b[row] === c + "R" && !chAttacked(st, row + 3, o)) push(sq, row + 2, { c: "Q" }); } // castling
+    } else { for (const [dr, df] of k === "R" ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : k === "B" ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { let rr = r + dr, ff = f + df; while (rr >= 0 && rr < 8 && ff >= 0 && ff < 8) { const t = rr * 8 + ff; if (!b[t]) push(sq, t); else { if (b[t][0] !== c) push(sq, t); break; } rr += dr; ff += df; } } } // sliders
+  }
+  return out;
+} // end chPseudo
+function chMake(st, m) { // play a move, returning the new position
+  const b = st.b.slice(), c = st.turn, p = b[m.f], cs = Object.assign({}, st.cs); b[m.t] = m.p ? c + m.p : p; b[m.f] = ""; // move it (promoting if needed)
+  if (m.e) b[m.t + (c === "w" ? 8 : -8)] = ""; // en passant takes the pawn beside
+  if (m.c) { const row = c === "w" ? 56 : 0; if (m.c === "K") { b[row + 5] = b[row + 7]; b[row + 7] = ""; } else { b[row + 3] = b[row]; b[row] = ""; } } // castling moves the rook
+  if (p[1] === "K") { cs[c + "K"] = 0; cs[c + "Q"] = 0; } for (const [sq, k] of [[56, "wQ"], [63, "wK"], [0, "bQ"], [7, "bK"]]) if (m.f === sq || m.t === sq) cs[k] = 0; // rights lost
+  return { b, turn: chOpp(c), cs, ep: m.dbl ? (m.f + m.t) >> 1 : -1 };
+} // end chMake
+function chLegal(st) { return chPseudo(st).filter((m) => !chInCheck(chMake(st, m), st.turn)); } // moves that do not leave your king in check
+const CH_CENTER = [0, 1, 2, 3, 3, 2, 1, 0]; // closeness to the middle, by file or rank
+function chEval(st) { // score for white: material, plus a little for good squares
+  let v = 0; for (let sq = 0; sq < 64; sq++) { const p = st.b[sq]; if (!p) continue; const r = sq >> 3, f = sq & 7, k = p[1], sg = p[0] === "w" ? 1 : -1; let x = CH_VAL[k]; // each piece
+    if (k === "N" || k === "B") x += (CH_CENTER[r] + CH_CENTER[f]) * 6; else if (k === "P") x += (p[0] === "w" ? 6 - r : r - 1) * 8 + (f >= 2 && f <= 5 ? 6 : 0); else if (k === "Q") x += (CH_CENTER[r] + CH_CENTER[f]) * 2; // develop and advance
+    v += sg * x; }
+  return v;
+} // end chEval
+function chSearch(st, depth, alpha, beta) { // alpha-beta search; returns a score for the side to move
+  if (depth === 0) return (st.turn === "w" ? 1 : -1) * chEval(st); // leaf
+  const ms = chLegal(st); if (!ms.length) return chInCheck(st, st.turn) ? -99999 - depth : 0; // mate or stalemate
+  ms.sort((a, b) => (st.b[b.t] ? CH_VAL[st.b[b.t][1]] : 0) - (st.b[a.t] ? CH_VAL[st.b[a.t][1]] : 0)); // captures first
+  for (const m of ms) { const v = -chSearch(chMake(st, m), depth - 1, -beta, -alpha); if (v >= beta) return beta; if (v > alpha) alpha = v; } return alpha;
+} // end chSearch
+function chBest(st, level) { // the computer picks a move
+  const ms = chLegal(st); if (!ms.length) return null; const depth = { easy: 1, normal: 3, hard: 4 }[level] || 3; let best = [], bv = -Infinity; // its options
+  for (const m of ms) { const v = -chSearch(chMake(st, m), depth - 1, -Infinity, Infinity) + (level === "easy" ? Math.random() * 120 : Math.random() * 8); if (v > bv + 0.5) { bv = v; best = [m]; } else if (Math.abs(v - bv) <= 0.5) best.push(m); } // score each
+  return best[Math.floor(Math.random() * best.length)];
+} // end chBest
+function chStart(vs, opp, level, host, id, oppName) { // set up a new game of chess
+  Object.assign(ARENA, { vs, opp: opp || "", oppName: oppName || "Computer", id: id || "", host: vs === "c" ? true : !!host, level: level || "" }); // who and how
+  Object.assign(CH, { st: chNew(), me: vs === "c" ? "w" : host ? "w" : "b", sel: -1, moves: [], last: null, thinking: false, msg: "" }); // you are white against the computer, or if you challenged
+  arenaOpen("ch", "♟️ Chess", vs === "p" ? "Live vs " + ARENA.oppName + " · you are " + (CH.me === "w" ? "white" : "black") : "vs Computer · " + (level || "normal")); // show it
+  const c = $("arCtrl"), dr = el("button", "sec", "Offer a draw"); dr.type = "button"; dr.onclick = () => { if (ARENA.vs === "c") { const e = chEval(CH.st) * (CH.me === "w" ? 1 : -1); if (e < -150) { arenaResult("draw", "The computer accepts a draw."); } else toast("The computer wants to play on."); } else { relaySend({ g: "draw" }); toast("Draw offered."); } }; c.append(dr); // a draw
+  chStatus(); arenaFit();
+} // end chStart
+function chStatus() { // whose turn, check, the score bar
+  const st = CH.st, el2 = $("arScore"), you = s.name || "You", them = ARENA.vs === "p" ? ARENA.oppName : "Computer", myTurn = st.turn === CH.me; el2.innerHTML = ""; // names
+  const side = (cls, col, n) => { const d = el("div", "side " + cls), i = el("i"); i.style.background = col; d.append(i, el("span", "", n)); return d; }; // one side
+  el2.append(side(myTurn ? "turn" : "", CH.me === "w" ? "#f4efe2" : "#2a2a2a", you), el("div", "mid", myTurn ? "Your move" : CH.thinking ? "Thinking…" : "Their move"), side("r" + (!myTurn ? " turn" : ""), CH.me === "w" ? "#2a2a2a" : "#f4efe2", them)); // the bar
+  if (!ARENA.over) $("arMsg").textContent = chInCheck(st, st.turn) ? (myTurn ? "⚠️ You are in check!" : "Check!") : CH.msg; // check warning
+} // end chStatus
+function chPlay(m, fromNet) { // play a move on the board and see if the game is over
+  CH.st = chMake(CH.st, m); CH.last = m; CH.sel = -1; CH.moves = []; CH.msg = ""; // apply it
+  if (!fromNet && ARENA.vs === "p") relaySend({ g: "mv", f: m.f, t: m.t }); // tell your opponent
+  const ms = chLegal(CH.st), mover = chOpp(CH.st.turn); // what the next player can do
+  if (!ms.length) { const mate = chInCheck(CH.st, CH.st.turn); chStatus(); if (mate) arenaResult(mover === CH.me ? "win" : "lose", mover === CH.me ? "Checkmate! You win." : "Checkmate. You lost this one."); else arenaResult("draw", "Stalemate. It's a draw."); return; } // over
+  if (CH.st.b.filter((p) => p && p[1] !== "K").length === 0) { arenaResult("draw", "Only kings left. It's a draw."); return; } // bare kings
+  chStatus(); if (ARENA.vs === "c" && CH.st.turn !== CH.me) { CH.thinking = true; chStatus(); setTimeout(() => { if (!ARENA.on || ARENA.over) return; const bm = chBest(CH.st, ARENA.level); CH.thinking = false; if (bm) chPlay(bm); }, 350); } // the computer replies
+} // end chPlay
+function chNet(d) { // chess messages from your opponent
+  if (d.g === "mv") { if (CH.st.turn === CH.me) return; const m = chLegal(CH.st).find((q) => q.f === (d.f | 0) && q.t === (d.t | 0)); if (m) chPlay(m, true); return; } // their move (checked to be legal)
+  if (d.g === "draw") { openMenu(ARENA.oppName + " offers a draw", [{ label: "🤝 Accept the draw", info: "The game ends", go: () => { closeMenu(); relaySend({ g: "drawyes" }); arenaResult("draw", "You agreed a draw."); } }, { label: "Play on", info: "Keep going", go: () => { closeMenu(); relaySend({ g: "drawno" }); } }], "Your call."); return; } // they offer a draw
+  if (d.g === "drawyes") { arenaResult("draw", ARENA.oppName + " accepted the draw."); return; } if (d.g === "drawno") { toast(ARENA.oppName + " wants to play on."); } // their answer
+} // end chNet
+function chSq(px, py) { const n = Math.floor(px / 50), m = Math.floor(py / 50); if (n < 0 || n > 7 || m < 0 || m > 7) return -1; return CH.me === "w" ? m * 8 + n : (7 - m) * 8 + (7 - n); } // screen to square (your side at the bottom)
+function chTap(px, py) { // select a piece or move it
+  if (ARENA.over || CH.st.turn !== CH.me || CH.thinking) return; const sq = chSq(px, py); if (sq < 0) return; // not your turn
+  const mv = CH.moves.find((m) => m.t === sq); if (mv) { chPlay(mv); return; } // a highlighted target: move there
+  const p = CH.st.b[sq]; if (p && p[0] === CH.me) { CH.sel = sq; CH.moves = chLegal(CH.st).filter((m) => m.f === sq); } else { CH.sel = -1; CH.moves = []; } // pick a piece
+} // end chTap
+function chDraw() { // the board, from your side
+  const c = ARENA.ctx, st = CH.st; if (!c || !st) return; const xy = (sq) => { let r = sq >> 3, f = sq & 7; if (CH.me === "b") { r = 7 - r; f = 7 - f; } return [f * 50, r * 50]; }; // square to screen
+  for (let sq = 0; sq < 64; sq++) { const [x, y] = xy(sq); c.fillStyle = ((sq >> 3) + (sq & 7)) % 2 ? "#b07a4f" : "#f0d9b5"; c.fillRect(x, y, 50, 50); } // squares
+  if (CH.last) for (const sq of [CH.last.f, CH.last.t]) { const [x, y] = xy(sq); c.fillStyle = "rgba(255, 210, 60, 0.42)"; c.fillRect(x, y, 50, 50); } // the last move
+  if (chInCheck(st, st.turn)) { const [x, y] = xy(chKing(st, st.turn)); c.fillStyle = "rgba(230, 40, 40, 0.55)"; c.fillRect(x, y, 50, 50); } // a king in check
+  if (CH.sel >= 0) { const [x, y] = xy(CH.sel); c.fillStyle = "rgba(61, 155, 233, 0.5)"; c.fillRect(x, y, 50, 50); } // your selected piece
+  for (let sq = 0; sq < 64; sq++) { const p = st.b[sq]; if (!p) continue; const [x, y] = xy(sq); c.font = "40px 'Segoe UI Symbol', 'Noto Sans Symbols 2', 'DejaVu Sans', serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.lineWidth = 2.2; c.strokeStyle = p[0] === "w" ? "#2a1c10" : "#e9dcc6"; c.fillStyle = p[0] === "w" ? "#fffaf0" : "#1d1712"; c.strokeText(CH_GLYPH[p[1]], x + 25, y + 27); c.fillText(CH_GLYPH[p[1]], x + 25, y + 27); } // pieces
+  for (const m of CH.moves) { const [x, y] = xy(m.t); c.fillStyle = st.b[m.t] ? "rgba(230, 60, 60, 0.55)" : "rgba(20, 60, 90, 0.38)"; c.beginPath(); c.arc(x + 25, y + 25, st.b[m.t] ? 22 : 8, 0, 7); c.fill(); } // where it can go
+  c.font = "700 9px Figtree, sans-serif"; c.fillStyle = "rgba(40,30,20,0.7)"; c.textAlign = "left"; c.textBaseline = "top"; for (let i = 0; i < 8; i++) { const f = CH.me === "w" ? i : 7 - i; c.fillText("abcdefgh"[f], i * 50 + 2, 400 - 11); c.fillText(String(CH.me === "w" ? 8 - i : i + 1), 2, i * 50 + 2); } // coordinates
+} // end chDraw
+function arenaWire() { // buttons, touch, keyboard and network for the game screen (once)
+  $("arClose").onclick = arenaClose; $("arResign").onclick = () => { if (ARENA.over) return; if (ARENA.vs === "p") relaySend({ g: "resign" }); arenaResult("lose", "You resigned."); }; addEventListener("resize", arenaFit); // header and resizing
+  const cv2 = $("arCv"), at = (e) => { const r = cv2.getBoundingClientRect(); return { x: (e.clientX - r.left) / ARENA.sc, y: (e.clientY - r.top) / ARENA.sc }; }; // pointer in game units
+  cv2.addEventListener("pointerdown", (e) => { if (!ARENA.on) return; e.preventDefault(); const p = at(e); if (ARENA.game === "ch") { chTap(p.x, p.y); return; } fbJoy = { on: true, ox: p.x, oy: p.y, x: p.x, y: p.y, id: e.pointerId }; try { cv2.setPointerCapture(e.pointerId); } catch (er) {} }); // chess tap, or start the joystick
+  cv2.addEventListener("pointermove", (e) => { if (fbJoy && fbJoy.on && e.pointerId === fbJoy.id) { const p = at(e); fbJoy.x = p.x; fbJoy.y = p.y; } }); // steer
+  const up = (e) => { if (fbJoy && e.pointerId === fbJoy.id) { const moved = Math.hypot(fbJoy.x - fbJoy.ox, fbJoy.y - fbJoy.oy); if (moved < 8) FB2.kickMe = 1; fbJoy = null; } }; cv2.addEventListener("pointerup", up); cv2.addEventListener("pointercancel", up); // let go (a quick tap kicks)
+  addEventListener("keydown", (e) => { if (!ARENA.on) return; const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (ARENA.game === "fb") { if (k === " " || k === "Enter") FB2.kickMe = 1; else fbKeys[k] = true; } if (k === "Escape") arenaClose(); e.stopPropagation(); if (k.startsWith("Arrow") || k === " ") e.preventDefault(); }, true); // keys go to the game, not your character
+  addEventListener("keyup", (e) => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; delete fbKeys[k]; }, true);
+  if (relayApi()) relayApi().on(onRelay); // challenges and moves from other players
+} // end arenaWire
 
 // ================= 8-ball pool (playable, with a money bet vs the house) =================
 // ================= 8-ball pool (portrait table, player panels, aim + power controls) =================
@@ -3941,7 +4266,8 @@ function orderDelivery(name, hunger, fee) { // order fast food to your home
 const GAMELOG = [
   { icon: "🎱", name: "8-Ball Pool", where: "Tigers Sports Bar", stat: () => (s.pool || 0) + " played", to: { door: "tigers" } }, // bet frames vs the house
   { icon: "🃏", name: "Whot!", where: "Maravan Burgers", stat: () => (s.whot || 0) + " played", to: { door: "maravan" } }, // the card game, bet or friendly
-  { icon: "⚽", name: "Football Match", where: "The pitch", stat: () => (s.team ? "team " + s.team : "pick a side"), to: { x: 42.5, y: 37 } }, // team vs team, live with friends
+  { icon: "⚽", name: "Football", where: "The pitch · or challenge a player from their profile", stat: () => (s.fbGames || 0) + " played · " + (s.fbGamesW || 0) + " won", to: { x: 42.5, y: 37 } }, // 2D matches vs the computer or a player
+  { icon: "♟️", name: "Chess", where: "Chess table in the park · or challenge a player", stat: () => (s.chGames || 0) + " played · " + (s.chGamesW || 0) + " won", to: { x: 30.5, y: 25.5 } }, // chess vs the computer or a player
   { icon: "🎰", name: "Casino", where: "Wolmar Sands Resort", stat: () => (s.casino || 0) + " bets", to: { door: "resort" } }, // roulette, slots, high-roller
   { icon: "🏁", name: "Street Race", where: "Coastal Road", stat: () => (s.races || 0) + " races", to: { x: 15.5, y: 20.5 } }, // risky street racing for a pot
   { icon: "🪙", name: "Treasure Dive", where: "Dive Centre", stat: () => (s.dives || 0) + " dives", to: { door: "dive" } }  // dangerous reef dives for big payouts
@@ -4402,7 +4728,7 @@ function carsApp(box) { // show what you drive and point you to Flic Motors
 let last = performance.now(), hudTimer = 0, saveTimer = 0; // frame timing
 function frame(now) { // runs every animation frame
   const dt = Math.min(0.05, (now - last) / 1000); last = now; // seconds since the last frame
-  const paused = !$("sheet").hidden || !$("phone").hidden || !$("pool").hidden || !$("whot").hidden || introOn; // menus, the phone and the intro pause your game
+  const paused = !$("sheet").hidden || !$("phone").hidden || !$("pool").hidden || !$("whot").hidden || !$("arena").hidden || introOn; // menus, the phone and the intro pause your game
   if (!paused) { // game is running
     if (ride) { rideStep(dt); if (ride) advance(dt * 2, true); } // a trip is under way
     else if (busy) { // an action is in progress
@@ -4521,6 +4847,7 @@ $("navMap").onclick = () => openPhone("maps"); // the town map
 $("navPhone").onclick = () => openPhone(); // open the phone
 $("online").onclick = () => openPhone("players"); // the online counter opens the list of players
 $("quest").onclick = () => openPhone("goals"); // the goal card opens your goals
+arenaWire(); // football and chess: buttons, touch, keys and live challenges
 $("rideBtn").onclick = rideMenu; // ride button
 // pool buttons are wired inside the pool module
 $("wDrawBtn").onclick = whotDraw; $("wDrawPile").onclick = whotDraw; $("wConcede").onclick = () => { if (!WHOT.over) whotEnd(1); }; $("wDone").onclick = whotClose; // Whot buttons
