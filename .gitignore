@@ -7,3 +7,4 @@ auth-secret.txt
 
 # local tooling
 .claude/
+backups/
