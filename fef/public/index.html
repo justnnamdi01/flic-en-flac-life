@@ -187,6 +187,33 @@ button:focus-visible { outline: 3px solid var(--mango); outline-offset: 2px; }
 .arctrl button { border: 0; border-radius: 14px; padding: 12px 18px; font: 800 0.95rem/1 Figtree, system-ui, sans-serif; cursor: pointer; background: #ffa733; color: #10232c; }
 .arctrl button.sec { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .arctrl .kick { min-width: 120px; background: linear-gradient(180deg, #ffd23c, #ff8a3d); font-size: 1.05rem; }
+.moodchip { position: absolute; right: 10px; top: 10px; z-index: 6; display: flex; align-items: center; gap: 6px; border: 0; cursor: pointer; padding: 6px 12px 6px 8px; border-radius: 999px; font: 800 0.8rem/1 Figtree, system-ui, sans-serif; color: #10232c; background: #fffdf8; box-shadow: 0 0 0 3px var(--mc, #3fd16b), 0 6px 16px rgba(0, 0, 0, 0.3); }
+.moodchip .mci { font-size: 1.15rem; } .moodchip[hidden] { display: none; }
+.hud.needs { top: 52px !important; }
+.traitgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 10px 0 14px; }
+.traitopt { display: grid; gap: 3px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.06); color: inherit; cursor: pointer; font: inherit; }
+.traitopt .ti { font-size: 1.5rem; } .traitopt b { font-size: 0.95rem; } .traitopt small { font-size: 0.75rem; opacity: 0.8; line-height: 1.3; }
+.traitopt.on { border-color: #ffa733; background: rgba(255, 167, 51, 0.18); }
+.acttag.res { color: #1f6f3a; background: rgba(63, 209, 107, 0.18); }
+.rescard { position: relative; display: grid; gap: 4px; margin: 4px 0 12px; padding: 16px 18px; border-radius: 18px; color: #fff; background: linear-gradient(135deg, #e4151c 0%, #e4151c 25%, #1a3fa8 25%, #1a3fa8 50%, #f3c200 50%, #f3c200 75%, #1f8f4e 75%); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25); overflow: hidden; }
+.rescard::before { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(10, 20, 40, 0.72), rgba(10, 20, 40, 0.35)); }
+.rescard > * { position: relative; } .rescard small { font-size: 0.66rem; letter-spacing: 0.12em; font-weight: 800; opacity: 0.9; } .rescard b { font-size: 1.25rem; } .rescard .rcid { font-family: var(--mono, monospace); font-size: 0.8rem; opacity: 0.9; } .rescard .rcflag { position: absolute; right: 14px; top: 10px; font-size: 1.8rem; }
+.relbar { display: inline-block; width: 70px; height: 6px; border-radius: 4px; background: rgba(0, 0, 0, 0.15); overflow: hidden; vertical-align: middle; } .relbar i { display: block; height: 100%; }
+.toasts { position: absolute; left: 50%; top: 58px; transform: translateX(-50%); width: min(420px, calc(100% - 24px)); display: grid; gap: 8px; z-index: 50; pointer-events: none; }
+.tcard { pointer-events: auto; position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 11px 14px 13px 11px; border-radius: 16px; background: rgba(255, 253, 248, 0.97); color: #10232c; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32); border-left: 5px solid var(--tc); overflow: hidden; cursor: pointer; animation: tin 0.35s cubic-bezier(.2, 1.4, .4, 1); font: 600 0.9rem/1.35 Figtree, system-ui, sans-serif; }
+.tcard .ticon { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font-size: 1.15rem; background: var(--tb); }
+.tcard .tcount { font: 800 0.75rem/1 Figtree, system-ui, sans-serif; color: var(--tc); }
+.tcard .tbar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--tc); transform-origin: left; animation: tbar linear forwards; opacity: 0.7; }
+.tcard.info { --tc: #1fa5a0; --tb: rgba(31, 165, 160, 0.14); } .tcard.money { --tc: #2f9e44; --tb: rgba(47, 158, 68, 0.15); } .tcard.win { --tc: #e6a100; --tb: rgba(255, 196, 0, 0.2); } .tcard.social { --tc: #3d7be9; --tb: rgba(61, 123, 233, 0.14); } .tcard.bad { --tc: #e23b3b; --tb: rgba(226, 59, 59, 0.13); }
+.tcard.out { animation: tout 0.3s ease forwards; } .tcard.bump { animation: tbump 0.3s ease; }
+@keyframes tin { from { transform: translateY(-14px) scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes tout { to { transform: translateY(-10px); opacity: 0; } } @keyframes tbar { from { transform: scaleX(1); } to { transform: scaleX(0); } } @keyframes tbump { 50% { transform: scale(1.03); } }
+.hud.toast { display: none !important; }
+.wbcard { text-align: center; } .wbhero { font-size: 3rem; line-height: 1; margin-top: 4px; } .wbsub { opacity: 0.85; }
+.wblist { display: grid; gap: 8px; margin: 14px 0 16px; text-align: left; }
+.wbrow { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); }
+.wbrow .wbi { font-size: 1.4rem; } .wbrow .wbt { display: grid; gap: 2px; } .wbrow small { opacity: 0.75; font-size: 0.78rem; }
+@media (prefers-reduced-motion: reduce) { .tcard, .tcard.out, .tcard .tbar { animation: none; } }
 .tut { position: fixed; inset: 0; z-index: 9000; }
 .tutspot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 4px #ffa733, 0 0 0 9999px rgba(4, 16, 22, 0.62); transition: all 0.35s ease; pointer-events: none; }
 .tutspot.none { left: 50% !important; top: 42% !important; width: 0 !important; height: 0 !important; box-shadow: 0 0 0 9999px rgba(4, 16, 22, 0.62); }
@@ -519,7 +546,7 @@ const SHIRTS = ["#ffa733", "#e4572e", "#35c4bb", "#3d9be9", "#f4f1e8", "#b07be0"
 const ROLE = { // the three ways to live in Flic en Flac
   tourist: { label: "Tourist", money: 46000, weekly: 7000, info: "Rs 46,000 (about US$1,000) holiday budget. Studio costs Rs 7,000 a week. No local jobs: freelance and gigs only. Fun fills 25% faster." }, // rich but cannot take careers
   student: { label: "Student", money: 10000, weekly: 1500, info: "Rs 10,000 to start. Shared room at Rs 1,500 a week. Rs 4,500 allowance every Monday. Classes at Middlesex University on your course timetable. Part-time jobs at Saxo, Tigers, Kafe Wifi, Super U and the mall." }, // cheap rent plus allowance
-  resident: { label: "Resident", money: 4000, weekly: 2500, info: "Rs 4,000 to start. Room at Rs 2,500 a week. People know you: charisma starts at 3." } // the standard life
+  resident: { label: "Resident", money: 4000, weekly: 2500, info: "Rs 4,000 to start. Room at Rs 2,500 a week. People know you: charisma starts at 3. Resident Card: 20% off food, free buses, half-price hospital and a Rs 1,000 grant every Monday." } // the standard life
 }; // end ROLE
 const NEEDS = ["hunger", "energy", "hygiene", "bladder", "fun", "social"]; // the six needs (100 is good)
 const NEED_LABEL = { hunger: "Food", energy: "Sleep", hygiene: "Clean", bladder: "Toilet", fun: "Fun", social: "People" }; // HUD names
@@ -582,7 +609,7 @@ function load() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e
 const hour = () => (s.t % 1440) / 60; // current hour as a decimal
 const day = () => Math.floor(s.t / 1440) + 1; // current day number
 const mood = () => NEEDS.reduce((a, k) => a + s[k], 0) / 6; // average of all needs
-function toast(text) { $("toast").textContent = text; $("toast").hidden = false; toastUntil = performance.now() + 3800; try { if (typeof s === "object" && s) { (s.notifs = s.notifs || []).unshift({ m: text, at: Date.now() }); s.notifs = s.notifs.slice(0, 30); } } catch (e) {} } // show a message, and keep it in the phone's alert history
+// (toast: see "notifications" further down)
 
 // ================= map =================
 const terr = new Uint8Array(W * H); // terrain type per tile
@@ -1574,7 +1601,7 @@ const peerName = (o) => String(o.p.name || "Player").slice(0, 14); // another pl
 function peerLook(p) { return { g: p.g === "f" ? "f" : "m", skin: safeHex(p.skin, SKINS[2]), hair: safeHex(p.hcol, "#17100c"), hs: ["short", "fade", "afro", "long", "braids", "bun", "bald"].includes(p.hs) ? p.hs : "", nails: p.nails ? safeHex(p.nails, "") : "", shirt: p.shirt === "" ? "" : safeHex(p.shirt, SHIRTS[3]), pants: p.pants === "" ? "" : safeHex(p.pants, "#22364a"), cap: p.cap ? safeHex(p.cap, "") : "", shades: !!p.shades, role: ROLE[p.role] ? p.role : "resident", head: String(p.hd || "").slice(0, 20), top: String(p.tp || "").slice(0, 20), legs: String(p.lg || "").slice(0, 20), feet: String(p.ft || "").slice(0, 20) }; } // build a safe look from what a player sent
 function netSend() { // tell everyone where you are
   if (!room || !s.made) return; // offline, or still creating your character
-  const me = { name: s.name, g: s.g, skin: s.skin, shirt: s.shirt, pants: s.pants, cap: s.cap || "", shades: !!s.shades, role: s.role, x: Math.round(s.x * 50) / 50, y: Math.round(s.y * 50) / 50, face: s.face, mv: meMoving, in: roomKey(), hid: !!(ride && ride.on), uid, hs: s.hs, hcol: s.hcol, nails: s.nails, hd: s.head || "", tp: s.top || "", lg: s.legs || "", ft: s.feet || "", hp: hostingNow() ? s.hostEnd : 0, ph: s.inside === "houseparty" ? s.hpHost : "", cls: myClass(), po: busy && busy.pose ? busy.pose.k : "", pz: busy && busy.pose ? busy.pose.h : 0, dn: dancing || "", pet: s.pet ? s.pet.k : "", hg: hostingNow() ? s.genre : "", hm: s.home || 0, tm: s.team || "", mt: matchMsg() }; // your public state, including any house party you host or attend
+  const me = { name: s.name, g: s.g, skin: s.skin, shirt: s.shirt, pants: s.pants, cap: s.cap || "", shades: !!s.shades, role: s.role, x: Math.round(s.x * 50) / 50, y: Math.round(s.y * 50) / 50, face: s.face, mv: meMoving, in: roomKey(), hid: !!(ride && ride.on), uid, hs: s.hs, hcol: s.hcol, nails: s.nails, md: moodLevel(), hd: s.head || "", tp: s.top || "", lg: s.legs || "", ft: s.feet || "", hp: hostingNow() ? s.hostEnd : 0, ph: s.inside === "houseparty" ? s.hpHost : "", cls: myClass(), po: busy && busy.pose ? busy.pose.k : "", pz: busy && busy.pose ? busy.pose.h : 0, dn: dancing || "", pet: s.pet ? s.pet.k : "", hg: hostingNow() ? s.genre : "", hm: s.home || 0, tm: s.team || "", mt: matchMsg() }; // your public state, including any house party you host or attend
   for (const k of ["fb", "bb"]) if (ballDirty[k] && Date.now() - ballSent[k] > 130) { // a ball you touched needs sharing (at most 7 times a second)
     const b = BALL[k], r2 = (v) => Math.round(v * 100) / 100; // the ball and a rounding helper
     room.presence({ [k]: k === "fb" ? { x: r2(b.x), y: r2(b.y), vx: r2(b.vx), vy: r2(b.vy), t: b.t, a: b.a, b: b.b } : { x: r2(b.x), y: r2(b.y), vx: r2(b.vx), vy: r2(b.vy), t: b.t, h: b.h } }).catch(() => {}); // send where it is and how it moves
@@ -1883,7 +1910,7 @@ function phoneRender() { // draw the current phone screen
     for (const b of BUILD) prow(box, b.name, Math.round(Math.hypot(b.x + b.w / 2 - me.x, b.y + b.h - me.y)) + " blocks"); // distance to every place
   } // end maps
   if (pv.app === "wallet") { // money
-    box.append(el("div", "pbig", rs(s.money)), el("p", "pnote", "Juice balance")); // balance
+    box.append(el("div", "pbig", rs(s.money)), el("p", "pnote", "Juice balance")); if (isResident()) residentCard(box); // balance, and your Resident Card
     prow(box, "Rent", rs(s.rent) + " weekly", "Due Monday 08:00"); if (s.debt) prow(box, "Owed to landlord", rs(s.debt)); // rent and debt
     prow(box, "Groceries at home", s.meals + " meals"); prow(box, "Owned", ["bike", "scooter", "tv", "cooler", "stall"].filter((k) => s[k]).join(", ") || "old laptop"); // what you have
     if (s.stall) prow(box, "Snack stall income", "Rs 1,200 daily"); // business income
@@ -1908,7 +1935,7 @@ function phoneRender() { // draw the current phone screen
   if (pv.app === "events") prow(box, "No Tomorrow run club", s.club ? "Member" : "Join at the club sign", "Group runs Tue and Thu 06:00, Sat 07:00" + (clubRunNow() ? " · ON NOW" : "")); // run club
   if (pv.app === "events") { for (const ev of EVENTS) prow(box, ev.org, DAYS[ev.d] + " " + ev.h + ":00", doorOf(ev.venue).name + (evOn(ev) ? " · LIVE NOW" : "") + " · ticket " + rs(ev.fee)); box.append(el("p", "pnote", "Hand out flyers at the venue on the day for Rs 450.")); } // parties
   if (pv.app === "health") { // body
-    healthCard(box); // your avatar
+    healthCard(box); moodletRows(box); // your avatar and how you feel
     for (const k of NEEDS) { const r = prow(box, NEED_LABEL[k], Math.round(s[k]) + "%"), bar = el("div", "bar"), i = el("i", s[k] < 25 ? "low" : ""); i.style.width = Math.round(s[k]) + "%"; bar.append(i); bar.style.flex = "1"; bar.style.alignSelf = "center"; r.insertBefore(bar, r.lastChild); } // six needs with bars
     prow(box, "Stamina", (s.stamina || 0) + "/" + STAM_MAX, "Needs drop " + Math.round((1 - staminaMul()) * 100) + "% slower · build it at the gym"); prow(box, "Fitness", String(s.fit)); prow(box, "Mood", Math.round(mood()) + "/100"); prow(box, "Football goals / Basketball points", s.goals + " / " + s.hoops); if (s.g === "f") prow(box, "Harassed in the street / reported", s.harass + " / " + s.reported); prow(box, "Fitness / Charisma / Style", s.fit + " / " + s.cha + " / " + s.style); // stats
     prow(box, "Dog bite", s.sick ? "Infected" : s.bitten ? "Needs treatment" : "None", s.sick || s.bitten ? "Go to the Hospital" : ""); // bite status
@@ -2228,6 +2255,7 @@ function openMenu(title, acts, note) { // show the actions as a grid of cards
   const head = el("div", "menuhead"); head.append(el("h2", "", title)); if (note) head.append(el("p", "", note)); card.append(head); // title and subtitle
   const grid = el("div", "actgrid"); card.append(grid); // the 2-column grid
   for (const a of acts) { // one card per action
+    if (!a._rp) { a._rp = 1; const rp = residentPrice(a); if (rp < a.cost) { a.was = a.cost; a.cost = rp; } } // Resident Card price
     const why = a.why || (a.cost > s.money ? "Not enough money" : ""); // reason it is blocked
     const nav = !!a.go; // a navigation / sub-menu choice, not a timed activity
     const b = el("button", "actcard" + (nav ? " nav" : "")); b.type = "button"; b.disabled = !!why; // the card
@@ -2235,7 +2263,7 @@ function openMenu(title, acts, note) { // show the actions as a grid of cards
       b.append(el("span", "acticon", a.icon || actIcon(a))); // the round icon
       const meta = el("div", "actmeta"); meta.append(el("span", "acttime", a.min ? "\ud83d\udd50 " + actSecs(a) + "s" : "")); // time pill
       const earns = /earn|about rs|\+\s*rs|tips|fare|\bsell|salary|wins?\b|\bpay\b/i.test((a.info || "") + " " + (a.label || "")); // does it make money?
-      meta.append(el("span", "acttag " + (a.cost > 0 ? "cost" : earns ? "earn" : "free"), a.cost > 0 ? rs(a.cost) : earns ? "Earns" : "Free")); b.append(meta); // the tag
+      const tg = el("span", "acttag " + (a.tag ? a.tagCls || "free" : a.was ? "res" : a.cost > 0 ? "cost" : earns ? "earn" : "free"), a.tag ? a.tag : a.was ? "🪪 " + (a.cost > 0 ? rs(a.cost) : "Free") : a.cost > 0 ? rs(a.cost) : earns ? "Earns" : "Free"); if (a.was) tg.title = "Resident Card: was " + rs(a.was); meta.append(tg); b.append(meta); // the tag (and your resident saving)
       b.append(el("b", "acttitle", stripEmoji(a.label) || a.label)); // the title
       if (a.fx) { const keys = Object.keys(a.fx).filter((k) => a.fx[k]).sort((x, y) => Math.abs(a.fx[y]) - Math.abs(a.fx[x])).slice(0, 3); // the three biggest effects
         if (keys.length) { const chips = el("div", "actchips"); for (const k of keys) chips.append(el("span", "chip " + (a.fx[k] > 0 ? "up" : "down"), (a.fx[k] > 0 ? "+" : "\u2212") + (STATNAME[k] || k))); b.append(chips); } } // chips
@@ -2260,17 +2288,17 @@ function startAction(a) { // begin an action
   path = []; pending = null; // stop walking
 } // end startAction
 function finish(a) { // apply an action's results
-  s.money -= a.cost || 0; // pay
+  s.money -= a.cost || 0; if (a.was) s.resSaved = (s.resSaved || 0) + (a.was - (a.cost || 0)); // pay (and count what the Resident Card saved)
   for (const k in a.fx) s[k] = clamp(s[k] + a.fx[k] * (k === "fun" && a.fx[k] > 0 && s.role === "tourist" ? 1.25 : 1)); // change needs (tourists enjoy more)
-  toast(a.run ? a.run() : a.msg); // show what happened
+  moodFromAction(a); toast(a.run ? a.run() : a.msg); // feelings, then show what happened
   if (busy && busy.from) { s.x = busy.from[0]; s.y = busy.from[1]; } // stand back up where you were
   busy = null; save(); // done, store
 } // end finish
 function useNear() { // press E or the yellow button
   if (!near || busy || ride) return; // nothing to use
   if (near.sport) { sportAction(); return; } // kick the football or shoot the basketball
-  if (near.peerId) { openPhone("thread", near.peerId); return; } // message a real player
-  if (near.npc) { openMenu(near.npc.name, chatActs(near.npc)); return; } // talk to a person
+  if (near.peerId) { peerSocial(near.peerId); return; } // interact with a real player
+  if (near.npc) { npcSocial(near.npc); return; } // interact with a neighbour
   if (near.enter) { enterBuilding(near.enter); return; } // go inside a building
   if (near.exit) { leaveBuilding(); return; } // leave the building
   const acts = near.acts(); if (!Array.isArray(acts)) return; // what this thing offers (some open their own screen)
@@ -2324,7 +2352,7 @@ function openCreate() { // the "who are you" screen
     { const P = pieceSet(myLook()); for (const k of SLOTS) s.wardrobe[pieceKey(P.g, k, P[k])] = 1; } // your starting clothes are yours to keep
     s.made = true; s.joined = s.joined || Date.now(); s.day0 = day(); s.permit = day() + permDays(); save(); closeMenu(); // done, start playing
     toast("Bonzour " + s.name + ". Your room is paid until Monday. Go find work, or a party."); // welcome
-    if (!s.tutDone) setTimeout(tutStart, 900); // first time: the guided tour
+    setTimeout(() => traitPicker(() => { if (!s.tutDone) setTimeout(tutStart, 500); }), 600); // first time: pick traits, then the guided tour
   }; // end start
   card.appendChild(go); // add the button
   $("sheet").hidden = false; // show the screen (game stays paused)
@@ -2376,6 +2404,7 @@ function advance(min, decay) { // move the clock forward
   if (mark(rentAt)) { // rent day
     s.rents++; // count this rent
     if (s.role === "student") { allowance(); s.skips = 0; } // student allowance, cut Rs 300 per missed class
+    if (isResident()) { s.money += 1000; txn("Solidarity grant", 1000); toast("💵 Government solidarity grant: +Rs 1,000 (Resident Card)."); } // the weekly grant, before rent
     if (s.money >= s.rent) { s.money -= s.rent; txn("Rent", -s.rent); toast("Rent paid: " + rs(s.rent) + "."); } // pay if you can
     else { // you cannot pay: you get kicked out
       if (s.debt > 0 && (s.tv || s.bed)) { s.tv = false; s.bed = false; toast("Second missed rent. The landlord kept your TV and mattress."); } // a second miss costs you your things
@@ -2404,7 +2433,7 @@ function advance(min, decay) { // move the clock forward
   if (mark(Math.floor(s.t / 1440) * 1440)) permitTick(day()); // once a world day: permit warnings and overstay fines
 } // end advance
 function crisis() { // what happens when a need hits zero
-  if (s.hunger <= 0) { s.money = Math.max(0, s.money - 800); s.hunger = 50; s.energy = clamp(s.energy + 20); advance(180, false); toast("You fainted from hunger. Clinic bill: Rs 800."); } // starving
+  if (s.hunger <= 0) { const bill = isResident() ? 400 : 800; s.money = Math.max(0, s.money - bill); addMoodlet("fainted", "Fainted from hunger", -3, 240, "miserable"); s.hunger = 50; s.energy = clamp(s.energy + 20); advance(180, false); toast("You fainted from hunger. Clinic bill: " + rs(bill) + (isResident() ? " (half price, Resident Card)." : ".")); } // starving
   else if (s.bladder <= 0) { s.bladder = 100; s.hygiene = 5; s.fun = clamp(s.fun - 20); toast("Too late. You need a shower now."); } // accident
   else if (s.energy <= 0) startAction(A("Passed out", "", 240, 0, { energy: 35, hygiene: -15 }, { msg: "You passed out where you stood for four hours." })); // exhausted
 } // end crisis
@@ -2662,7 +2691,7 @@ function hud() { // refresh the text panels
   $("online").className = "online" + (room ? " live" : ""); $("online").innerHTML = "<i></i>"; $("online").append(room ? String(on) : "solo"); // live counter with a green dot
   $("online").title = room ? "Tap to see who is online" : "No live connection: you are playing alone"; // tooltip
   const mcl = myClass(); if (s.made && mcl !== s.cls) { if (mcl) toast("New class: " + CLASSES[mcl].icon + " " + CLASSES[mcl].name + ". " + CLASSES[mcl].perk + "."); s.cls = mcl; save(); } // class changes
-  questCheck(); questCard(); // the goal card
+  questCheck(); questCard(); moodChip(); // the goal card and your mood
   const liveM = match.on && Date.now() < match.end + 2000; $("matchhud").hidden = !liveM; // show the scoreboard only during a match
   if (liveM) { const mh = $("matchhud"); mh.innerHTML = ""; const dot = (c) => { const i = el("i"); i.style.background = c; return i; }; mh.append(dot(KIT.W), el("span", "", "West " + BALL.fb.a), el("span", "", "–"), el("span", "", BALL.fb.b + " East"), dot(KIT.E), el("span", "clk", "⏱ " + fmtClock(match.end - Date.now())), el("span", "", s.team ? "· You: " + teamName(s.team) : "· tap ⚽ to join")); } // score, clock and your side
   if (performance.now() > toastUntil) $("toast").hidden = true; // hide old toasts
@@ -3090,9 +3119,10 @@ function personAt(id, L, x, z, face, moving, opt) { // show one person this fram
   if (p.sync) { p.sync(moving, !!(opt && ((opt.pose && POSES.includes(opt.pose.k)) || GENRES[opt.dance]))); const lx = p.parts.legL.rotation.x; if (lx < -1) p.g.position.y += (0.52 - p.hip) * Math.min(1, -lx / 1.5); } // real models: move the arm bones, and lift seated people whose legs are shorter than the simple ones
   const tag = (opt && opt.name) || ""; if (tag) { if (!p.label) { p.label = sprite(textTex(" ", null, "#ffffff"), 0.26, true); R.dyn.add(p.label); } setSpriteText(p.label, tag, "rgba(6,28,40,0.75)", opt.real ? "#ffd23c" : "#ffffff", 0.26); { const lk = R.lk || 1; p.label.scale.set(0.26 * p.label.material.map.userData.aspect * lk, 0.26 * lk, 1); } p.label.position.set(x, 1.85, z); p.label.visible = true; } else if (p.label) p.label.visible = false; // name above the head
   const bub = (opt && opt.bubble) || ""; if (bub) { if (!p.bub) { p.bub = sprite(textTex(" ", "#ffffff", "#14181c"), 0.3, true); R.dyn.add(p.bub); } setSpriteText(p.bub, bub.length > 30 ? bub.slice(0, 29) + "…" : bub, "#ffffff", "#14181c", 0.3); p.bub.position.set(x, 2.2, z); p.bub.visible = true; } else if (p.bub) p.bub.visible = false; // speech bubble
-  if (opt && opt.me) { if (!p.arrow) { p.arrow = mesh(new THREE.ConeGeometry(0.1, 0.2, 4), new THREE.MeshBasicMaterial({ color: 0xffa733 }), 0, 0, 0, R.dyn, false); p.arrow.rotation.x = Math.PI; } p.arrow.position.set(x, 1.72 + Math.sin(performance.now() / 300) * 0.05, z); p.arrow.visible = true; } // orange arrow over you
+  if (opt && (opt.me || opt.real)) { const lvl = opt.me ? moodLevel() : Math.max(-2, Math.min(2, opt.md | 0)), pb = plumbobFor(p, lvl), now2 = performance.now(); pb.position.set(x, (opt.swim ? -0.62 : 0) + 2.18 + Math.sin(now2 / 450) * 0.05, z); pb.rotation.y = now2 / 600; } else if (p.plumb) p.plumb.visible = false; // the Sims plumbob, coloured by mood
+  if (p.arrow) p.arrow.visible = false; // (the old orange arrow over you: the plumbob does this job now)
 } // end personAt
-function hideUnused() { for (const id in PETM) if (PETM[id].seen !== R.frame) PETM[id].g.visible = false; for (const id in PP) { const p = PP[id]; if (p.seen !== R.frame) { p.g.visible = false; if (p.label) p.label.visible = false; if (p.bub) p.bub.visible = false; if (p.arrow) p.arrow.visible = false; } } } // hide people not drawn this frame
+function hideUnused() { for (const id in PETM) if (PETM[id].seen !== R.frame) PETM[id].g.visible = false; for (const id in PP) { const p = PP[id]; if (p.seen !== R.frame) { p.g.visible = false; if (p.plumb) p.plumb.visible = false; if (p.label) p.label.visible = false; if (p.bub) p.bub.visible = false; if (p.arrow) p.arrow.visible = false; } } } // hide people not drawn this frame
 
 function makeCar(v) { // a vehicle model pointing along +x
   const gr = new THREE.Group(), L = v.len, hgt = v.bus ? 1.1 : 0.45; // length and body height
@@ -3247,7 +3277,7 @@ function render3d(dt) { // draw one 3D frame
     { const vg = venueGenre(), st = CLUB[s.inside] && vg ? ROOM[s.inside].find((o) => o.kind === "dance") : null; if (st) { R.party.forEach((l, i) => { l.position.set(st.x + Math.cos(now / 500 + i * 2) * 2.5, 2.4, st.y - 0.6 + Math.sin(now / 600 + i * 2) * 1.8); l.intensity = 1.5; }); [[-0.6, -1.15], [0.6, -1.15], [-1.25, -0.35], [1.25, -0.35]].forEach(([dx, dz], i) => personAt("cd" + i, NPC[(i * 3 + 2) % NPC.length].look, st.x + dx, st.y + dz, i < 2 ? 0 : i === 2 ? 3 : 2, false, { dance: vg })); } } // club night: lights and a crowd on the floor
     const st0 = ROOM[s.inside][0]; if (["counter", "bar", "freezer"].includes(st0.kind)) { const b = BUILD.find((q) => q.id === s.inside) || {}; personAt("staff_" + s.inside, { g: (b.x || 1) % 2 ? "f" : "m", skin: SKINS[((b.x || 1) + (b.y || 1)) % 5], hair: "#17100c", shirt: b.roofCol || "#3d9be9", pants: "#22364a", role: "resident" }, st0.x + 0.8, st0.y - 1.55, 0, false); } // staff behind the counter
     if (s.inside === "mall") for (let i = 0; i < 5; i++) personAt("shop" + i, NPC[i].look, 2 + ((now / 1000 * 1.2 + i * 3.7) % 16), 5 + (i % 3) * 1.1, 3, true); // shoppers walking through
-    for (const k in others) { const o = others[k]; if (o.p.in === s.inside && (s.inside !== "houseparty" || o.p.ph === s.hpHost)) personAt("peer" + k, peerLook(o.p), o.x, o.y, o.p.face | 0, !!o.p.mv, { dance: o.p.dn, pose: POSES.includes(o.p.po) ? { k: o.p.po, h: Math.max(-0.5, Math.min(1, Number(o.p.pz) || 0)) } : null, name: peerName(o) + relTag(o) + clsTag(o.p.cls), real: true, bubble: o.until > now ? o.bubble : "" }); } // real players in here
+    for (const k in others) { const o = others[k]; if (o.p.in === s.inside && (s.inside !== "houseparty" || o.p.ph === s.hpHost)) personAt("peer" + k, peerLook(o.p), o.x, o.y, o.p.face | 0, !!o.p.mv, { dance: o.p.dn, pose: POSES.includes(o.p.po) ? { k: o.p.po, h: Math.max(-0.5, Math.min(1, Number(o.p.pz) || 0)) } : null, name: peerName(o) + relTag(o) + clsTag(o.p.cls), real: true, md: o.p.md, bubble: o.until > now ? o.bubble : "" }); } // real players in here
     personAt("me", myLook(), s.x, s.y, s.face, meMoving, { me: true, dance: dancing, pose: busy && busy.pose, name: myClass() ? CLASSES[myClass()].icon + " " + CLASSES[myClass()].name : "", bubble: myBubble.until > now ? myBubble.text : busy && busy.pose && busy.pose.k === "sleep" ? "💤 z z z" : "" }); // you
     for (const id of ["fb", "bb"]) R[id === "fb" ? "fball" : "bball"].visible = false; for (const m of R.carM || []) m.visible = false; if (R.rideM) R.rideM.visible = false; for (const m of R.dogM || []) m.visible = false; // hide outdoor things
     pets3d(); hideUnused(); R.renderer.render(R.scene, R.camera); return; // draw the room
@@ -3264,8 +3294,8 @@ function render3d(dt) { // draw one 3D frame
   if (!R.carM) R.carM = CARS.map((cc) => makeCar(cc)); CARS.forEach((cc, i) => placeCar(R.carM[i], cc.v ? cc.lane : cc.a + cc.len / 2, cc.v ? cc.a + cc.len / 2 : cc.lane, !!cc.v, false)); R.carM.forEach((m) => (m.visible = true)); // background traffic
   if (ride) { if (!R.rideM || R.rideKind !== ride.kind) { if (R.rideM) R.dyn.remove(R.rideM); R.rideM = makeCar(ride.v); R.rideKind = ride.kind; } R.rideM.visible = true; placeCar(R.rideM, ride.x, ride.y, ride.vert, ride.rev); } else if (R.rideM) R.rideM.visible = false; // your ride
   if (!R.dogM) R.dogM = DOGS.map((d) => makeDog(d.col)); DOGS.forEach((d, i) => { const m = R.dogM[i]; m.visible = true; m.position.set(d.x, 0, d.y); m.rotation.y = d.dir > 0 ? 0 : Math.PI; m.position.y = d.chase > 0 ? Math.abs(Math.sin(now / 60)) * 0.08 : 0; }); // street dogs (they bounce when chasing)
-  for (const n of NPC) personAt("npc" + n.name, n.look, n.x, n.y, n.face, n.path.length > 0, { name: Math.hypot(n.x - s.x, n.y - s.y) < 3 ? n.name + ((s.friends[n.name] || 0) >= 3 ? " ♥" : "") : "", swim: inLagoon(n.x, n.y) }); // neighbours
-  for (const k in others) { const o = others[k]; if (!o.p.in && !o.p.hid) personAt("peer" + k, kit(peerLook(o.p), o.p.tm, o.x, o.y), o.x, o.y, o.p.face | 0, !!o.p.mv, { dance: o.p.dn, pose: POSES.includes(o.p.po) ? { k: o.p.po, h: Math.max(-0.5, Math.min(1, Number(o.p.pz) || 0)) } : null, name: peerName(o) + relTag(o) + clsTag(o.p.cls), real: true, bubble: o.until > now ? o.bubble : "", swim: inLagoon(o.x, o.y) }); } // other real players
+  for (const n of NPC) personAt("npc" + n.name, n.look, n.x, n.y, n.face, n.path.length > 0, { name: Math.hypot(n.x - s.x, n.y - s.y) < 3 ? n.name + ((s.friends[n.name] || 0) >= 3 ? " ♥" : "") : "", swim: inLagoon(n.x, n.y), bubble: n.sayUntil > performance.now() ? n.say : "" }); // neighbours
+  for (const k in others) { const o = others[k]; if (!o.p.in && !o.p.hid) personAt("peer" + k, kit(peerLook(o.p), o.p.tm, o.x, o.y), o.x, o.y, o.p.face | 0, !!o.p.mv, { dance: o.p.dn, pose: POSES.includes(o.p.po) ? { k: o.p.po, h: Math.max(-0.5, Math.min(1, Number(o.p.pz) || 0)) } : null, name: peerName(o) + relTag(o) + clsTag(o.p.cls), real: true, md: o.p.md, bubble: o.until > now ? o.bubble : "", swim: inLagoon(o.x, o.y) }); } // other real players
   if (run && run.group) { const el2 = (now - run.t0) / 1000; for (let k = 0; k < 4; k++) { const [rx, rz, rf] = routePoint(el2 * (4.4 + k * 0.25) + 2 - k * 1.6); personAt("runner" + k, { g: k % 2 ? "f" : "m", skin: SKINS[(k + 1) % 5], hair: "#17100c", shirt: "#15171a", pants: "#ff6a1a", role: "resident" }, rx + (k % 2 ? 0.4 : -0.4), rz, rf, true, { name: k === 0 ? "No Tomorrow" : "" }); } } // the club running with you
   if (creep) personAt("creep", creep.look, creep.x, creep.y, creep.face, creep.phase !== "talk", { bubble: creep.say }); // the man bothering you
   if (!(ride && ride.on)) personAt("me", kit(myLook(), s.team, s.x, s.y), s.x, s.y, s.face, meMoving, { me: true, dance: dancing, pose: busy && busy.pose, name: myClass() ? CLASSES[myClass()].icon + " " + CLASSES[myClass()].name : "", bubble: myBubble.until > now ? myBubble.text : busy && busy.pose && busy.pose.k === "sleep" ? "💤 z z z" : "", swim: inLagoon(s.x, s.y) }); // you (hidden while inside a vehicle)
@@ -3415,6 +3445,7 @@ function policeActs() { // the police station
 function gotSig2(id, o, sg) { // hangouts, treats and crime between players (true if handled)
   const nm = peerName(o), t = sg.type; // who, what
   const note = (text, extra) => { const m = Object.assign({ from: nm, text, me: false }, extra || {}); (threads[id] = threads[id] || []).push(m); if (!$("phone").hidden && pv.app === "thread" && pv.arg === id) addBubble(m); else { unread++; setBadge(); } }; // add to your chat with them
+  if (t === "soc") { gotSoc(id, o, sg.kind); return true; } // a social interaction
   if (t === "hang" && HANG[sg.kind]) { note(nm + " asked you out: " + HANG[sg.kind] + " at " + doorOf(sg.kind).name + ".", { hang: sg.kind, peer: id }); toast(nm + " asked you out for " + HANG[sg.kind] + ". Open Messages to answer."); return true; } // an invite
   if (t === "hangyes" && HANG[sg.kind]) { s.plan = { peer: id, uid: o.p.uid || "", name: nm, place: sg.kind, at: Date.now() }; save(); toast(nm + " said yes! Meet at " + doorOf(sg.kind).name + "."); return true; } // accepted
   if (t === "hangno") { toast(nm + " can't make it this time."); return true; } // declined
@@ -3703,6 +3734,196 @@ function matchTick() { // called each frame: run the clock
 } // end matchTick
 function footballMenu() { gameMenuFor("fb"); } // the pitch: 2D matches against the computer or a player
 
+// ================= Sims-style life: traits, moodlets, mood and the plumbob =================
+const TRAITS = { // pick three when you are born; each one changes how life feels
+  foodie: { i: "🍲", n: "Foodie", d: "Good food makes you much happier" },
+  party: { i: "🎉", n: "Party Animal", d: "Parties and dancing give a big boost" },
+  bookworm: { i: "📚", n: "Bookworm", d: "Loves studying, reading and chess" },
+  gym: { i: "💪", n: "Gym Rat", d: "Workouts and sport make you feel pumped" },
+  romantic: { i: "💘", n: "Romantic", d: "Flirting works better; love means more" },
+  charmer: { i: "😎", n: "Charmer", d: "Jokes and compliments land more often" },
+  lazy: { i: "🛋️", n: "Lazy", d: "Naps and lounging feel amazing; work drains you" },
+  neat: { i: "🧼", n: "Neat Freak", d: "Loves showers; hates being dirty" },
+  hothead: { i: "😤", n: "Hothead", d: "Arguments feel good; losing makes you furious" },
+  beach: { i: "🏝️", n: "Beach Bum", d: "Happy whenever you are on the sand or in the lagoon" }
+}; // end TRAITS
+const hasTrait = (k) => (s.traits || []).includes(k); // do you have this trait?
+const EMO = { // emotions: icon, colour of the plumbob, word
+  happy: ["😊", "#3fd16b", "Happy"], great: ["😄", "#2fe37a", "Very happy"], fine: ["🙂", "#a6e05a", "Fine"], flirty: ["😍", "#ff6fb1", "Flirty"], confident: ["😎", "#3fd16b", "Confident"],
+  energized: ["⚡", "#ffb020", "Energized"], playful: ["🤪", "#3fd16b", "Playful"], focused: ["🧠", "#58b7ff", "Focused"], uncomfortable: ["😕", "#ffc53d", "Uncomfortable"],
+  sad: ["😢", "#5c8dff", "Sad"], angry: ["😡", "#ff4d4d", "Angry"], tense: ["😬", "#ff8a3d", "Tense"], tired: ["🥱", "#c9a0ff", "Tired"], miserable: ["😣", "#ff4d4d", "Miserable"]
+}; // end EMO
+function addMoodlet(k, t, v, mins, emo) { // a feeling that lasts a while (game minutes), replacing an older one of the same kind
+  const L = (s.moodlets = (s.moodlets || []).filter((m) => m.k !== k && m.until > s.t)); L.unshift({ k, t, v, until: s.t + mins, emo: emo || "" }); s.moodlets = L.slice(0, 10); // keep the newest ten
+} // end addMoodlet
+function needMoodlets() { // feelings that come straight from your needs (not stored)
+  const out = [], n = (k) => s[k], add = (t, v, emo) => out.push({ t, v, emo, need: 1 }); // helper
+  if (n("hunger") < 20) add("Starving", -3, "uncomfortable"); else if (n("hunger") < 35) add("Hungry", -1, "uncomfortable");
+  if (n("energy") < 20) add("Exhausted", -2, "tired"); else if (n("energy") < 35) add("Sleepy", -1, "tired");
+  if (n("hygiene") < 30) add(hasTrait("neat") ? "Grossed out (Neat Freak)" : "Stinky", hasTrait("neat") ? -3 : -1, "uncomfortable");
+  if (n("bladder") < 20) add("Bursting for the toilet", -2, "uncomfortable");
+  if (n("fun") < 25) add("Bored", -1, "sad"); if (n("social") < 25) add("Lonely", -2, "sad");
+  if (NEEDS.every((k) => s[k] >= 70)) add("Feeling great", 2, "happy");
+  if (hasTrait("beach") && !s.inside && (terr[Math.floor(s.y) * W + Math.floor(s.x)] === 2 || inLagoon(s.x, s.y))) add("Sun-kissed (Beach Bum)", 2, "happy");
+  if (s.debt > 0) add("Locked out of home", -2, "tense"); if (s.sick) add("Infected bite", -2, "uncomfortable");
+  return out;
+} // end needMoodlets
+function allMoodlets() { return (s.moodlets || []).filter((m) => m.until > s.t).concat(needMoodlets()); } // every feeling right now
+function moodScore() { return allMoodlets().reduce((a, m) => a + m.v, 0); } // the sum of your feelings
+function myEmotion() { // your main emotion: the strongest feeling sets its flavour, the total sets how good it is
+  const L = allMoodlets(), sc = L.reduce((a, m) => a + m.v, 0); if (!L.length) return "fine"; // nothing much going on
+  const top = L.slice().sort((a, b) => Math.abs(b.v) - Math.abs(a.v))[0]; // the strongest
+  if (sc <= -4) return top.emo === "angry" ? "angry" : "miserable"; if (sc < 0) return top.v < 0 && EMO[top.emo] ? top.emo : "uncomfortable"; // bad
+  if (top.v > 0 && EMO[top.emo] && top.emo !== "happy") return top.emo; return sc >= 4 ? "great" : sc >= 1 ? "happy" : "fine"; // good
+} // end myEmotion
+const moodLevel = () => { const sc = moodScore(); return sc >= 4 ? 2 : sc >= 1 ? 1 : sc >= 0 ? 0 : sc >= -3 ? -1 : -2; }; // -2 miserable .. 2 very happy
+const PLUMB_COL = { "-2": "#ff4d4d", "-1": "#ffc53d", 0: "#a6e05a", 1: "#3fd16b", 2: "#2fe37a" }; // plumbob colour by mood level
+function moodFromAction(a) { // feelings from what you just did
+  const L = a.label || "", fx = a.fx || {}, f = (k) => fx[k] || 0; // what it was
+  if (f("hunger") >= 25) addMoodlet("meal", hasTrait("foodie") ? "Delicious food (Foodie)" : "Good meal", hasTrait("foodie") ? 3 : 1, 180, "happy");
+  if (f("hygiene") >= 50) addMoodlet("clean", hasTrait("neat") ? "Squeaky clean (Neat Freak)" : "Fresh and clean", hasTrait("neat") ? 3 : 1, 240, "confident");
+  if (f("energy") >= 60) addMoodlet("rest", hasTrait("lazy") ? "So comfy (Lazy)" : "Well rested", hasTrait("lazy") ? 3 : 2, 360, "energized"); else if (f("energy") >= 20 && hasTrait("lazy")) addMoodlet("nap", "Lovely nap (Lazy)", 2, 180, "happy");
+  if (f("fun") >= 20) addMoodlet("fun", "Had a blast", 1, 180, "playful"); if (f("social") >= 20) addMoodlet("company", "Good company", 1, 180, "happy");
+  if (/Workout|gym|Jog|laps|Run|train|Lift|swim/i.test(L)) addMoodlet("pumped", hasTrait("gym") ? "Pumped (Gym Rat)" : "Got a workout in", hasTrait("gym") ? 3 : 1, 240, "energized");
+  if (/Study|Read|lecture|Attend|library|book/i.test(L)) addMoodlet("study", hasTrait("bookworm") ? "Brain food (Bookworm)" : "Learned something", hasTrait("bookworm") ? 3 : 1, 240, "focused");
+  if (/Dance|party|Bottle|club|Pint|Cocktail|Drinks/i.test(L)) addMoodlet("party", hasTrait("party") ? "Partied hard (Party Animal)" : "Out on the town", hasTrait("party") ? 3 : 1, 240, "playful");
+  if (/shift|Work|Sell|Crew|Hand out|freelance/i.test(L) && hasTrait("lazy")) addMoodlet("work", "Overworked (Lazy)", -2, 180, "tense");
+} // end moodFromAction
+function plumbobFor(p, lvl) { // the green diamond above a head, coloured by mood
+  if (!p.plumb) { const m = mesh(new THREE.OctahedronGeometry(0.13, 0), new THREE.MeshBasicMaterial({ color: 0x3fd16b, transparent: true, opacity: 0.92 }), 0, 0, 0, R.dyn, false); m.scale.set(0.8, 1.45, 0.8); p.plumb = m; } // made once
+  p.plumb.material.color.set(PLUMB_COL[lvl] || PLUMB_COL[0]); p.plumb.visible = true; return p.plumb; // tinted
+} // end plumbobFor
+function moodChip() { // the mood pill at the top of the needs panel
+  let c = $("moodChip"); if (!c) { c = document.createElement("button"); c.id = "moodChip"; c.type = "button"; c.className = "moodchip"; c.onclick = () => openPhone("health"); $("needs").parentNode.insertBefore(c, $("needs")); } // made once, opens your feelings
+  c.hidden = !s.made || !$("phone").hidden; const e = EMO[myEmotion()], lvl = moodLevel(); c.style.setProperty("--mc", PLUMB_COL[lvl]); c.textContent = ""; c.append(el("span", "mci", e[0]), el("span", "mct", e[2])); // icon and word
+} // end moodChip
+function moodletRows(box) { // your feelings listed in the Health app
+  const L = allMoodlets().sort((a, b) => b.v - a.v), e = EMO[myEmotion()]; box.append(el("p", "pnote", "Mood: " + e[0] + " " + e[2] + " (" + (moodScore() >= 0 ? "+" : "") + moodScore() + ")")); // headline
+  if (!L.length) box.append(el("p", "pnote", "Nothing special. Do things you enjoy to feel good!")); // none
+  for (const m of L) prow(box, m.t, (m.v > 0 ? "+" : "") + m.v, m.need ? "From your needs" : Math.max(1, Math.round((m.until - s.t) / 60)) + "h left"); // one row each
+  if ((s.traits || []).length) box.append(el("p", "pnote", "Traits: " + s.traits.map((k) => TRAITS[k].i + " " + TRAITS[k].n).join(" · "))); // your traits
+} // end moodletRows
+function traitPicker(after) { // choose up to three traits (at creation, or once for older characters)
+  const pick = new Set(s.traits || []), card = $("card"); card.className = "card"; card.innerHTML = ""; card.append(el("h2", "", "Pick 3 traits"), el("p", "", "Traits shape your character: what makes them happy, what they're good at, how others react.")); // header
+  const grid = el("div", "traitgrid"), go = el("button", "start", "Done"); go.type = "button"; // the grid and the button
+  const draw = () => { grid.innerHTML = ""; for (const k in TRAITS) { const t = TRAITS[k], b = el("button", "traitopt" + (pick.has(k) ? " on" : "")); b.type = "button"; b.append(el("span", "ti", t.i), el("b", "", t.n), el("small", "", t.d)); b.onclick = () => { if (pick.has(k)) pick.delete(k); else if (pick.size < 3) pick.add(k); draw(); }; grid.append(b); } go.disabled = pick.size !== 3; go.textContent = pick.size === 3 ? "Done" : "Choose " + (3 - pick.size) + " more"; }; // redraw
+  go.onclick = () => { s.traits = [...pick]; save(); $("sheet").hidden = true; toast("Traits set: " + s.traits.map((k) => TRAITS[k].i + " " + TRAITS[k].n).join(", ") + "."); if (after) after(); }; // keep them
+  card.append(grid, go); draw(); $("sheet").hidden = false; // show it
+} // end traitPicker
+
+// ================= social interactions, with friendship and romance =================
+const SOC = [ // [id, icon, label, minutes, friendship gain, romance gain, needs friendship, needs romance, base chance, kind]
+  ["chat", "💬", "Chat", 15, 6, 0, -100, 0, 0.95, "friendly"], ["joke", "😂", "Tell a joke", 10, 8, 0, -30, 0, 0.7, "funny"], ["compliment", "🌟", "Compliment", 10, 7, 2, -30, 0, 0.8, "friendly"],
+  ["gossip", "🤫", "Gossip", 15, 6, 0, 15, 0, 0.75, "friendly"], ["deep", "🫶", "Deep talk", 30, 12, 0, 35, 0, 0.8, "friendly"], ["hug", "🤗", "Hug", 5, 8, 2, 30, 0, 0.75, "friendly"],
+  ["flirt", "😏", "Flirt", 10, 2, 9, 15, 0, 0.6, "romantic"], ["kiss", "💋", "Kiss", 5, 2, 12, 30, 35, 0.65, "romantic"],
+  ["prank", "🙃", "Prank", 10, 6, 0, 10, 0, 0.5, "funny"], ["argue", "😠", "Argue", 10, -14, -4, -100, 0, 1, "mean"], ["insult", "🤬", "Insult", 5, -22, -8, -100, 0, 1, "mean"]
+]; // end SOC
+const relOf = (key) => { const R2 = (s.rels2 = s.rels2 || {}); return R2[key] || (R2[key] = { f: 0, r: 0 }); }; // friendship -100..100, romance 0..100
+const relWords = (r) => (r.r >= 60 ? "Sweethearts" : r.r >= 30 ? "Crush" : r.f >= 70 ? "Best friends" : r.f >= 40 ? "Friends" : r.f >= 15 ? "Acquaintances" : r.f <= -40 ? "Enemies" : r.f <= -15 ? "Disliked" : "Strangers"); // the label
+function bar(v, max, col) { const b = el("span", "relbar"), i = el("i"); i.style.width = Math.max(0, Math.min(100, v / max * 100)) + "%"; i.style.background = col; b.append(i); return b; } // a little meter
+function socChance(row, rel) { // how likely an interaction is to land
+  let c = row[8] + moodScore() * 0.025 + Math.min(20, s.cha || 0) * 0.01 + Math.max(-0.2, Math.min(0.2, rel.f / 300)); // base, your mood, charisma, how well you know them
+  if (row[9] === "romantic") c += (hasTrait("romantic") ? 0.15 : 0) + rel.r / 400; if ((row[0] === "joke" || row[0] === "compliment") && hasTrait("charmer")) c += 0.15; if (row[0] === "prank" && hasTrait("hothead")) c += 0.1; // traits
+  return Math.max(0.08, Math.min(0.97, c));
+} // end socChance
+function socResult(row, ok, name, rel) { // apply one interaction; returns what to say
+  const [id, icon, label, , fg, rg, , , , kind] = row; let df = ok ? fg : -Math.abs(Math.round(fg / 2)) - 3, dr = ok ? rg : -Math.abs(Math.round(rg / 2)); // gains, or a small loss on failure
+  if (kind === "mean") { df = fg; dr = rg; } if (hasTrait("romantic") && dr > 0) dr = Math.round(dr * 1.5); // mean always hurts; romantics feel more
+  rel.f = Math.max(-100, Math.min(100, rel.f + df)); rel.r = Math.max(0, Math.min(100, rel.r + dr)); // update
+  s.social = clamp(s.social + (kind === "mean" ? 4 : ok ? 12 : 4)); if (kind === "funny" && ok) s.fun = clamp(s.fun + 8); // needs
+  if (ok && kind === "romantic") addMoodlet("flirty", (id === "kiss" ? "A sweet kiss with " : "Flirting with ") + name, id === "kiss" ? 3 : 2, 180, "flirty"); // feelings
+  else if (ok && kind === "funny") addMoodlet("laugh", "Good laugh with " + name, 1, 120, "playful"); else if (ok) addMoodlet("social", "Nice time with " + name, 1, 120, "happy");
+  else if (kind === "mean") addMoodlet("argue", hasTrait("hothead") ? "Let off steam (Hothead)" : "Had a fight with " + name, hasTrait("hothead") ? 1 : -2, 180, hasTrait("hothead") ? "energized" : "angry");
+  else addMoodlet("awkward", "Awkward moment with " + name, -1, 120, "tense");
+  if (ok && (id === "joke" || id === "compliment") && Math.random() < 0.3) s.cha++; // a little charisma
+  const said = { chat: ["had a lovely chat", "ended up talking for ages"], joke: ["cracked up laughing", "didn't get the joke"], compliment: ["blushed and smiled", "looked a bit suspicious"], gossip: ["loved the gossip", "didn't want to gossip"], deep: ["opened up to you", "changed the subject"], hug: ["hugged you back", "stepped away awkwardly"], flirt: ["flirted right back 😍", "laughed it off"], kiss: ["kissed you back 💕", "turned their cheek"], prank: ["burst out laughing", "was NOT amused"], argue: ["argued back", ""], insult: ["is furious with you", ""] }[id];
+  return icon + " " + name + " " + (ok || kind === "mean" ? said[0] : said[1]) + ". " + (df >= 0 ? "+" : "") + df + " friendship" + (dr ? " · " + (dr > 0 ? "+" : "") + dr + " romance" : "") + " · now " + relWords(rel) + ".";
+} // end socResult
+function socialActs(name, key, onDo, extra, after) { // the interaction menu for a person (a neighbour or a real player): shortcuts first, then interactions, then extras
+  const rel = relOf(key), acts = []; // how you know them
+  for (const row of SOC) { const [id, icon, label, mins, , , needF, needR, , kind] = row; const why = rel.f < needF ? "Needs friendship " + needF + " (now " + rel.f + ")" : rel.r < needR ? "Needs romance " + needR + " (now " + rel.r + ")" : ""; // locked until you know them better
+    const pct = Math.round(socChance(row, rel) * 100); acts.push(A(icon + " " + label, kind === "mean" ? "Hurts the friendship" : pct + "% chance it goes well", mins, 0, {}, { why, icon, tag: kind === "mean" ? "Mean" : pct + "% ✓", tagCls: kind === "mean" ? "cost" : pct >= 70 ? "earn" : "free", run() { const ok = kind === "mean" || Math.random() < socChance(row, rel); const msg = socResult(row, ok, name, rel); if (onDo) onDo(row, ok); save(); return msg; } })); } // each one
+  return (extra || []).concat(acts, after || []);
+} // end socialActs
+function socialNote(key) { const r = relOf(key); return relWords(r) + " · friendship " + r.f + " · romance " + r.r; } // the menu subtitle
+function npcSocial(n) { // talk to a neighbour
+  const say = (row, ok) => { n.say = row[1]; n.sayUntil = performance.now() + 3500; myBubble = { text: row[1], until: performance.now() + 3500 }; n.last = s.t; if (ok && row[9] !== "mean") { s.friends[n.name] = Math.max(s.friends[n.name] || 0, relOf("npc:" + n.name).f >= 40 ? 3 : (s.friends[n.name] || 0) + (row[0] === "chat" ? 1 : 0)); } }; // speech icons, and the older friend counter
+  openMenu(n.name, socialActs(n.name, "npc:" + n.name, say, [], chatActs(n).slice(chatActs0(n).length)), socialNote("npc:" + n.name)); // interactions, then anything else (like pickpocketing)
+} // end npcSocial
+function peerSocial(id) { // interact with a real player standing near you
+  const o = others[id]; if (!o) return; const nm = peerName(o), key = "p:" + relKey(o); // who
+  const send = (row, ok) => { sendSig(id, "soc", row[0] + (ok ? ":1" : ":0")); o.bubble = row[1]; o.until = performance.now() + 3500; myBubble = { text: row[1], until: performance.now() + 3500 }; }; // tell them, and show icons
+  openMenu(nm, socialActs(nm, key, send, [{ label: "💬 Message " + nm, info: "Open your chat", go: () => { closeMenu(); openPhone("thread", id); } }, { label: "👤 Profile, games and dates", info: "Challenge, invite home, ask out", go: () => { closeMenu(); openPhone("player", id); } }]), socialNote(key)); // menu
+} // end peerSocial
+function gotSoc(id, o, kind) { // a real player did something to you
+  const [k, okS] = String(kind || "").split(":"), row = SOC.find((q) => q[0] === k); if (!row) return; const nm = peerName(o), ok = okS === "1", rel = relOf("p:" + relKey(o)); // what and who
+  const [, icon, label, , fg, rg, , , , cat] = row; const df = ok || cat === "mean" ? fg : -3, dr = ok || cat === "mean" ? rg : 0; rel.f = Math.max(-100, Math.min(100, rel.f + df)); rel.r = Math.max(0, Math.min(100, rel.r + dr)); // you feel it too
+  if (ok && cat === "romantic") addMoodlet("flirty", nm + " " + (k === "kiss" ? "kissed you" : "flirted with you"), 2, 180, "flirty"); else if (cat === "mean") addMoodlet("hurt", nm + " was mean to you", -2, 180, "angry"); else if (ok) addMoodlet("social", nm + " made your day", 1, 120, "happy");
+  s.social = clamp(s.social + (cat === "mean" ? 0 : 8)); o.bubble = icon; o.until = performance.now() + 3500; save(); // needs and icons
+  toast(icon + " " + nm + ": " + label.toLowerCase() + (ok || cat === "mean" ? "" : " (it didn't land)") + " · " + relWords(rel));
+} // end gotSoc
+
+// ================= the Resident Card: government benefits for residents =================
+const RES_CARD = [["🍛", "20% off all food and drinks", "At every restaurant, stall and supermarket"], ["🚌", "Free public buses", "Show your card to the driver"], ["🏥", "Half-price hospital care", "Treatment and clinic bills"], ["💵", "Rs 1,000 solidarity grant", "Every Monday at 08:00"], ["🎟️", "Rs 200 off party tickets", "Club and event entry"]]; // the benefits
+const isResident = () => s.role === "resident"; // only residents get the card
+function residentPrice(a) { // what a resident pays for this action
+  if (!isResident() || !(a.cost > 0)) return a.cost; const L = (a.label || "") + " " + (a.info || ""); // only residents, only paid things
+  if (/^Public bus/.test(a.label || "")) return 0; // free buses
+  if (/Treat|hospital|clinic|check-up/i.test(L)) return Math.round(a.cost * 0.5); // half-price care
+  if (/ticket|entry|Get in|cover/i.test(L) && a.cost >= 300) return a.cost - 200; // party tickets
+  if ((a.fx && a.fx.hunger > 0) || /grocer|meals?\b|food|drink|coffee|juice|pint|cocktail|burger|dholl|puri|rice|gelato|coconut water/i.test(L)) return Math.round(a.cost * 0.8); // food and drinks
+  return a.cost;
+} // end residentPrice
+function residentCard(box) { // the card in the Wallet app
+  const c = el("div", "rescard"); c.append(el("small", "", "GOVERNMENT · RESIDENT CARD"), el("b", "", s.name || "Resident"), el("span", "rcid", "No. " + String(hash((s.name || "x").length * 97, (s.joined || 1) % 100000)).slice(0, 8)), el("span", "rcflag", "🪪")); box.append(c); // the card face
+  for (const [i, t, d] of RES_CARD) prow(box, i + " " + t, "", d); box.append(el("p", "pnote", "Saved so far: " + rs(s.resSaved || 0))); // benefits and savings
+} // end residentCard
+
+// ================= notifications: stacked cards with an icon and colour =================
+function toastKind(t) { // what sort of message is this?
+  if (/fainted|police|arrest|cell|kicked out|evict|robbed|pickpocketed you|bite|infected|failed|lost|not enough|can't|cannot|missed/i.test(t)) return ["bad", "⚠️"];
+  if (/goal complete|you win|won|ambition|level up|promot|new class|checkmate|🏆/i.test(t)) return ["win", "🏆"];
+  if (/\+\s*rs|sent you|grant|salary|paid you|earned|income|tips|found .* worth|refund/i.test(t)) return ["money", "💰"];
+  if (/message|invited|challenge|friend|asked you|flirt|kiss|hug|joke|party/i.test(t)) return ["social", "💬"];
+  return ["info", "🔔"];
+} // end toastKind
+const LEAD_EMOJI = /^\s*((?:[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2190}-\u{21FF}][️‍\u{1F3FB}-\u{1F3FF}]*)+)\s*/u; // an emoji at the start
+function toast(text) { // show a message as a card (and keep it in the phone's alert history)
+  text = String(text || "").trim(); if (!text) return; // nothing to say
+  try { if (typeof s === "object" && s) { (s.notifs = s.notifs || []).unshift({ m: text, at: Date.now() }); s.notifs = s.notifs.slice(0, 30); } } catch (e) {} // history
+  let box = document.getElementById("toasts"); if (!box) { box = document.createElement("div"); box.id = "toasts"; box.className = "toasts"; box.setAttribute("aria-live", "polite"); document.querySelector(".game").appendChild(box); } // the stack
+  const dup = [...box.children].find((c) => c.dataset.t === text); if (dup) { const n = (+dup.dataset.n || 1) + 1; dup.dataset.n = n; dup.querySelector(".tcount").textContent = "×" + n; dup.classList.remove("bump"); void dup.offsetWidth; dup.classList.add("bump"); clearTimeout(dup._t); dup._t = setTimeout(() => toastOut(dup), 4200); return; } // the same again: count it
+  const [kind, def] = toastKind(text), m = text.match(LEAD_EMOJI), icon = m ? m[1] : def, body = m ? text.slice(m[0].length) : text; // style and icon
+  const c = el("div", "tcard " + kind); c.dataset.t = text; c.append(el("span", "ticon", icon), el("span", "ttext", body), el("span", "tcount", ""), el("i", "tbar")); c.onclick = () => toastOut(c); // the card
+  box.prepend(c); while (box.children.length > 3) toastOut(box.lastChild, true); c._t = setTimeout(() => toastOut(c), 4200 + Math.min(3000, body.length * 25)); // newest on top, at most three
+  c.querySelector(".tbar").style.animationDuration = (4200 + Math.min(3000, body.length * 25)) + "ms"; toastUntil = performance.now() + 4200; // countdown bar
+} // end toast
+function toastOut(c, now) { if (!c || c._gone) return; c._gone = true; clearTimeout(c._t); if (now) { c.remove(); return; } c.classList.add("out"); setTimeout(() => c.remove(), 320); } // slide a card away
+
+// ================= welcome back =================
+let awayMs = 0, welcomeShown = false; // how long you were gone, and whether we said hello
+function dailyGift() { // a small present once a real day, bigger on a streak
+  const today = new Date().toDateString(); if (s.giftDay === today) return null; // already had today's
+  const y = new Date(Date.now() - 86400000).toDateString(); s.giftStreak = s.giftDay === y ? Math.min(7, (s.giftStreak || 0) + 1) : 1; s.giftDay = today; // keep the streak
+  const amt = 150 + s.giftStreak * 100; s.money += amt; txn("Daily gift (day " + s.giftStreak + ")", amt); if (s.giftStreak >= 7) addMoodlet("streak", "7-day streak!", 3, 600, "great"); save(); return { amt, streak: s.giftStreak }; // pay it
+} // end dailyGift
+function fmtAway(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + " minutes" : m < 1440 ? Math.round(m / 60) + " hours" : Math.round(m / 1440) + " days"; } // a friendly duration
+function welcomeBack() { // the card you see when you come back
+  if (welcomeShown || !s.made) return; welcomeShown = true; const gift = dailyGift(), card = $("card"); card.className = "card wbcard"; card.innerHTML = ""; // once per visit
+  const e = EMO[myEmotion()], low = NEEDS.filter((k) => s[k] < 35), q = typeof nextGoal === "function" ? nextGoal() : null; // how you are and what's next
+  card.append(el("div", "wbhero", "🌴"), el("h2", "", "Welcome back, " + (s.name || "friend") + "!"), el("p", "wbsub", awayMs > 0 ? "You were away for " + fmtAway(awayMs) + ". Here's what's new in Flic en Flac." : "Good to see you again."));
+  const list = el("div", "wblist"), row = (i, t, d) => { const r = el("div", "wbrow"); r.append(el("span", "wbi", i)); const tx = el("span", "wbt"); tx.append(el("b", "", t)); if (d) tx.append(el("small", "", d)); r.append(tx); list.append(r); }; // a line
+  if (gift) row("🎁", "Daily gift: +" + rs(gift.amt), "Day " + gift.streak + " streak" + (gift.streak < 7 ? " · come back tomorrow for more" : " · maximum streak!")); // present
+  const since = (s.notifs || []).filter((n) => n.at > Date.now() - awayMs - 60000 && n.at < Date.now() - 1000).slice(0, 4); for (const n of since) row("📬", n.m, ""); // what happened while you were gone
+  row(e[0], "You feel " + e[2].toLowerCase(), low.length ? "Low on: " + low.map((k) => NEED_ICON[k] + " " + NEED_LABEL[k]).join(", ") : "Your needs look good"); // your mood
+  if (isResident()) row("🪪", "Resident Card active", "20% off food, free buses, half-price hospital"); // perks
+  if (q) row(q.i, "Next: " + q.t, q.p); const ev = EVENTS.find((x) => (day() - 1) % 7 === x.d); if (ev) row("🎉", "Tonight: " + ev.org, doorOf(ev.venue).name + " · doors " + ev.h + ":00"); // goals and tonight
+  card.append(list); const go = el("button", "start", "Let's go! 🌴"); go.type = "button"; go.onclick = () => { $("sheet").hidden = true; if (!(s.traits || []).length) traitPicker(); }; card.append(go); $("sheet").hidden = false; // done (older characters then pick traits)
+} // end welcomeBack
+function welcomeWatch() { // wait until the intro and any menu are gone, then say hello
+  const t = setInterval(() => { if (typeof introOn !== "undefined" && introOn) return; if (!s.made) { clearInterval(t); return; } if (!$("sheet").hidden || !$("phone").hidden || !$("arena").hidden) return; clearInterval(t); if (awayMs > 20 * 60000 || (s.giftDay !== new Date().toDateString())) welcomeBack(); else if (!(s.traits || []).length) traitPicker(); }, 700); // returning players get the card; new arrivals already picked traits
+} // end welcomeWatch
+
 // ================= two-player games (football and chess): against the computer, or live against another player =================
 const ARENA = { on: false, game: "", vs: "", opp: "", oppName: "", id: "", host: false, last: 0, hb: 0, over: false, raf: 0, sc: 1, W: 360, H: 560 }; // the open game
 const relayApi = () => window.claude && window.claude.relay; // live messages to one player (self-hosted server only)
@@ -3734,6 +3955,8 @@ function arenaResult(res, text) { // the game is over: say so and reward you onc
   const prize = res === "win" ? (vsP ? 500 : { easy: 150, normal: 400, hard: 1000 }[lvl] || 0) : res === "draw" ? (vsP ? 150 : 100) : 0; // a little money for winning
   if (prize) { s.money += prize; txn((g === "fb" ? "Football" : "Chess") + (res === "win" ? " win" : " draw"), prize); } // pay
   s.fun = clamp(s.fun + (res === "win" ? 25 : 12)); s.social = clamp(s.social + (vsP ? 15 : 0)); if (vsP) { s.qActive = true; if (res === "win") s.cha++; } if (g === "fb") s.fit = s.fit + (Math.random() < 0.25 ? 1 : 0); // how it made you feel
+  const gn = g === "fb" ? "football" : "chess", fav = (g === "ch" && hasTrait("bookworm")) || (g === "fb" && hasTrait("gym")); // how it feels, more if it's your thing
+  if (res === "win") addMoodlet("game", "Won at " + gn + (fav ? " (loved it)" : ""), fav ? 3 : 2, 240, "confident"); else if (res === "lose") addMoodlet("game", hasTrait("hothead") ? "Furious about losing (Hothead)" : "Lost at " + gn, hasTrait("hothead") ? -3 : -1, 180, hasTrait("hothead") ? "angry" : "sad"); else addMoodlet("game", "A hard-fought draw", 1, 120, "happy");
   const k = g === "fb" ? "fbGames" : "chGames"; s[k] = (s[k] || 0) + 1; if (res === "win") s[k + "W"] = (s[k + "W"] || 0) + 1; save(); // records
   if (res === "win") banner(g === "fb" ? "⚽ YOU WIN!" : "♟️ CHECKMATE!", text + (prize ? " +" + rs(prize) : "")); // celebrate
   toast(text + (prize ? " +" + rs(prize) + "." : "")); // tell you
@@ -4848,6 +5071,7 @@ $("navPhone").onclick = () => openPhone(); // open the phone
 $("online").onclick = () => openPhone("players"); // the online counter opens the list of players
 $("quest").onclick = () => openPhone("goals"); // the goal card opens your goals
 arenaWire(); // football and chess: buttons, touch, keys and live challenges
+welcomeWatch(); // say hello when you come back
 $("rideBtn").onclick = rideMenu; // ride button
 // pool buttons are wired inside the pool module
 $("wDrawBtn").onclick = whotDraw; $("wDrawPile").onclick = whotDraw; $("wConcede").onclick = () => { if (!WHOT.over) whotEnd(1); }; $("wDone").onclick = whotClose; // Whot buttons
@@ -4856,7 +5080,7 @@ addEventListener("resize", resize); // keep the canvas sharp
 
 // ================= start =================
 function start(data) { // boot the game
-  { const _l = (data && data.s) || load(); loadedLocal = !!(_l && _l.made); s = Object.assign(fresh(), _l || {}); } // live state, then save, then new game
+  { const _l = (data && data.s) || load(); loadedLocal = !!(_l && _l.made); s = Object.assign(fresh(), _l || {}); awayMs = _l && _l.stamp ? Math.max(0, Date.now() - _l.stamp) : 0; } // live state, then save, then new game
   if (!Array.isArray(s.decor)) s.decor = []; if (!Array.isArray(s.decorXY)) s.decorXY = []; if (!Array.isArray(s.decorRot)) s.decorRot = []; if (!s.grantV2) { s.grantV2 = 1; if (s.made && s.role === "student") { s.money += 8500; } else if (s.made && s.role === "tourist") { s.money += 16000; } } homeSetup(); musicWire(); // top up existing students and tourists once // your apartment and the music bar
   if (!s.zv) { s.zoom = 0.5; s.zv = 1; } if (!s.mv2) { s.radio = true; s.mv2 = 1; } // older saves: start zoomed out, with music on
   for (const o of OBJ) if (["Bed", "Shower", "Toilet", "Stove", "TV"].includes(o.name)) o.show = () => false; // these now live inside your home
