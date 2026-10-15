@@ -54,6 +54,9 @@ let db = { players: {}, mail: {}, homes: dict(), auth: { bound: dict(), accounts
 try { const loaded = JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); db.players = loaded.players || {}; db.mail = loaded.mail || {}; db.homes = dict(loaded.homes); const a = loaded.auth || {}; db.auth = { bound: dict(a.bound), accounts: dict(a.accounts), names: dict(a.names) }; db.invites = dict(); for (const k in loaded.invites || {}) db.invites[k] = dict(loaded.invites[k]); } catch (e) {} // load last state (known collections only)
 const PUBLIC_COLS = ["players", "mail", "homes"];      // the only collections a tab may read (homes: which player lives at which address)
 let saveTimer = null;                                  // debounce disk writes
+const BACKUP_DIR = path.join(path.dirname(DATA_FILE), "backups"); // daily copies of everyone's progress, kept for two weeks
+function backupDaily() { try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); const f = path.join(BACKUP_DIR, "data-" + new Date().toISOString().slice(0, 10) + ".json"); if (!fs.existsSync(f)) fs.writeFileSync(f, JSON.stringify(db)); const old = fs.readdirSync(BACKUP_DIR).filter((n) => /^data-d{4}-d{2}-d{2}.json$/.test(n)).sort().slice(0, -14); for (const n of old) fs.unlinkSync(path.join(BACKUP_DIR, n)); } catch (e) { console.warn("backup failed", e.message); } }
+setTimeout(backupDaily, 60000); setInterval(backupDaily, 3600000); // a minute after start, then hourly (one file per day)
 function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { fs.writeFile(DATA_FILE, JSON.stringify(db), () => {}); }, 400); } // write at most ~2x/sec
 
 // ---------- player identity: signed keys, plus optional logins ----------
@@ -167,9 +170,13 @@ const peers = new Map();                               // peerId -> { ws, uid, p
 const subs = new Map();                                // ws -> [ { subId, col, limit, where } ]
 let peersDirty = false;                                // did the room change since the last broadcast?
 
-function send(ws, obj) { if (ws.readyState === 1) { try { ws.send(JSON.stringify(obj)); } catch (e) {} } } // one message
-function roomList() { const out = []; for (const [peer, p] of peers) out.push({ peer, kind: "viewer", presence: p.presence || {} }); return out; } // everyone online
-function broadcastPeers() { const list = roomList(); for (const [, p] of peers) send(p.ws, { t: "peers", peers: list }); } // tell every tab who is here
+function send(ws, obj) { if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify(obj)); } catch (e) {} } } // one message (an "away" player has no socket)
+const AWAY_MS = 5 * 60000;                             // a player whose connection drops (phone screen off) stays in the world as "away" this long
+function roomList() { const out = []; for (const [peer, p] of peers) if (p.uid) out.push({ peer, kind: "viewer", presence: p.away ? Object.assign({}, p.presence, { away: 1, mv: false }) : p.presence || {} }); return out; } // everyone in town (away players marked)
+function playedCount() { return Object.keys(db.players).length; } // everyone who has ever made a character
+function broadcastPeers() { const list = roomList(), total = playedCount(); for (const [, p] of peers) send(p.ws, { t: "peers", peers: list, total }); } // tell every tab who is here
+setInterval(() => { const now = Date.now(); for (const [id, p] of peers) if (p.away && now - p.away > AWAY_MS) { peers.delete(id); peersDirty = true; } }, 15000); // away too long: they have really gone
+setInterval(() => { for (const [, p] of peers) { if (!p.ws || p.away) continue; if (p.alive === false) { try { p.ws.terminate(); } catch (e) {} continue; } p.alive = false; try { p.ws.ping(); } catch (e) {} } }, 25000); // a heartbeat: sockets that stop answering are closed (and their player turns "away")
 setInterval(() => { if (peersDirty) { peersDirty = false; broadcastPeers(); } }, 100); // at most ~10 room updates a second
 
 // read a whole collection as the game expects: [{ id, data }]
@@ -185,7 +192,8 @@ function fanout(col) { for (const [ws, list] of subs) for (const sub of list) if
 
 wss.on("connection", (ws) => {
   const peerId = crypto.randomBytes(8).toString("hex");  // this tab's id
-  peers.set(peerId, { ws, uid: "", presence: {}, tokens: RATE_CAP, last: Date.now() }); // register it (presence + uid fill in later)
+  peers.set(peerId, { ws, uid: "", presence: {}, tokens: RATE_CAP, last: Date.now(), alive: true }); // register it (presence + uid fill in later)
+  ws.on("pong", () => { const p = peers.get(peerId); if (p) p.alive = true; }); // still there
   subs.set(ws, []);                                      // no db subscriptions yet
   peersDirty = true;                                     // the room changed
   const helloTimer = setTimeout(() => { const me = peers.get(peerId); if (me && !me.uid) ws.close(); }, 10000); // must say hello within 10 s
@@ -195,6 +203,7 @@ wss.on("connection", (ws) => {
     const me = peers.get(peerId); if (!me) return;        // gone already
     if (m.t === "hello") { // who this tab is: checked against its key, then welcomed (once per connection)
       if (me.uid) return; clearTimeout(helloTimer); me.uid = whoIs(m);
+      for (const [id, p] of peers) if (p.away && p.uid === me.uid) { if (!Object.keys(me.presence).length) me.presence = p.presence; peers.delete(id); } peersDirty = true; // back from "away": take your old spot
       send(ws, { t: "welcome", peer: peerId, uid: me.uid, token: sign(me.uid), account: db.auth.names[me.uid] || "" }); return; // its id, key and login name
     }
     if (!me.uid) return;                                  // nothing else until hello
@@ -226,7 +235,8 @@ wss.on("connection", (ws) => {
     if (m.t === "unsub") { subs.set(ws, (subs.get(ws) || []).filter((s) => s.subId !== m.id)); return; } // stop watching
   });
 
-  ws.on("close", () => { clearTimeout(helloTimer); peers.delete(peerId); subs.delete(ws); peersDirty = true; }); // tab closed: leave the room
+  ws.on("close", () => { clearTimeout(helloTimer); subs.delete(ws); const p = peers.get(peerId); // the connection dropped
+    if (p && p.uid && typeof (p.presence || {}).x === "number") { p.away = Date.now(); p.ws = null; } else peers.delete(peerId); peersDirty = true; }); // a player who was in town stays as "away" for a while; others just leave
   ws.on("error", () => {});                               // never crash on a socket error
 });
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#07171f">
 <style>html,body{height:100%;margin:0;background:#07171f;overflow:hidden}.game{border:0!important;border-radius:0!important}</style>
-<script src="net-adapter.js"></script>
+<script src="net-adapter.js?v=6"></script>
 </head>
 <body>
 <title>Flic en Flac Life</title>
@@ -187,6 +187,10 @@ button:focus-visible { outline: 3px solid var(--mango); outline-offset: 2px; }
 .arctrl button { border: 0; border-radius: 14px; padding: 12px 18px; font: 800 0.95rem/1 Figtree, system-ui, sans-serif; cursor: pointer; background: #ffa733; color: #10232c; }
 .arctrl button.sec { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .arctrl .kick { min-width: 120px; background: linear-gradient(180deg, #ffd23c, #ff8a3d); font-size: 1.05rem; }
+.loginlink { display: block; width: 100%; margin: 6px 0 10px; padding: 11px 14px; border: 2px dashed rgba(255, 167, 51, 0.7); border-radius: 14px; background: rgba(255, 167, 51, 0.1); color: inherit; font: 700 0.92rem/1.2 Figtree, system-ui, sans-serif; cursor: pointer; }
+.accsheet { text-align: center; } .accsheet .pinput { width: 100%; margin: 6px 0; } .accmsg { min-height: 1.3em; color: #ffb3a7; font-weight: 700; margin: 6px 0; }
+.relrow > span { display: grid; gap: 4px; } .relmeters { display: flex; gap: 12px; flex-wrap: wrap; } .relm { display: inline-flex; align-items: center; gap: 6px; } .relm small { font-weight: 700; min-width: 44px; }
+.playedbig { display: grid; justify-items: center; gap: 2px; margin: 4px 0 10px; padding: 14px; border-radius: 16px; background: linear-gradient(135deg, #1fa5a0, #3d7be9); color: #fff; } .playedbig b { font-size: 2rem; font-weight: 800; line-height: 1; } .playedbig span { font-size: 0.82rem; opacity: 0.92; }
 .moodchip { position: absolute; right: 10px; top: 10px; z-index: 6; display: flex; align-items: center; gap: 6px; border: 0; cursor: pointer; padding: 6px 12px 6px 8px; border-radius: 999px; font: 800 0.8rem/1 Figtree, system-ui, sans-serif; color: #10232c; background: #fffdf8; box-shadow: 0 0 0 3px var(--mc, #3fd16b), 0 6px 16px rgba(0, 0, 0, 0.3); }
 .moodchip .mci { font-size: 1.15rem; } .moodchip[hidden] { display: none; }
 .hud.needs { top: 52px !important; }
@@ -1611,7 +1615,9 @@ function netSend() { // tell everyone where you are
   if (j === lastSent) return; // nothing changed
   lastSent = j; room.presence(me).catch(() => {}); // send it, ignore network hiccups
 } // end netSend
+let netDown = false, playedTotal = 0; // connection lost for a moment?, and how many people have ever played
 function netPeers(ch) { // the list of players changed
+  netDown = false; if (ch.total) playedTotal = ch.total; // connected again; the server counts everyone who ever played
   const here = {}; // who is present in this update
   for (const p of ch.peers) { // every open game
     if (p.isMe) { if (p.sameTab) myPeer = p.peer; continue; } // that is you
@@ -1663,7 +1669,7 @@ async function netStart() { // connect to other players if this view allows it
   const r = window.claude && window.claude.use ? await window.claude.use("room") : null; // ask the page host for the live room
   if (!r) return; // single-player: nothing else to do
   room = r; chatRender(); // keep the connection
-  r.onPeers(netPeers, () => { room = null; for (const k in others) delete others[k]; }); // hear who is here; go solo if the room closes
+  r.onPeers(netPeers, () => { netDown = true; for (const k in others) delete others[k]; }); // hear who is here; if the connection drops, keep the room and wait for it to come back
   setInterval(netSend, 120); // share your position about eight times a second
 } // end netStart
 function setBadge() { const b = $("navbadge"); if (b) { b.hidden = !unread; b.textContent = unread; } } // unread count on the Phone tab
@@ -1813,7 +1819,7 @@ $("chatForm").onsubmit = (e) => { e.preventDefault(); const v = $("chatBox").val
 // ================= phone =================
 let pv = { app: "home", arg: "" }; // which phone screen is open
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }; // make an element safely (text is never HTML)
-const APPS = [["msgs", "💬", "Messages", "#1f8f4e"], ["maps", "🗺️", "Maps", "#3d9be9"], ["wardrobe", "👕", "Wardrobe", "#7a4fd1"],["ride", "🚕", "Rides", "#f2b430"], ["cars", "🚗", "Cars", "#3d9be9"], ["delivery", "🛵", "Delivery", "#1f8f4e"], ["wallet", "💳", "Wallet", "#7a4fd1"], ["jobs", "💼", "Jobs", "#d9482b"], ["goals", "🎯", "Goals", "#e4572e"], ["events", "🎉", "Events", "#c2457a"], ["health", "❤️", "Health", "#ef4f6a"], ["juice", "🧃", "Juice", "#c8102e"], ["campus", "🎓", "Campus", "#7a2f2f"], ["rich", "🏆", "Rich list", "#d4a017"], ["players", "👥", "Players", "#2a9d8f"], ["house", "🏠", "Home", "#b5482f"], ["games", "🎮", "Games", "#8e44ad"], ["alerts", "🔔", "Alerts", "#e4572e"], ["invite", "📨", "Invite", "#2a9d8f"], ["settings", "⚙️", "Settings", "#6c7781"]]; // apps on the home screen
+const APPS = [["msgs", "💬", "Messages", "#1f8f4e"], ["maps", "🗺️", "Maps", "#3d9be9"], ["wardrobe", "👕", "Wardrobe", "#7a4fd1"], ["people", "👥", "People", "#c2457a"], ["ride", "🚕", "Rides", "#f2b430"], ["cars", "🚗", "Cars", "#3d9be9"], ["delivery", "🛵", "Delivery", "#1f8f4e"], ["wallet", "💳", "Wallet", "#7a4fd1"], ["jobs", "💼", "Jobs", "#d9482b"], ["goals", "🎯", "Goals", "#e4572e"], ["events", "🎉", "Events", "#c2457a"], ["health", "❤️", "Health", "#ef4f6a"], ["juice", "🧃", "Juice", "#c8102e"], ["campus", "🎓", "Campus", "#7a2f2f"], ["rich", "🏆", "Rich list", "#d4a017"], ["players", "👥", "Players", "#2a9d8f"], ["house", "🏠", "Home", "#b5482f"], ["games", "🎮", "Games", "#8e44ad"], ["alerts", "🔔", "Alerts", "#e4572e"], ["invite", "📨", "Invite", "#2a9d8f"], ["settings", "⚙️", "Settings", "#6c7781"]]; // apps on the home screen
 function openPhone(app, arg) { pv = { app: app || "home", arg: arg || "" }; $("phone").hidden = false; phoneRender(); } // take the phone out
 function closePhone() { $("phone").hidden = true; } // put it away
 function phoneStat() { // the phone's status bar
@@ -1863,7 +1869,7 @@ function phoneRender() { // draw the current phone screen
     f.append(inp, go); f.onsubmit = (e) => { e.preventDefault(); sendMsg(id, inp.value); inp.value = ""; }; sc.append(f); // send on Enter or the button
     return; // done
   } // end thread
-  const names = { games: "Games", alerts: "Alerts", delivery: "Delivery", deliverfrom: "Delivery", invite: "Invite friends", players: "Players", player: "Player", house: "Home", cars: "Cars", msgs: "Messages", maps: "Maps", wallet: "Wallet", jobs: "Jobs", goals: "Goals", events: "Events", health: "Health", campus: "Campus", juice: "MCB Juice", invest: "Invest", history: "Bank history", rich: "Rich list", send: "Send money", sendto: "Send money", settings: "Settings", wardrobe: "Wardrobe" }; // app titles
+  const names = { games: "Games", alerts: "Alerts", delivery: "Delivery", deliverfrom: "Delivery", invite: "Invite friends", players: "Players", player: "Player", house: "Home", cars: "Cars", msgs: "Messages", maps: "Maps", wallet: "Wallet", jobs: "Jobs", goals: "Goals", events: "Events", health: "Health", campus: "Campus", juice: "MCB Juice", invest: "Invest", history: "Bank history", rich: "Rich list", send: "Send money", sendto: "Send money", settings: "Settings", wardrobe: "Wardrobe", people: "People" }; // app titles
   phead(sc, names[pv.app]); const box = el("div", "pbody"); sc.append(box); // title bar and content area
   if (pv.app === "msgs") { // chat list
     unread = 0; setBadge(); // you have seen the list
@@ -1963,15 +1969,16 @@ function phoneRender() { // draw the current phone screen
   } // end sendto
   const link = (label, sub, fn) => { const r = el("button", "prow"), l = el("span", "", label); if (sub) l.append(el("small", "", sub)); r.type = "button"; r.append(l, el("b", "", "›")); r.onclick = fn; box.append(r); }; // a tappable row
   if (pv.app === "players") { // everyone online now, then everyone who has played
-    box.append(el("p", "pnote", room ? (Object.keys(others).length + 1) + " online now, you included. Tap someone to message or interact." : "You are offline. Players appear here when the game is open with a live connection.")); // count
-    for (const k in others) { const o = others[k], b = BUILD.find((q) => q.id === o.p.in) || ROOMDEF[o.p.in], P = peerLook(o.p); link("🟢 " + peerName(o) + relTag(o), ROLE[P.role].label + clsTag(o.p.cls) + " · " + (GENRES[o.p.dn] ? "💃 dancing" + (b ? " at " + b.name : "") : o.p.in === "houseparty" ? "at a house party" : b ? "at " + b.name : "out in town") + (o.p.hp > Date.now() ? " · 🎉 hosting" : ""), () => openPhone("player", k)); } // each player online
+    if (playedTotal) { const st = el("div", "playedbig"); st.append(el("b", "", playedTotal.toLocaleString()), el("span", "", "people have played Flic en Flac Life")); box.append(st); } // the all-time player count
+    box.append(el("p", "pnote", room ? (Object.keys(others).length + 1) + " in town now, you included (💤 = phone asleep). Tap someone to message or interact." : "You are offline. Players appear here when the game is open with a live connection.")); // count
+    for (const k in others) { const o = others[k], b = BUILD.find((q) => q.id === o.p.in) || ROOMDEF[o.p.in], P = peerLook(o.p); link((o.p.away ? "💤 " : "🟢 ") + peerName(o) + relTag(o), ROLE[P.role].label + clsTag(o.p.cls) + " · " + (GENRES[o.p.dn] ? "💃 dancing" + (b ? " at " + b.name : "") : o.p.in === "houseparty" ? "at a house party" : b ? "at " + b.name : "out in town") + (o.p.hp > Date.now() ? " · 🎉 hosting" : ""), () => openPhone("player", k)); } // each player online
     const off = players.filter((p) => p.id !== uid && !Object.values(others).some((o) => o.p.uid === p.id)); // offline players
     if (off.length) { box.append(el("p", "pnote", "Offline · tap to send money")); for (const p of off.slice(0, 40)) link("⚪ " + p.name, ROLE[p.role].label + clsTag(p.cls) + " · worth " + rs(p.money), () => openPhone("sendto", p.id)); } // with a way to pay them
   } // end players
   if (pv.app === "player") { // one player's card
     const o = others[pv.arg]; if (!o) { box.append(el("p", "pnote", "They went offline.")); return; } // gone
     const nm = peerName(o), P = peerLook(o.p), cl = CLASSES[o.p.cls], rec = players.find((q) => q.id === o.p.uid), b = BUILD.find((q) => q.id === o.p.in) || ROOMDEF[o.p.in], hm = HOMES[o.p.hm | 0]; // what we know
-    box.append(el("div", "pbig", nm + relTag(o))); prow(box, "Status", ROLE[P.role].label, cl ? cl.icon + " " + cl.name : ""); // name and status
+    box.append(el("div", "pbig", nm + relTag(o))); relRow(box, "You and " + nm, "p:" + relKey(o), "", () => { closePhone(); peerSocial(pv.arg); }); prow(box, "Status", ROLE[P.role].label, cl ? cl.icon + " " + cl.name : ""); // name and status
     prow(box, "Where", o.p.in === "houseparty" ? "House party" : b ? b.name : "Out in town", GENRES[o.p.dn] ? "Dancing to " + GENRES[o.p.dn].n : ""); if (rec) prow(box, "Net worth", rs(rec.money)); if (hm) prow(box, "Lives in", hm.n); if (PETS[o.p.pet]) prow(box, "Pet", PETS[o.p.pet].i + " " + PETS[o.p.pet].n); // details
     link("💬 Message " + nm, "Direct message", () => openPhone("thread", pv.arg)); // chat
     link("👋 Wave", "They get a wave in their messages", () => { sendMsg(pv.arg, "👋 waves at you"); toast("You waved at " + nm + "."); }); // wave
@@ -2018,6 +2025,7 @@ function phoneRender() { // draw the current phone screen
     box.append(el("p", "pnote", "Prices move once a game day. Investments count toward the rich list and Big Baller.")); // how it works
   } // end invest
   if (pv.app === "history") { for (const x of s.txns) prow(box, x.l, (x.a > 0 ? "+" : "") + rs(x.a), "Day " + x.d); if (!s.txns.length) box.append(el("p", "pnote", "No transactions yet.")); } // bank history
+  if (pv.app === "people") peopleApp(box); // everyone you know
   if (pv.app === "wardrobe") { // change into anything you own, any time
     const g = s.g === "f" ? "f" : "m", P = pieceSet(myLook()), pvw = el("div", "pvwrap"), cv3 = charPreview(myLook()); if (cv3) { pvw.append(cv3); box.append(pvw); } // a turning preview of you
     const tabs = [["head", "Hair & hats"], ["body", "Tops"], ["legs", "Bottoms"], ["feet", "Shoes"]], cur = pv.arg || "body", bar = el("div", "tbar"); bar.style.borderRadius = "12px"; // one tab per slot
@@ -2326,6 +2334,7 @@ function optRow(boxId, list, key, redo) { // build one row of choice buttons
 function openCreate() { // the "who are you" screen
   const card = $("card"); // sheet body
   card.innerHTML = '<h2>Who are you in Flic en Flac?</h2><div class="mk"><div class="pvbox" id="pvbox"><canvas id="pv" width="220" height="280"></canvas></div><div class="mkf"><label for="nm">Name</label><input id="nm" type="text" maxlength="14" placeholder="Your name"><h3>Gender</h3><div class="opts" id="og"></div><h3>Status</h3><div class="opts" id="or"></div><p id="ri"></p><h3 id="ch">Course</h3><div class="opts" id="oco"></div><h3>Skin</h3><div class="opts" id="os"></div><h3>Hair</h3><div class="opts" id="ohd"></div><h3>Hair colour</h3><div class="opts" id="ohc"></div><h3>Outfit</h3><div class="opts" id="oot"></div><h3>Top colour</h3><div class="opts" id="oc"></div></div></div>'; // layout
+  if (accApi()) { const lb = el("button", "loginlink", "🔐 Already playing? Log in to your character"); lb.type = "button"; lb.onclick = () => accountSheet("login"); card.insertBefore(lb, card.children[1]); } // a new device: carry on with your saved character
   const redo = () => { // refresh choices and preview
     const g = s.g === "f" ? "f" : "m"; if (s.head && !hasPiece(g, "head", s.head)) s.head = ""; // hair must exist for this body
     optRow("og", [["m", "Man"], ["f", "Woman"]], "g", () => { s.head = s.top = s.legs = s.feet = ""; redo(); }); // gender buttons (outfit resets to that body's basics)
@@ -2352,7 +2361,7 @@ function openCreate() { // the "who are you" screen
     { const P = pieceSet(myLook()); for (const k of SLOTS) s.wardrobe[pieceKey(P.g, k, P[k])] = 1; } // your starting clothes are yours to keep
     s.made = true; s.joined = s.joined || Date.now(); s.day0 = day(); s.permit = day() + permDays(); save(); closeMenu(); // done, start playing
     toast("Bonzour " + s.name + ". Your room is paid until Monday. Go find work, or a party."); // welcome
-    setTimeout(() => traitPicker(() => { if (!s.tutDone) setTimeout(tutStart, 500); }), 600); // first time: pick traits, then the guided tour
+    const tut = () => { if (!s.tutDone) setTimeout(tutStart, 500); }; setTimeout(() => traitPicker(() => (needsLogin() ? accountSheet("create", tut) : tut())), 600); // first time: pick traits, save your progress with a password, then the guided tour
   }; // end start
   card.appendChild(go); // add the button
   $("sheet").hidden = false; // show the screen (game stays paused)
@@ -2688,10 +2697,10 @@ function hud() { // refresh the text panels
   $("status").hidden = !st; $("status").textContent = st; // show or hide the warning
   if (!$("phone").hidden) phoneStat(); // keep the phone clock current
   const on = Object.keys(others).length + 1; // everyone with the game open right now, you included
-  $("online").className = "online" + (room ? " live" : ""); $("online").innerHTML = "<i></i>"; $("online").append(room ? String(on) : "solo"); // live counter with a green dot
-  $("online").title = room ? "Tap to see who is online" : "No live connection: you are playing alone"; // tooltip
+  $("online").className = "online" + (room ? " live" : ""); $("online").innerHTML = "<i></i>"; $("online").append(room ? (netDown ? "…" : String(on)) + (playedTotal ? " · 👥 " + playedTotal.toLocaleString() : "") : "solo"); // live counter with a green dot, and everyone who has played
+  $("online").title = room ? (netDown ? "Reconnecting…" : on + " online now") + (playedTotal ? " · " + playedTotal.toLocaleString() + " people have played" : "") + " · tap to see who is here" : "No live connection: you are playing alone"; // tooltip
   const mcl = myClass(); if (s.made && mcl !== s.cls) { if (mcl) toast("New class: " + CLASSES[mcl].icon + " " + CLASSES[mcl].name + ". " + CLASSES[mcl].perk + "."); s.cls = mcl; save(); } // class changes
-  questCheck(); questCard(); moodChip(); // the goal card and your mood
+  questCheck(); questCard(); moodChip(); relDrift(); // the goal card, your mood, and relationships fading day by day
   const liveM = match.on && Date.now() < match.end + 2000; $("matchhud").hidden = !liveM; // show the scoreboard only during a match
   if (liveM) { const mh = $("matchhud"); mh.innerHTML = ""; const dot = (c) => { const i = el("i"); i.style.background = c; return i; }; mh.append(dot(KIT.W), el("span", "", "West " + BALL.fb.a), el("span", "", "–"), el("span", "", BALL.fb.b + " East"), dot(KIT.E), el("span", "clk", "⏱ " + fmtClock(match.end - Date.now())), el("span", "", s.team ? "· You: " + teamName(s.team) : "· tap ⚽ to join")); } // score, clock and your side
   if (performance.now() > toastUntil) $("toast").hidden = true; // hide old toasts
@@ -3277,7 +3286,7 @@ function render3d(dt) { // draw one 3D frame
     { const vg = venueGenre(), st = CLUB[s.inside] && vg ? ROOM[s.inside].find((o) => o.kind === "dance") : null; if (st) { R.party.forEach((l, i) => { l.position.set(st.x + Math.cos(now / 500 + i * 2) * 2.5, 2.4, st.y - 0.6 + Math.sin(now / 600 + i * 2) * 1.8); l.intensity = 1.5; }); [[-0.6, -1.15], [0.6, -1.15], [-1.25, -0.35], [1.25, -0.35]].forEach(([dx, dz], i) => personAt("cd" + i, NPC[(i * 3 + 2) % NPC.length].look, st.x + dx, st.y + dz, i < 2 ? 0 : i === 2 ? 3 : 2, false, { dance: vg })); } } // club night: lights and a crowd on the floor
     const st0 = ROOM[s.inside][0]; if (["counter", "bar", "freezer"].includes(st0.kind)) { const b = BUILD.find((q) => q.id === s.inside) || {}; personAt("staff_" + s.inside, { g: (b.x || 1) % 2 ? "f" : "m", skin: SKINS[((b.x || 1) + (b.y || 1)) % 5], hair: "#17100c", shirt: b.roofCol || "#3d9be9", pants: "#22364a", role: "resident" }, st0.x + 0.8, st0.y - 1.55, 0, false); } // staff behind the counter
     if (s.inside === "mall") for (let i = 0; i < 5; i++) personAt("shop" + i, NPC[i].look, 2 + ((now / 1000 * 1.2 + i * 3.7) % 16), 5 + (i % 3) * 1.1, 3, true); // shoppers walking through
-    for (const k in others) { const o = others[k]; if (o.p.in === s.inside && (s.inside !== "houseparty" || o.p.ph === s.hpHost)) personAt("peer" + k, peerLook(o.p), o.x, o.y, o.p.face | 0, !!o.p.mv, { dance: o.p.dn, pose: POSES.includes(o.p.po) ? { k: o.p.po, h: Math.max(-0.5, Math.min(1, Number(o.p.pz) || 0)) } : null, name: peerName(o) + relTag(o) + clsTag(o.p.cls), real: true, md: o.p.md, bubble: o.until > now ? o.bubble : "" }); } // real players in here
+    for (const k in others) { const o = others[k]; if (o.p.in === s.inside && (s.inside !== "houseparty" || o.p.ph === s.hpHost)) personAt("peer" + k, peerLook(o.p), o.x, o.y, o.p.face | 0, !!o.p.mv, { dance: o.p.dn, pose: POSES.includes(o.p.po) ? { k: o.p.po, h: Math.max(-0.5, Math.min(1, Number(o.p.pz) || 0)) } : null, name: (o.p.away ? "💤 " : "") + peerName(o) + relTag(o) + clsTag(o.p.cls), real: true, md: o.p.md, bubble: o.until > now ? o.bubble : "" }); } // real players in here
     personAt("me", myLook(), s.x, s.y, s.face, meMoving, { me: true, dance: dancing, pose: busy && busy.pose, name: myClass() ? CLASSES[myClass()].icon + " " + CLASSES[myClass()].name : "", bubble: myBubble.until > now ? myBubble.text : busy && busy.pose && busy.pose.k === "sleep" ? "💤 z z z" : "" }); // you
     for (const id of ["fb", "bb"]) R[id === "fb" ? "fball" : "bball"].visible = false; for (const m of R.carM || []) m.visible = false; if (R.rideM) R.rideM.visible = false; for (const m of R.dogM || []) m.visible = false; // hide outdoor things
     pets3d(); hideUnused(); R.renderer.render(R.scene, R.camera); return; // draw the room
@@ -3295,7 +3304,7 @@ function render3d(dt) { // draw one 3D frame
   if (ride) { if (!R.rideM || R.rideKind !== ride.kind) { if (R.rideM) R.dyn.remove(R.rideM); R.rideM = makeCar(ride.v); R.rideKind = ride.kind; } R.rideM.visible = true; placeCar(R.rideM, ride.x, ride.y, ride.vert, ride.rev); } else if (R.rideM) R.rideM.visible = false; // your ride
   if (!R.dogM) R.dogM = DOGS.map((d) => makeDog(d.col)); DOGS.forEach((d, i) => { const m = R.dogM[i]; m.visible = true; m.position.set(d.x, 0, d.y); m.rotation.y = d.dir > 0 ? 0 : Math.PI; m.position.y = d.chase > 0 ? Math.abs(Math.sin(now / 60)) * 0.08 : 0; }); // street dogs (they bounce when chasing)
   for (const n of NPC) personAt("npc" + n.name, n.look, n.x, n.y, n.face, n.path.length > 0, { name: Math.hypot(n.x - s.x, n.y - s.y) < 3 ? n.name + ((s.friends[n.name] || 0) >= 3 ? " ♥" : "") : "", swim: inLagoon(n.x, n.y), bubble: n.sayUntil > performance.now() ? n.say : "" }); // neighbours
-  for (const k in others) { const o = others[k]; if (!o.p.in && !o.p.hid) personAt("peer" + k, kit(peerLook(o.p), o.p.tm, o.x, o.y), o.x, o.y, o.p.face | 0, !!o.p.mv, { dance: o.p.dn, pose: POSES.includes(o.p.po) ? { k: o.p.po, h: Math.max(-0.5, Math.min(1, Number(o.p.pz) || 0)) } : null, name: peerName(o) + relTag(o) + clsTag(o.p.cls), real: true, md: o.p.md, bubble: o.until > now ? o.bubble : "", swim: inLagoon(o.x, o.y) }); } // other real players
+  for (const k in others) { const o = others[k]; if (!o.p.in && !o.p.hid) personAt("peer" + k, kit(peerLook(o.p), o.p.tm, o.x, o.y), o.x, o.y, o.p.face | 0, !!o.p.mv, { dance: o.p.dn, pose: POSES.includes(o.p.po) ? { k: o.p.po, h: Math.max(-0.5, Math.min(1, Number(o.p.pz) || 0)) } : null, name: (o.p.away ? "💤 " : "") + peerName(o) + relTag(o) + clsTag(o.p.cls), real: true, md: o.p.md, bubble: o.until > now ? o.bubble : "", swim: inLagoon(o.x, o.y) }); } // other real players
   if (run && run.group) { const el2 = (now - run.t0) / 1000; for (let k = 0; k < 4; k++) { const [rx, rz, rf] = routePoint(el2 * (4.4 + k * 0.25) + 2 - k * 1.6); personAt("runner" + k, { g: k % 2 ? "f" : "m", skin: SKINS[(k + 1) % 5], hair: "#17100c", shirt: "#15171a", pants: "#ff6a1a", role: "resident" }, rx + (k % 2 ? 0.4 : -0.4), rz, rf, true, { name: k === 0 ? "No Tomorrow" : "" }); } } // the club running with you
   if (creep) personAt("creep", creep.look, creep.x, creep.y, creep.face, creep.phase !== "talk", { bubble: creep.say }); // the man bothering you
   if (!(ride && ride.on)) personAt("me", kit(myLook(), s.team, s.x, s.y), s.x, s.y, s.face, meMoving, { me: true, dance: dancing, pose: busy && busy.pose, name: myClass() ? CLASSES[myClass()].icon + " " + CLASSES[myClass()].name : "", bubble: myBubble.until > now ? myBubble.text : busy && busy.pose && busy.pose.k === "sleep" ? "💤 z z z" : "", swim: inLagoon(s.x, s.y) }); // you (hidden while inside a vehicle)
@@ -3811,6 +3820,24 @@ function traitPicker(after) { // choose up to three traits (at creation, or once
   card.append(grid, go); draw(); $("sheet").hidden = false; // show it
 } // end traitPicker
 
+// ================= your login: protect your progress, and carry on from any device =================
+const accApi = () => window.claude && window.claude.account; // only the online version has logins
+function accountSheet(mode, after) { // "create": add a username and password to this character · "login": switch this device to your saved character
+  const acc = accApi(); if (!acc) { if (after) after(); return; } const card = $("card"); card.className = "card accsheet"; card.innerHTML = ""; // fresh sheet
+  const create = mode === "create"; card.append(el("div", "wbhero", create ? "🔐" : "👋"), el("h2", "", create ? "Save your progress" : "Welcome back!"), el("p", "wbsub", create ? "Pick a username and password. Your character, money and home are saved online, and you can log in on any phone or computer." : "Log in with your username and password to carry on with your character on this device.")); // header
+  const u = el("input", "pinput"), pw = el("input", "pinput"), msg = el("p", "accmsg", ""); u.placeholder = "Username (letters, numbers, _)"; u.maxLength = 20; u.autocomplete = "username"; u.value = create ? String(s.name || "").toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20) : ""; // the username
+  pw.type = "password"; pw.placeholder = "Password (8+ characters)"; pw.autocomplete = create ? "new-password" : "current-password"; card.append(u, pw, msg); // the password
+  const go = el("button", "start", create ? "Save my progress" : "Log in"); go.type = "button"; card.append(go); // the main button
+  go.onclick = () => { go.disabled = true; msg.textContent = create ? "Saving…" : "Checking…"; // busy
+    (create ? acc.register(u.value, pw.value) : acc.login(u.value, pw.value)).then((r) => { go.disabled = false; if (!r.ok) { msg.textContent = r.error; return; } // tell them what was wrong
+      if (create) { s.loginMade = 1; save(); $("sheet").hidden = true; toast("🔐 Progress saved. Log in as @" + r.name + " on any device."); banner("🔐 PROGRESS SAVED", "Log in as @" + r.name + " anywhere"); if (after) after(); } // done
+      else { msg.textContent = "Loading your character…"; save = () => {}; try { localStorage.removeItem(KEY); } catch (e) {} setTimeout(() => location.reload(), 300); } }); }; // switch this device to that character
+  pw.onkeydown = (e) => { if (e.key === "Enter") go.click(); }; // Enter submits
+  const alt = el("button", "close", create ? "Skip for now" : "Back"); alt.type = "button"; alt.onclick = () => { if (create) { $("sheet").hidden = true; toast("You can save your progress any time: Phone → Settings → Login."); if (after) after(); } else openCreate(); }; card.append(alt); // skip, or back to character creation
+  $("sheet").hidden = false; setTimeout(() => (create ? pw : u).focus(), 50); // show it
+} // end accountSheet
+const needsLogin = () => !!accApi() && !accApi().name(); // online, but this character has no login yet
+
 // ================= social interactions, with friendship and romance =================
 const SOC = [ // [id, icon, label, minutes, friendship gain, romance gain, needs friendship, needs romance, base chance, kind]
   ["chat", "💬", "Chat", 15, 6, 0, -100, 0, 0.95, "friendly"], ["joke", "😂", "Tell a joke", 10, 8, 0, -30, 0, 0.7, "funny"], ["compliment", "🌟", "Compliment", 10, 7, 2, -30, 0, 0.8, "friendly"],
@@ -3829,7 +3856,7 @@ function socChance(row, rel) { // how likely an interaction is to land
 function socResult(row, ok, name, rel) { // apply one interaction; returns what to say
   const [id, icon, label, , fg, rg, , , , kind] = row; let df = ok ? fg : -Math.abs(Math.round(fg / 2)) - 3, dr = ok ? rg : -Math.abs(Math.round(rg / 2)); // gains, or a small loss on failure
   if (kind === "mean") { df = fg; dr = rg; } if (hasTrait("romantic") && dr > 0) dr = Math.round(dr * 1.5); // mean always hurts; romantics feel more
-  rel.f = Math.max(-100, Math.min(100, rel.f + df)); rel.r = Math.max(0, Math.min(100, rel.r + dr)); // update
+  rel.f = Math.max(-100, Math.min(100, rel.f + df)); rel.r = Math.max(0, Math.min(100, rel.r + dr)); relTouch(rel, name); // update (and celebrate milestones)
   s.social = clamp(s.social + (kind === "mean" ? 4 : ok ? 12 : 4)); if (kind === "funny" && ok) s.fun = clamp(s.fun + 8); // needs
   if (ok && kind === "romantic") addMoodlet("flirty", (id === "kiss" ? "A sweet kiss with " : "Flirting with ") + name, id === "kiss" ? 3 : 2, 180, "flirty"); // feelings
   else if (ok && kind === "funny") addMoodlet("laugh", "Good laugh with " + name, 1, 120, "playful"); else if (ok) addMoodlet("social", "Nice time with " + name, 1, 120, "happy");
@@ -3839,13 +3866,13 @@ function socResult(row, ok, name, rel) { // apply one interaction; returns what 
   const said = { chat: ["had a lovely chat", "ended up talking for ages"], joke: ["cracked up laughing", "didn't get the joke"], compliment: ["blushed and smiled", "looked a bit suspicious"], gossip: ["loved the gossip", "didn't want to gossip"], deep: ["opened up to you", "changed the subject"], hug: ["hugged you back", "stepped away awkwardly"], flirt: ["flirted right back 😍", "laughed it off"], kiss: ["kissed you back 💕", "turned their cheek"], prank: ["burst out laughing", "was NOT amused"], argue: ["argued back", ""], insult: ["is furious with you", ""] }[id];
   return icon + " " + name + " " + (ok || kind === "mean" ? said[0] : said[1]) + ". " + (df >= 0 ? "+" : "") + df + " friendship" + (dr ? " · " + (dr > 0 ? "+" : "") + dr + " romance" : "") + " · now " + relWords(rel) + ".";
 } // end socResult
-function socialActs(name, key, onDo, extra, after) { // the interaction menu for a person (a neighbour or a real player): shortcuts first, then interactions, then extras
+function socialActs(name, key, onDo, extra, after, peerId) { // the interaction menu for a person (a neighbour or a real player): shortcuts first, then interactions, then extras
   const rel = relOf(key), acts = []; // how you know them
   for (const row of SOC) { const [id, icon, label, mins, , , needF, needR, , kind] = row; const why = rel.f < needF ? "Needs friendship " + needF + " (now " + rel.f + ")" : rel.r < needR ? "Needs romance " + needR + " (now " + rel.r + ")" : ""; // locked until you know them better
     const pct = Math.round(socChance(row, rel) * 100); acts.push(A(icon + " " + label, kind === "mean" ? "Hurts the friendship" : pct + "% chance it goes well", mins, 0, {}, { why, icon, tag: kind === "mean" ? "Mean" : pct + "% ✓", tagCls: kind === "mean" ? "cost" : pct >= 70 ? "earn" : "free", run() { const ok = kind === "mean" || Math.random() < socChance(row, rel); const msg = socResult(row, ok, name, rel); if (onDo) onDo(row, ok); save(); return msg; } })); } // each one
-  return (extra || []).concat(acts, after || []);
+  return (extra || []).concat(acts, relSpecialActs(name, key, onDo, peerId), after || []);
 } // end socialActs
-function socialNote(key) { const r = relOf(key); return relWords(r) + " · friendship " + r.f + " · romance " + r.r; } // the menu subtitle
+function socialNote(key) { const r = relOf(key); return (r.partner ? "💍 Partner" : relWords(r)) + " · ❤️ friendship " + r.f + " · 💕 romance " + r.r; } // the menu subtitle
 function npcSocial(n) { // talk to a neighbour
   const say = (row, ok) => { n.say = row[1]; n.sayUntil = performance.now() + 3500; myBubble = { text: row[1], until: performance.now() + 3500 }; n.last = s.t; if (ok && row[9] !== "mean") { s.friends[n.name] = Math.max(s.friends[n.name] || 0, relOf("npc:" + n.name).f >= 40 ? 3 : (s.friends[n.name] || 0) + (row[0] === "chat" ? 1 : 0)); } }; // speech icons, and the older friend counter
   openMenu(n.name, socialActs(n.name, "npc:" + n.name, say, [], chatActs(n).slice(chatActs0(n).length)), socialNote("npc:" + n.name)); // interactions, then anything else (like pickpocketing)
@@ -3853,15 +3880,48 @@ function npcSocial(n) { // talk to a neighbour
 function peerSocial(id) { // interact with a real player standing near you
   const o = others[id]; if (!o) return; const nm = peerName(o), key = "p:" + relKey(o); // who
   const send = (row, ok) => { sendSig(id, "soc", row[0] + (ok ? ":1" : ":0")); o.bubble = row[1]; o.until = performance.now() + 3500; myBubble = { text: row[1], until: performance.now() + 3500 }; }; // tell them, and show icons
-  openMenu(nm, socialActs(nm, key, send, [{ label: "💬 Message " + nm, info: "Open your chat", go: () => { closeMenu(); openPhone("thread", id); } }, { label: "👤 Profile, games and dates", info: "Challenge, invite home, ask out", go: () => { closeMenu(); openPhone("player", id); } }]), socialNote(key)); // menu
+  openMenu(nm, socialActs(nm, key, send, [{ label: "💬 Message " + nm, info: "Open your chat", go: () => { closeMenu(); openPhone("thread", id); } }, { label: "👤 Profile, games and dates", info: "Challenge, invite home, ask out", go: () => { closeMenu(); openPhone("player", id); } }], [], id), socialNote(key)); // menu
 } // end peerSocial
 function gotSoc(id, o, kind) { // a real player did something to you
   const [k, okS] = String(kind || "").split(":"), row = SOC.find((q) => q[0] === k); if (!row) return; const nm = peerName(o), ok = okS === "1", rel = relOf("p:" + relKey(o)); // what and who
-  const [, icon, label, , fg, rg, , , , cat] = row; const df = ok || cat === "mean" ? fg : -3, dr = ok || cat === "mean" ? rg : 0; rel.f = Math.max(-100, Math.min(100, rel.f + df)); rel.r = Math.max(0, Math.min(100, rel.r + dr)); // you feel it too
+  const [, icon, label, , fg, rg, , , , cat] = row; const df = ok || cat === "mean" ? fg : -3, dr = ok || cat === "mean" ? rg : 0; rel.f = Math.max(-100, Math.min(100, rel.f + df)); rel.r = Math.max(0, Math.min(100, rel.r + dr)); relTouch(rel, nm); // you feel it too
   if (ok && cat === "romantic") addMoodlet("flirty", nm + " " + (k === "kiss" ? "kissed you" : "flirted with you"), 2, 180, "flirty"); else if (cat === "mean") addMoodlet("hurt", nm + " was mean to you", -2, 180, "angry"); else if (ok) addMoodlet("social", nm + " made your day", 1, 120, "happy");
   s.social = clamp(s.social + (cat === "mean" ? 0 : 8)); o.bubble = icon; o.until = performance.now() + 3500; save(); // needs and icons
   toast(icon + " " + nm + ": " + label.toLowerCase() + (ok || cat === "mean" ? "" : " (it didn't land)") + " · " + relWords(rel));
 } // end gotSoc
+
+// ================= deeper relationships: milestones, gifts, partners, drifting apart, and the People app =================
+const REL_MS = [["friends", (r) => r.f >= 40, "🤝", "FRIENDS!", "You and {n} are friends now"], ["best", (r) => r.f >= 70, "💛", "BEST FRIENDS!", "{n} is your best friend"], ["crush", (r) => r.r >= 30, "💘", "A CRUSH!", "You have a crush on {n}"], ["sweet", (r) => r.r >= 60, "💕", "SWEETHEARTS!", "You and {n} are sweethearts"]]; // milestones worth celebrating
+function relTouch(rel, name) { // after anything that changes a relationship: remember when, and celebrate milestones (once each)
+  rel.last = s.t; rel.ms = rel.ms || {}; for (const [k, ok, icon, title, text] of REL_MS) if (!rel.ms[k] && ok(rel)) { rel.ms[k] = 1; s.cha++; banner(icon + " " + title, text.replace("{n}", name) + " · +1 charisma"); addMoodlet("ms_" + k, text.replace("{n}", name), 2, 360, k === "crush" || k === "sweet" ? "flirty" : "happy"); } // each milestone once
+} // end relTouch
+function relDrift() { // once a game day: friendships you ignore fade a little, like real life
+  if (s.relDay === day()) return; const first = !s.relDay; s.relDay = day(); if (first) return; // the first time just starts the clock
+  for (const k in (s.rels2 || {})) { const r = s.rels2[k], idle = s.t - (r.last || 0); if (idle > 2880 && Math.abs(r.f) > 10 && !r.partner) r.f -= Math.sign(r.f); if (idle > 4320 && r.r > 0 && !r.partner) r.r = Math.max(0, r.r - 2); } // two quiet days: -1 friendship; three: -2 romance (partners stay)
+} // end relDrift
+function relSpecialActs(name, key, onDo, peerId) { // gifts and asking to be partners, added to the interaction menu
+  const rel = relOf(key), out = [A("🎁 Give a gift", "Flowers or chocolates · a big friendship boost", 10, 300, {}, { icon: "🎁", tag: "Rs 300", tagCls: "cost", run() { // a present
+    rel.f = Math.min(100, rel.f + 12); if (rel.r > 10 || hasTrait("romantic")) rel.r = Math.min(100, rel.r + 6); s.social = clamp(s.social + 10); addMoodlet("gift", "Gave " + name + " a gift", 1, 180, "happy"); relTouch(rel, name); if (onDo) onDo(["gift", "🎁", "Give a gift", 10, 12, 6, 0, 0, 1, "friendly"], true); save(); return "🎁 " + name + " loved the gift! +12 friendship · now " + relWords(rel) + "."; } })];
+  if (rel.partner) out.push(A("💔 Break up", "End things with " + name, 5, 0, {}, { icon: "💔", run() { rel.partner = false; rel.r = Math.max(0, rel.r - 30); rel.f = Math.max(-100, rel.f - 20); addMoodlet("breakup", "Broke up with " + name, -3, 720, "sad"); save(); return "💔 You and " + name + " broke up."; } })); // splitting up
+  else out.push(A("💍 Ask to be partners", "Make it official", 10, 0, {}, { icon: "💍", why: rel.r < 60 ? "Needs romance 60 (now " + rel.r + ")" : rel.f < 40 ? "Needs friendship 40 (now " + rel.f + ")" : "", run() { // going steady
+    if (peerId) { closeMenu(); relMenu(peerId); return "Asking " + name + "…"; } // a real player answers for themselves
+    if (Math.random() < 0.55 + rel.r / 400 + moodScore() * 0.03) { rel.partner = true; rel.ms = rel.ms || {}; addMoodlet("love", "In love with " + name, 3, 1440, "flirty"); banner("💍 IT'S OFFICIAL!", name + " said yes!"); s.cha++; save(); return "💍 " + name + " said YES! You're partners now."; } // yes
+    rel.r = Math.max(0, rel.r - 10); addMoodlet("rejected", name + " said not yet", -2, 360, "sad"); save(); return "😬 " + name + " said they're not ready yet. -10 romance."; } })); // not yet
+  return out;
+} // end relSpecialActs
+function relRow(box, name, key, sub, onClick) { // one person in the People app: name, label and two meters
+  const r = relOf(key), b = el("button", "prow relrow"); b.type = "button"; const l = el("span", "", (r.partner ? "💍 " : "") + name); const meters = el("span", "relmeters"); // the row
+  const fm = el("span", "relm"); fm.append(el("small", "", "❤️ " + r.f), bar(Math.max(0, r.f), 100, r.f >= 0 ? "#3fd16b" : "#ff4d4d")); const rm = el("span", "relm"); rm.append(el("small", "", "💕 " + r.r), bar(r.r, 100, "#ff6fb1")); meters.append(fm, rm); // friendship and romance
+  l.append(el("small", "", (r.partner ? "Partner" : relWords(r)) + (sub ? " · " + sub : "") + (r.last ? " · " + (s.t - r.last < 60 ? "just now" : Math.round((s.t - r.last) / 60) < 48 ? Math.round((s.t - r.last) / 60) + "h ago" : Math.round((s.t - r.last) / 1440) + " days ago") : "")), meters); b.append(l, el("b", "", "›")); if (onClick) b.onclick = onClick; box.append(b); // details
+} // end relRow
+function peopleApp(box) { // everyone you know, closest first
+  const R2 = s.rels2 || {}, keys = Object.keys(R2).filter((k) => R2[k].f || R2[k].r || R2[k].partner).sort((a, b) => (R2[b].partner ? 300 : 0) + R2[b].f + R2[b].r - ((R2[a].partner ? 300 : 0) + R2[a].f + R2[a].r)); // closest first
+  box.append(el("p", "pnote", keys.length ? "Your people. Interact to grow closer; friendships fade if you ignore them for days." : "You haven't met anyone yet. Walk up to a neighbour or a player and tap them to chat."));
+  for (const k of keys) { // each person
+    if (k.startsWith("npc:")) { const n = NPC.find((q) => q.name === k.slice(4)); if (!n) continue; relRow(box, n.name, k, "Neighbour", () => { closePhone(); path = findPath(s.x, s.y, n.x, n.y); toast("Walking over to " + n.name + "."); }); } // a neighbour: walk to them
+    else { const id = k.slice(2), pk = Object.keys(others).find((q) => relKey(others[q]) === id), p = players.find((q) => q.id === id), nm = pk ? peerName(others[pk]) : p ? p.name : "A player"; relRow(box, nm, k, pk ? "🟢 Online" : "Offline", pk ? () => openPhone("player", pk) : null); } // a player
+  }
+} // end peopleApp
 
 // ================= the Resident Card: government benefits for residents =================
 const RES_CARD = [["🍛", "20% off all food and drinks", "At every restaurant, stall and supermarket"], ["🚌", "Free public buses", "Show your card to the driver"], ["🏥", "Half-price hospital care", "Treatment and clinic bills"], ["💵", "Rs 1,000 solidarity grant", "Every Monday at 08:00"], ["🎟️", "Rs 200 off party tickets", "Club and event entry"]]; // the benefits
@@ -3918,7 +3978,10 @@ function welcomeBack() { // the card you see when you come back
   row(e[0], "You feel " + e[2].toLowerCase(), low.length ? "Low on: " + low.map((k) => NEED_ICON[k] + " " + NEED_LABEL[k]).join(", ") : "Your needs look good"); // your mood
   if (isResident()) row("🪪", "Resident Card active", "20% off food, free buses, half-price hospital"); // perks
   if (q) row(q.i, "Next: " + q.t, q.p); const ev = EVENTS.find((x) => (day() - 1) % 7 === x.d); if (ev) row("🎉", "Tonight: " + ev.org, doorOf(ev.venue).name + " · doors " + ev.h + ":00"); // goals and tonight
-  card.append(list); const go = el("button", "start", "Let's go! 🌴"); go.type = "button"; go.onclick = () => { $("sheet").hidden = true; if (!(s.traits || []).length) traitPicker(); }; card.append(go); $("sheet").hidden = false; // done (older characters then pick traits)
+  if (needsLogin()) row("🔐", "Your progress isn't protected yet", "Create a username and password to keep your character safe and play on any device"); // no login yet
+  card.append(list); const traits = () => { if (!(s.traits || []).length) traitPicker(); }; // older characters then pick traits
+  if (needsLogin()) { const sv = el("button", "start", "🔐 Save my progress"); sv.type = "button"; sv.onclick = () => accountSheet("create", traits); card.append(sv); } // the login, first
+  const go = el("button", needsLogin() ? "close" : "start", "Let's go! 🌴"); go.type = "button"; go.onclick = () => { $("sheet").hidden = true; traits(); }; card.append(go); $("sheet").hidden = false; // or just play
 } // end welcomeBack
 function welcomeWatch() { // wait until the intro and any menu are gone, then say hello
   const t = setInterval(() => { if (typeof introOn !== "undefined" && introOn) return; if (!s.made) { clearInterval(t); return; } if (!$("sheet").hidden || !$("phone").hidden || !$("arena").hidden) return; clearInterval(t); if (awayMs > 20 * 60000 || (s.giftDay !== new Date().toDateString())) welcomeBack(); else if (!(s.traits || []).length) traitPicker(); }, 700); // returning players get the card; new arrivals already picked traits

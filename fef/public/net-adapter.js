@@ -19,20 +19,24 @@
   var pending = {};                                               // db writes waiting for an ack: rid -> { resolve, reject, timer }
   var ridN = 0, subN = 0;                                         // counters for request ids and subscription ids
 
+  var myPres = null, retry = 0;                                   // everything you have told the room (re-sent after a reconnect), and the reconnect timer
+  function reconnectNow() { if (open || (ws && ws.readyState <= 1)) return; clearTimeout(retry); connect(); } // the screen came back: reconnect at once
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) reconnectNow(); }); // phone unlocked or tab shown again
+  window.addEventListener("online", reconnectNow); window.addEventListener("pageshow", reconnectNow); // network back, or page restored
   function connect() {
     try { ws = new WebSocket(URL); } catch (e) { setTimeout(connect, 2000); return; } // retry if the socket cannot be created
     ws.onopen = function () { ws.send(JSON.stringify({ t: "hello", uid: uid, token: token || undefined })); }; // identify with our key
     ws.onmessage = function (ev) {
       var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
-      if (m.t === "welcome") { myPeer = m.peer; remember(m.uid, m.token); accountName = m.account || ""; open = true; for (var id in snaps) sendSub(id); var q = readyQ; readyQ = []; q.forEach(function (r) { r(); }); } // accepted: the server says who we are, then restore subscriptions
+      if (m.t === "welcome") { myPeer = m.peer; remember(m.uid, m.token); accountName = m.account || ""; open = true; if (myPres) try { ws.send(JSON.stringify({ t: "presence", patch: myPres })); } catch (e) {} /* back online: tell everyone where you are again */ for (var id in snaps) sendSub(id); var q = readyQ; readyQ = []; q.forEach(function (r) { r(); }); } // accepted: the server says who we are, then restore subscriptions
       else if (m.t === "account" || m.t === "homes") { var ar = asks[m.rid]; if (ar) { clearTimeout(ar.timer); delete asks[m.rid]; ar.resolve(m); } } // an answer to a login or home request
       else if (m.t === "relay") { relayCbs.forEach(function (cb) { try { cb(m.from, m.d); } catch (e) {} }); } // a game message from another player
       else if (m.t === "invited" || m.t === "kicked") { (homeCbs[m.t] || []).forEach(function (cb) { try { cb(m); } catch (e) {} }); } // someone invited you, or you were sent out of a home
-      else if (m.t === "peers") { if (peersCb) peersCb({ peers: m.peers.map(function (p) { return { peer: p.peer, presence: p.presence, kind: p.kind || "viewer", isMe: p.peer === myPeer, sameTab: p.peer === myPeer }; }) }); } // room update
+      else if (m.t === "peers") { if (peersCb) peersCb({ total: m.total | 0, peers: m.peers.map(function (p) { return { peer: p.peer, presence: p.presence, kind: p.kind || "viewer", isMe: p.peer === myPeer, sameTab: p.peer === myPeer }; }) }); } // room update (and how many people have ever played)
       else if (m.t === "snap") { var s = snaps[m.id]; if (s && s.cb) s.cb({ docs: m.docs.map(function (d) { return { id: d.id, data: function () { return d.data; } }; }) }); } // a collection's data
       else if (m.t === "ack") { var pr = pending[m.rid]; if (pr) { clearTimeout(pr.timer); pr.resolve(); delete pending[m.rid]; } } // a write landed
     };
-    ws.onclose = function () { open = false; if (peersCloseCb) peersCloseCb(); setTimeout(connect, 1500); }; // drop to solo and reconnect
+    ws.onclose = function () { open = false; if (peersCloseCb) peersCloseCb(); clearTimeout(retry); retry = setTimeout(connect, 1500); }; // drop to solo and reconnect
     ws.onerror = function () { try { ws.close(); } catch (e) {} };
   }
   connect();
@@ -76,7 +80,7 @@
   window.claude = {
     use: function (name) {
       if (name === "user") return Promise.resolve({ id: function () { return whenReady().then(function () { return uid; }); } }); // who you are
-      if (name === "room") return Promise.resolve({ onPeers: function (cb, closeCb) { peersCb = cb; peersCloseCb = closeCb; }, presence: function (patch) { if (open) try { ws.send(JSON.stringify({ t: "presence", patch: patch })); } catch (e) {} return Promise.resolve(); } }); // live players
+      if (name === "room") return Promise.resolve({ onPeers: function (cb, closeCb) { peersCb = cb; peersCloseCb = closeCb; }, presence: function (patch) { myPres = Object.assign(myPres || {}, patch); if (open) try { ws.send(JSON.stringify({ t: "presence", patch: patch })); } catch (e) {} return Promise.resolve(); } }); // live players (remembered, so a reconnect restores you)
       if (name === "db") return Promise.resolve({ collection: collection, doc: docRef }); // the shared database
       return Promise.resolve(null); // anything else: not provided (the game falls back gracefully)
     },
