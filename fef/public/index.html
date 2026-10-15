@@ -645,6 +645,8 @@ const BUILD = [ // buildings: place, size, name, wall colour, roof style and col
   { id: "slr", x: 97, y: 18, w: 11, h: 8, name: "Student Life Residence", col: "#eef1e6", roof: "flat", roofCol: "#4c8f45", awn: "#2f7d3a", sign: "#2f6b2f", door: "S" }, // student digs: chill and vice
   { id: "yasmina1", x: 98, y: 4, w: 5, h: 7, name: "Yasmina 1", col: "#f1e7d6", roof: "flat", roofCol: "#b08a4a", sign: "#7a5a1e", door: "S", tall: 3.8 }, // two-storey apartments
   { id: "yasmina2", x: 40, y: 52, w: 5, h: 7, name: "Yasmina 2", col: "#e7eef1", roof: "flat", roofCol: "#4a7a8a", sign: "#2e5560", door: "N", tall: 3.8 }, // two-storey apartments, far from Yasmina 1
+  { id: "motors", x: 76, y: 22, w: 6, h: 3, name: "Flic Motors", col: "#f4f7fa", roof: "flat", roofCol: "#d81e2c", awn: "#d81e2c", sign: "#d81e2c", door: "S" }, // car rental and dealership, with its own lot of cars out front
+  { id: "club69", x: 86, y: 6, w: 9, h: 6, name: "Club 69", col: "#1b1024", roof: "flat", roofCol: "#2a1238", awn: "#ff2e88", sign: "#ff2e88", door: "S", tall: 4.4 }, // Cascavelle's neon nightclub
   { id: "resort", x: 20, y: 31, w: 14, h: 8, name: "Wolmar Sands Resort", col: "#f4e9d2", roof: "thatch", roofCol: "#c9a45a", sign: "#7a5a1e", door: "S" } // hotel jobs
 ]; // end buildings
 const hash = (x, y) => ((x * 73856093) ^ (y * 19349663)) >>> 0; // fixed pseudo-random number per tile
@@ -671,7 +673,9 @@ function buildMap() { // fill the terrain and collision grids
     terr[y * W + x] = t; // store terrain
     solid[y * W + x] = (t === 0 || t === 6) ? 1 : 0; // deep water and walls block you
   } // end tile loop
+  for (let y = 22; y <= 27; y++) for (let x = 76; x <= 87; x++) terr[y * W + x] = 4; // Flic Motors' tarmac car lot
   for (const b of BUILD) for (let y = b.y; y < b.y + b.h; y++) for (let x = b.x; x < b.x + b.w; x++) solid[y * W + x] = 1; // buildings block you
+  for (const cx of [77.2, 78.2, 80.5, 81.7, 86.1, 87.2]) for (const x of [Math.floor(cx - 0.3), Math.floor(cx + 0.3)]) for (const y of [26, 27]) solid[y * W + x] = 1; for (let y = 23; y <= 25; y++) for (let x = 83; x <= 85; x++) solid[y * W + x] = 1; solid[27 * W + 82] = 1; // the display cars, the turntable and the sign pole at Flic Motors
   for (let y = APTS.y; y < APTS.y + APTS.h; y++) for (let x = APTS.x; x < APTS.x + APTS.w; x++) solid[y * W + x] = 1; // the apartment block
   for (const p of PLOTS) for (let y = p.y; y < p.y + 3; y++) for (let x = p.x; x < p.x + 3; x++) solid[y * W + x] = 1; // house plots block you too
   for (let y = 0; y < H; y++) for (let x = 13; x < W; x++) { // place trees
@@ -841,6 +845,8 @@ const PLACE = { // what each building door offers
   dive: () => [A("🪙 Treasure dive off the reef", "Rs 500 gear · 2 hours · big payouts, but you can get hurt", 120, 0, { energy: -20, hygiene: 10, fun: 15 }, { why: s.fit < 3 ? "Needs fitness 3 (train at the gym)" : openAt(7, 17), run() { treasureDive(); return ""; } }), shift("dive")], // treasure diving or the dive career
   bar: () => [A("Drinks with the crowd", "Rs 250 · 1 hour · fun and people", 60, 250, { fun: 35, social: 30, bladder: -25, energy: -8 }, { why: openAt(17, 2), run() { s.cha++; return "Good night out. People know your face."; } }), shift("bar")], // night out or work
   gym: () => [A("Workout", "Rs 150 · 1 hour · +1 fitness", 60, 150, { energy: -20, hygiene: -25, fun: 10, hunger: -10 }, { why: openAt(6, 21), run() { s.fit++; return "Fitness is now " + s.fit + "."; } }), A("💪 Build stamina", "Rs 200 · 90 min · +1 stamina (needs drop slower)", 90, 200, { energy: -25, hygiene: -25, hunger: -12, fun: 6 }, { why: openAt(6, 21), run: trainStamina }), A("Personal trainer session", "Rs 400 · 1 hour · +2 fitness", 60, 400, { energy: -28, hygiene: -30, fun: 5, hunger: -14 }, { why: openAt(6, 21), run() { s.fit += 2; return "The trainer destroyed you. Fitness is now " + s.fit + "."; } })], // build fitness
+  motors: () => motorsActs(), // rent, buy and show off cars (see "Flic Motors" further down)
+  club69: () => club69Acts(), // the nightclub (see "Club 69" further down)
   saxo: () => [...partyActs("saxo"), shift("saxo"), partTime("Saxo bar back", 550, 18, 1), A("Cocktail on the deck", "Rs 350 · 1 hour · fun and people", 60, 350, { fun: 32, social: 22, bladder: -20, energy: -6 }, { why: openAt(18, 3), msg: "Cocktail by the sea while the DJ warms up." }), A("Dance", "Free on normal nights · 1 hour", 60, 0, { fun: 28, social: 18, energy: -18, hygiene: -10 }, { why: openAt(21, 3), run() { s.cha++; return "You held the dance floor."; } })], // club nights
   sapphire: () => [...partyActs("sapphire"), A("Dinner", "Rs 600 · +70 food, +15 fun", 60, 600, { hunger: 70, fun: 15, social: 10 }, { why: openAt(11, 23), msg: "Grilled fish and a sea breeze." }), A("Cocktail at the bar", "Rs 300 · 45 min · fun and people", 45, 300, { fun: 25, social: 20, bladder: -15 }, { why: openAt(11, 2), msg: "Cold cocktail, good playlist." })], // eat and drink
   tigers: () => [A("Pint and football", "Rs 220 · 1 hour · fun and people", 60, 220, { fun: 30, social: 22, bladder: -22 }, { why: openAt(11, 1), msg: "Big screen, loud crowd, cold pint." }), A("Burger and chips", "Rs 260 · +60 food", 30, 260, { hunger: 60 }, { why: openAt(11, 23), msg: "Proper pub burger." }), { label: "🎱 Play 8-ball pool", info: "For money vs the house, or a friendly frame", go: poolMenu }, shift("tigers"), partTime("Tigers waiter", 500, 12, 22)], // pub
@@ -875,12 +881,7 @@ const PLACE = { // what each building door offers
 for (const b of BUILD) OBJ.push({ id: b.id, x: b.x + b.w / 2, y: b.door === "S" ? b.y + b.h + 0.5 : b.y - 0.5, icon: "", name: b.name, enter: b.id }); // add a door object for every building
 
 OBJ.push({ x: 60.5, y: 14.5, icon: "🚏", stop: true, name: "Cascavelle bus stop", acts: busActs }); // bus stop for the mall and the university
-OBJ.push({ x: 70, y: 27, icon: "🚗", name: "Flic Motors", acts: () => [
-  A("Rent a car for 24 hours", "Rs 1,500 · the desk wants to see Rs 5,000 in your account", 15, 1500, {}, { why: hasCar() ? "You already have a car" : s.money < 5000 ? "You need Rs 5,000 in your account to rent" : "", run() { s.rentCar = s.t + 1440; return "Keys in hand for 24 hours. Drive it from the Ride menu."; } }),
-  A("Rent a car for a week", "Rs 6,000 · 7 days of driving · needs Rs 5,000 in your account", 15, 6000, {}, { why: hasCar() ? "You already have a car" : s.money < 5000 ? "You need Rs 5,000 in your account to rent" : "", run() { s.rentCar = s.t + 1440 * 7; return "Keys for a full week. Drive it from the Ride menu."; } }),
-  A("Buy a car", "Rs 60,000 · yours for good", 30, 60000, {}, { why: s.car ? "You own one" : "", run() { s.car = true; return "Your own car. Drive it from the Ride menu."; } }),
-  A("Buy a scooter", "Rs 25,000 · move twice as fast", 20, 25000, {}, { why: s.scooter ? "You own one" : "", run() { s.scooter = true; return "Scooter bought. Helmet on."; } })
-] }); // rent or buy wheels here, not just at the mall
+// (Flic Motors is now a real building with a car lot: see BUILD "motors" and motorsActs)
 OBJ.push({ x: 17.5, y: 11.5, icon: "🚏", stop: true, name: "Beach bus stop", acts: busActs }); // bus stop by the public beach
 OBJ.push({ x: 17.5, y: 27.5, icon: "🚏", stop: true, name: "Wolmar bus stop", acts: busActs }); // bus stop for the hotels
 OBJ.push({ x: 46.5, y: 27.5, icon: "🚏", stop: true, name: "Jumbo bus stop", acts: busActs }); // bus stop by the hypermarket
@@ -905,6 +906,8 @@ const ROOMDEF = { // each building's room: two floor colours and its stations [i
   bar: { floor: ["#5b3a2a", "#523324"], st: [["🍹", "Bar counter", "bar", 4, 2.4, /Drinks/], ["🧽", "Staff room", "counter", 9, 2.4, /shift/], ["", "", "table", 3, 5, null], ["", "", "table", 8.5, 5, null]] }, // nightlife
   gym: { floor: ["#3a4047", "#333940"], st: [["🏋", "Weights", "gymkit", 3.5, 2.6, /Workout/], ["💪", "Trainer corner", "gymkit", 8.5, 2.6, /trainer/], ["", "", "gymkit", 6, 5.2, null]] }, // fitness
   sapphire: { floor: ["#e9eef7", "#dbe3f1"], st: [["🍸", "Bar", "bar", 3.5, 2.4, /Cocktail|Bottle/], ["🍽", "Dining table", "table", 3, 5, /Dinner/], ["🎉", "Dance floor", "dance", 8.5, 4, /Party|flyers|Dance|Club/]] }, // resto bar
+  motors: { w: 12, h: 8, floor: ["#e9eef2", "#dfe6eb"], st: [["🔑", "Rental desk", "counter", 3.5, 2.4, /^Rent|keys/i], ["🚗", "Showroom", "shelf", 8.5, 2.6, /^Buy|Repaint/], ["☕", "Customer lounge", "sofa", 3.5, 5.6, /coffee|brochure/i], ["🏁", "Car meet board", "table", 9, 5.6, /meet|Show off|cars|Drag/i]] }, // showroom
+  club69: { w: 14, h: 9, floor: ["#1a0f24", "#2a1238"], st: [["🍸", "Neon bar", "bar", 3.5, 2.4, /cocktail|Shots|Bottle/i], ["🎧", "DJ and dance floor", "dance", 9, 4, /Dance|Party|entry/i], ["🛋️", "VIP booths", "sofa", 3.5, 6.4, /VIP/], ["🎤", "Stage", "screen", 10.5, 2.4, /stage/i], ["👔", "Staff door", "", 12, 6.6, /shift|Part-time/i]] }, // nightclub
   saxo: { floor: ["#2b2f36", "#25292f"], st: [["🍹", "Deck bar", "bar", 3.5, 2.4, /Cocktail|Bottle/], ["🎧", "DJ and dance floor", "dance", 8.5, 3.8, /Dance|Party/], ["📣", "Promoter", "table", 3, 5, /flyers|Club/], ["👔", "Staff door", "", 10, 5.6, /shift|Part-time/]] }, // beach club
   tigers: { floor: ["#4a3324", "#412c1f"], st: [["🍺", "Bar", "bar", 3.5, 2.4, /Pint|Bottle/], ["👔", "Staff door", "", 9.5, 2.2, /shift|Part-time/], ["🍔", "Table", "table", 3, 5.2, /Burger/], ["🎱", "Pool table", "pooltable", 8.5, 5.2, /pool/], ["🎧", "DJ corner", "dance", 6, 4.4, /Dance|Club/]] }, // pub
   mall: { w: 20, h: 12, x: 1, y: 1, name: "Cascavelle Mall", col: "#f3efe6", sign: "#7a5a1e", roofCol: "#c2457a", floor: ["#f1ece2", "#e7e0d2"], st: [["👗", "Fashion store", "store", 3.5, 2.7, /Fashion|Sales|Stylist|Store manager|Fold/], ["🛵", "Wheels", "store", 8, 2.7, /bicycle|scooter|\bcar\b/], ["📺", "Home and electronics", "store", 12.5, 2.7, /TV|mattress|cooler/], ["🎬", "Cinema", "screen", 16.5, 2.7, /film/], ["🍔", "Food court", "counter", 4, 7.6, /Burger|Bubble|cashier/], ["🕹", "Arcade", "arcade", 15.5, 7.6, /arcade/], ["", "", "plant", 10, 5, null], ["", "", "table", 7.5, 8, null], ["", "", "plant", 10, 8.6, null]] }, // the shopping mall
@@ -1114,7 +1117,7 @@ function rideModes(dest) { // step 2: choose how to get there
   let busWhy = openAt(6, 19); // buses stop running in the evening
   if (Math.hypot(here.x - s.x, here.y - s.y) > 2.5) busWhy = "Walk to a bus stop first (nearest: " + here.name + ")"; // must be at a stop
   else if (here === drop) busWhy = "This stop is already the closest one"; // pointless trip
-  const own = hasCar() ? [A("Drive your own car", "Free · fast", 0, 0, {}, { run() { startRide("mine", dest, 6, "You parked and walked the last steps."); ride.pts = [ride.P]; ride.x = ride.P.x; ride.y = ride.P.y; return "Getting in your car."; } })] : []; // your own car, parked right beside you
+  const own = hasCar() ? [A("Drive your " + myCarType().n, "Free · fast", 0, 0, {}, { run() { { const t = myCarType(); if (t.cha) addMoodlet("cruise", "Cruising in my " + t.n, 2, 120, "confident"); } startRide("mine", dest, 6, "You parked and walked the last steps."); ride.pts = [ride.P]; ride.x = ride.P.x; ride.y = ride.P.y; return "Getting in your car."; } })] : []; // your own car, parked right beside you
   openMenu("Ride to " + (dest.name === "Front door" ? "home" : dest.name), [...own, // your car first, then the three paid choices
     A("Taxi", rs(taxi) + " · comes at once · fastest", 0, taxi, {}, { run() { startRide("taxi", dest, 8, "Taxi dropped you off. " + rs(taxi) + " gone."); return "Your taxi is on its way."; } }), // very expensive, immediate
     A("Student driver", rs(stu) + (isNight() ? " incl. Rs 50 night rate" : "") + " · 15 min wait · any time · may cancel", 15, stu, { social: 8 }, { doing: "Waiting for your student driver", run() { // cheap, any time of day (Rs 50 more at night)
@@ -1226,13 +1229,17 @@ const EVENTS = [ // weekly parties: organiser, venue, weekday (0 = Monday), star
   { org: "WTF MAURITIUS", venue: "saxo", d: 4, h: 21, len: 300, fee: 500 }, // Friday night at Saxo Beach Club
   { org: "AFTER", venue: "sapphire", d: 5, h: 23, len: 300, fee: 600 }, // Saturday late at Sapphire Resto Bar
   { org: "JAMAL'S PARTY", venue: "jamal", d: 4, h: 22, len: 300, fee: 0 }, // Friday at Jamal's
-  { org: "JAMAL'S PARTY", venue: "jamal", d: 5, h: 22, len: 300, fee: 0 } // Saturday at Jamal's
+  { org: "JAMAL'S PARTY", venue: "jamal", d: 5, h: 22, len: 300, fee: 0 }, // Saturday at Jamal's
+  { org: "THROWBACK THURSDAY", venue: "club69", d: 3, h: 22, len: 300, fee: 400 }, // Thursday night at Club 69
+  { org: "CLUB 69 SUNDAY SESSIONS", venue: "club69", d: 6, h: 21, len: 300, fee: 300 }, // Sunday night at Club 69
+  { org: "FLIC MOTORS CAR MEET", venue: "motors", d: 5, h: 17, len: 240, fee: 0 } // Saturday evening car meet on the lot
 ]; // end EVENTS
 const evStart = (ev) => ev.d * 1440 + ev.h * 60; // minute of the week the party starts
 const evOn = (ev) => { const w = s.t % 10080; return w >= evStart(ev) && w < evStart(ev) + ev.len; }; // is the party on right now?
 const doorOf = (id) => OBJ.find((o) => o.id === id); // the door object of a building
 function partyActs(id) { // extra actions a venue gets around its party
-  const ev = EVENTS.find((e) => e.venue === id), out = [], w = s.t % 10080; // this venue's party and the time of week
+  const evs = EVENTS.filter((e) => e.venue === id), w = s.t % 10080, out = []; if (!evs.length) return out; // this venue's parties and the time of week
+  const ev = evs.find(evOn) || evs.slice().sort((a, b) => ((evStart(a) - w + 10080) % 10080) - ((evStart(b) - w + 10080) % 10080))[0]; // the one on now, else the next one
   if (evOn(ev)) out.push(A("Party: " + ev.org, (myClass() === "baller" ? "VIP entry, free for Big Ballers" : "Ticket " + rs(ev.fee)) + " · 3 hours · huge fun and people", 180, myClass() === "baller" ? 0 : ev.fee, { fun: 75, social: 55, energy: -32, bladder: -30, hunger: -15, hygiene: -15 }, { run() { // go to the party
     s.cha += 2 + (s.style >= 5 ? 1 : 0); s.parties++; s.cover = id + ":" + nightKey(); // parties build charisma, more if you dress well
     const n = NPC[rnd(0, NPC.length - 1)]; s.friends[n.name] = (s.friends[n.name] || 0) + 1; // you bond with someone there
@@ -1360,7 +1367,7 @@ const GENRES = { // what the DJs play
   house: { n: "House", bpm: 124, tr: ["Cascavelle Nights", "Deep Le Morne", "Wolmar 5AM"] },
   piano: { n: "Amapiano", bpm: 113, tr: ["Log Drum Lagoon", "Flic Piano", "Yanos on the Sand"] }
 }; // end GENRES
-const CLUB = { saxo: { g: "piano", dj: "DJ Lagon" }, sapphire: { g: "afro", dj: "DJ Kreol Vibes" }, tigers: { g: "house", dj: "DJ Sunset" } }; // nightly club nights and their resident DJs
+const CLUB = { club69: { g: "house", dj: "DJ Neon" }, saxo: { g: "piano", dj: "DJ Lagon" }, sapphire: { g: "afro", dj: "DJ Kreol Vibes" }, tigers: { g: "house", dj: "DJ Sunset" } }; // nightly club nights and their resident DJs
 const BOTTLES = [["Green Island rum", 1500, 1, "🥃"], ["Moët & Chandon", 6500, 2, "🍾"], ["Hennessy VSOP", 9000, 3, "🥃"], ["Belvedere magnum with sparklers", 15000, 4, "🎇"], ["Ace of Spades", 45000, 6, "👑"]]; // name, price, charisma, icon
 const seenBtl = {}; // bottle shout-outs already heard from each player
 let dancing = "", danceT = 0; // the genre you are dancing to, and time towards a charisma point
@@ -1387,7 +1394,7 @@ function nightActs(id) { // club night, dancing and bottles at a venue
   out.push({ label: "Bottle service", info: "From Rs 1,500 · the DJ announces your name to everyone", why: id !== "houseparty" && !venueGenre() ? "Only during club nights and parties" : !paidIn(id) ? "Get in first" : "", go: bottleMenu }); // bottles
   return out; // for the menu
 } // end nightActs
-for (const id of ["saxo", "sapphire", "tigers", "houseparty"]) { const f = PLACE[id]; PLACE[id] = () => f().filter((a) => a.label !== "Dance").concat(nightActs(id)); } // add nightlife to the party venues
+for (const id of ["saxo", "sapphire", "tigers", "club69", "houseparty"]) { const f = PLACE[id]; PLACE[id] = () => f().filter((a) => a.label !== "Dance").concat(nightActs(id)); } // add nightlife to the party venues
 function bottleMenu() { openMenu("Bottle service", BOTTLES.map(([n, p, pts, ic]) => A(ic + " " + n, rs(p) + " · +" + pts + " charisma · the DJ shouts your name", 10, p, { fun: 10 + pts * 6, social: 10 + pts * 5 }, { run() { s.cha += pts; s.bottles++; announceBottle(n, ic); return "Sparklers out! The DJ announced you to everyone."; } })), "Everyone playing the game hears who bought it."); } // the bottle list
 function announceBottle(item, ic) { // the DJ shouts your name
   const at = placeName(); shout(ic + " " + (s.name || "Someone") + " just bought " + item + " at " + at + "!"); myBubble = { text: ic + " " + item, until: performance.now() + 8000 }; // you see it
@@ -2766,7 +2773,7 @@ function init3d() { // build the 3D world; returns false if this device cannot d
   R.lampMat = new THREE.MeshLambertMaterial({ color: 0xfff3c4, emissive: 0xffd77a, emissiveIntensity: 0 }); // street lamp bulbs
   R.ray = new THREE.Raycaster(); R.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // for turning taps into ground positions
   R.party = [0xff3b8d, 0x35c4bb, 0xffd23c].map((c) => { const l = new THREE.PointLight(c, 0, 14); R.scene.add(l); return l; }); // three coloured party lights
-  for (const step of [buildGround, buildTown, buildTrees, buildApts, buildLandmark, buildTamarin, buildAirport, buildSugar, buildMonuments, buildMarkers, buildSports]) { try { step(); } catch (e) { console.error(e); } } // build each part; one failing part does not stop the rest
+  for (const step of [buildGround, buildTown, buildTrees, buildApts, buildVenues, buildLandmark, buildTamarin, buildAirport, buildSugar, buildMonuments, buildMarkers, buildSports]) { try { step(); } catch (e) { console.error(e); } } // build each part; one failing part does not stop the rest
   return true; // 3D is ready
 } // end init3d
 
@@ -3134,10 +3141,12 @@ function personAt(id, L, x, z, face, moving, opt) { // show one person this fram
 function hideUnused() { for (const id in PETM) if (PETM[id].seen !== R.frame) PETM[id].g.visible = false; for (const id in PP) { const p = PP[id]; if (p.seen !== R.frame) { p.g.visible = false; if (p.plumb) p.plumb.visible = false; if (p.label) p.label.visible = false; if (p.bub) p.bub.visible = false; if (p.arrow) p.arrow.visible = false; } } } // hide people not drawn this frame
 
 function makeCar(v) { // a vehicle model pointing along +x
-  const gr = new THREE.Group(), L = v.len, hgt = v.bus ? 1.1 : 0.45; // length and body height
+  const gr = new THREE.Group(), L = v.len, hgt = v.bus ? 1.1 : v.tall ? 0.62 : v.sport ? 0.3 : 0.45; // length and body height (SUVs tall, sports cars low)
   box(L, hgt, 0.72, v.col, 0, 0.22 + hgt / 2, 0, gr); // body
   if (v.bus) { box(L - 0.3, 0.3, 0.74, "#1d2a36", 0, 0.95, 0, gr); box(L, 0.08, 0.74, "#ffffff", 0, 0.6, 0, gr); } // bus window band and stripe
-  else { box(L * 0.55, 0.3, 0.64, shade(v.col, 0.9), -L * 0.05, 0.82, 0, gr); box(0.05, 0.24, 0.6, "#1d2a36", L * 0.23, 0.82, 0, gr); } // car cabin and windscreen
+  else if (v.conv) { box(0.05, 0.22, 0.62, "#9fd3ea", L * 0.12, 0.8, 0, gr); for (const z of [-0.17, 0.17]) { box(0.28, 0.12, 0.26, "#2a2420", -L * 0.05, 0.73, z, gr); box(0.06, 0.3, 0.26, "#2a2420", -L * 0.2, 0.82, z, gr); } } // open-top convertible: windscreen and two seats
+  else if (v.sport) { box(L * 0.42, 0.24, 0.62, "#1d2a36", -L * 0.08, 0.64, 0, gr); box(0.08, 0.05, 0.7, shade(v.col, 0.75), -L * 0.47, 0.72, 0, gr); for (const z of [-0.28, 0.28]) box(0.04, 0.16, 0.04, shade(v.col, 0.75), -L * 0.45, 0.62, z, gr); } // low glass cabin and a rear spoiler
+  else { const ch = v.tall ? 0.36 : 0.3, cy = 0.22 + hgt + ch / 2; box(L * (v.tall ? 0.7 : 0.55), ch, 0.64, shade(v.col, 0.9), -L * 0.05, cy, 0, gr); box(0.05, ch - 0.06, 0.6, "#1d2a36", L * (v.tall ? 0.3 : 0.23), cy, 0, gr); if (v.tall) for (const z of [-0.33, 0.33]) box(L * 0.7, 0.03, 0.03, "#2a2e35", -L * 0.05, cy + ch / 2 + 0.03, z, gr); } // car cabin and windscreen (SUVs get roof rails)
   for (const [dx, dz] of [[L * 0.32, 0.36], [L * 0.32, -0.36], [-L * 0.32, 0.36], [-L * 0.32, -0.36]]) { const wh = cyl(0.16, 0.16, 0.1, "#15171a", dx, 0.16, dz, gr, 10); wh.rotation.x = Math.PI / 2; } // four wheels
   if (v.taxi) box(0.3, 0.12, 0.18, "#ffd23c", 0, 1.03, 0, gr); // taxi sign
   if (v.plate) { box(0.22, 0.22, 0.02, "#ffffff", L / 2 + 0.01, 0.5, 0, gr).rotation.y = Math.PI / 2; box(0.08, 0.14, 0.03, "#d81e2c", L / 2 + 0.02, 0.5, 0, gr).rotation.y = Math.PI / 2; } // learner plate
@@ -3328,7 +3337,7 @@ $("introGo").onclick = () => endIntro(true); // start playing
 $("introSkip").onclick = () => endIntro(false); // skip straight in
 
 // ================= building icons, previews, the Flic en Flac letters =================
-const BICON = { jamal: "🎉", slr: "🎓", yasmina1: "🏢", yasmina2: "🏢", sugar: "🏖️", coq: "🍗", burgo: "🍔", immig: "🛂", snack: "🍜", cafe: "☕", shop: "🛒", gelato: "🍨", dive: "🤿", bar: "🍹", gym: "🏋️", jumbo: "🛍️", sapphire: "🍸", saxo: "🎧", tigers: "🍺", hospital: "🏥", uni: "🎓", mall: "🏬", salon: "💇", maravan: "🍔", mcb: "🏦", resort: "🏨", police: "👮" }; // an emoji for every building
+const BICON = { motors: "🚗", club69: "🎶", jamal: "🎉", slr: "🎓", yasmina1: "🏢", yasmina2: "🏢", sugar: "🏖️", coq: "🍗", burgo: "🍔", immig: "🛂", snack: "🍜", cafe: "☕", shop: "🛒", gelato: "🍨", dive: "🤿", bar: "🍹", gym: "🏋️", jumbo: "🛍️", sapphire: "🍸", saxo: "🎧", tigers: "🍺", hospital: "🏥", uni: "🎓", mall: "🏬", salon: "💇", maravan: "🍔", mcb: "🏦", resort: "🏨", police: "👮" }; // an emoji for every building
 function previewBuilding(id) { // show what a building offers before you walk in
   const b = BUILD.find((q) => q.id === id), d = doorOf(id), dist = Math.round(Math.hypot(d.x - s.x, d.y - s.y)); // building, its door, how far
   let acts = []; try { acts = PLACE[id] ? PLACE[id]() : []; } catch (e) { acts = []; } // what you can do inside
@@ -3375,7 +3384,7 @@ function buildHouse() { // (old) the shared small house on Coral Street, no long
 const _lp = typeof THREE !== "undefined" ? new THREE.Vector3() : null; // scratch for label positions
 function scaleLabels() { // keep every building's name tag the same readable size on screen at any zoom
   const vh = (R.renderer.domElement.clientHeight || innerHeight), per = 2 * Math.tan(R.camera.fov * Math.PI / 360) / vh, big = Math.min(innerWidth, innerHeight) < 700 ? 1.08 : 1; // world size of one screen pixel per unit distance (a touch bigger on phones)
-  syncMyFlat(); const t = performance.now() / 1000; // your flat's marker, and a clock for the bobbing
+  syncMyFlat(); venuesTick(); const t = performance.now() / 1000; // your flat's marker, and a clock for the bobbing
   for (const gr of R.world.children.concat(R.estate ? R.estate.children : [])) { const bc = gr.userData.beacon; if (bc) { bc.position.y = bc.userData.base + Math.sin(t * 3) * 0.18; bc.rotation.y = t * 1.2; const k = 1 + (Math.sin(t * 3) + 1) * 0.12; bc.userData.ring.scale.set(k, k, k); } // bob and spin your home's arrow, pulse its ring
     const sp = gr.userData.tag; if (!sp || !sp.userData.px) continue; // only the new tags
     sp.getWorldPosition(_lp); if (sp.userData.near) sp.visible = !introOn && Math.hypot(_lp.x - s.x, _lp.z - s.y) < sp.userData.near; if (!sp.visible) continue; // houses and plots: only when you are near
@@ -3987,6 +3996,73 @@ function welcomeWatch() { // wait until the intro and any menu are gone, then sa
   const t = setInterval(() => { if (typeof introOn !== "undefined" && introOn) return; if (!s.made) { clearInterval(t); return; } if (!$("sheet").hidden || !$("phone").hidden || !$("arena").hidden) return; clearInterval(t); if (awayMs > 20 * 60000 || (s.giftDay !== new Date().toDateString())) welcomeBack(); else if (!(s.traits || []).length) traitPicker(); }, 700); // returning players get the card; new arrivals already picked traits
 } // end welcomeWatch
 
+// ================= Flic Motors: rent or buy the car you want, in your colour, and the Saturday car meet =================
+const CAR_TYPES = { // the cars on the lot: name, look, top speed, prices, how much people notice you in it
+  compact: { n: "Island Compact", len: 1.3, sp: 8.5, day: 1200, week: 5000, buy: 60000, cha: 0, i: "🚗" },
+  suv: { n: "Family SUV", len: 1.6, sp: 8.2, tall: 1, day: 2200, week: 9000, buy: 120000, cha: 0, i: "🚙" },
+  conv: { n: "Beach Convertible", len: 1.5, sp: 9.5, conv: 1, day: 3500, week: 15000, buy: 200000, cha: 1, i: "🏎️" },
+  sport: { n: "Sports Coupé", len: 1.6, sp: 11, sport: 1, day: 5000, week: 22000, buy: 350000, cha: 2, i: "🏁" }
+}; // end CAR_TYPES
+const CAR_COLS = [["Sunset red", "#e4572e"], ["Lagoon blue", "#1f8fd6"], ["Pearl white", "#f2f4f5"], ["Midnight black", "#1b1d22"], ["Mango yellow", "#ffb020"], ["Palm green", "#2e9e5b"]]; // paint choices
+const myCarType = () => CAR_TYPES[(s.rentCar > s.t && s.rentKind) || s.carKind] || CAR_TYPES.compact; // what you drive now (a rental wins while it lasts)
+Object.defineProperty(VEH, "mine", { configurable: true, get() { const t = myCarType(); return { name: t.n.toLowerCase(), col: s.carCol || "#e4572e", len: t.len, sp: t.sp, tall: t.tall, conv: t.conv, sport: t.sport }; } }); // your own car looks like the one you chose
+function carDeal(mode, k) { // pick a colour, then rent or buy
+  const t = CAR_TYPES[k], price = mode === "buy" ? t.buy : mode === "week" ? t.week : t.day, what = mode === "buy" ? "Buy the " + t.n : "Rent the " + t.n + (mode === "week" ? " for a week" : " for 24 hours"); // the deal
+  openMenu(t.i + " " + what, CAR_COLS.map(([cn, col]) => A("🎨 " + cn, rs(price) + (mode === "buy" ? " · yours for good" : " · keys today"), 15, price, {}, { icon: t.i, // one card per colour
+    why: mode !== "buy" && hasCar() ? "You already have a car" : mode === "buy" && s.car && s.carKind === k ? "You already own one" : mode !== "buy" && s.money < price + 5000 ? "The desk wants to see " + rs(5000) + " in your account as well" : "", run() { // checks
+      if (mode === "buy") { s.car = true; s.carKind = k; s.carCol = col; if (t.cha) s.cha += t.cha; addMoodlet("newcar", "Brand-new " + t.n + "!", 3, 1440, "confident"); banner(t.i + " NEW CAR!", "Your " + cn.toLowerCase() + " " + t.n + " · drive it from Ride"); return "The " + t.n + " is yours. Drive it from the Ride menu."; } // bought
+      s.rentCar = s.t + (mode === "week" ? 1440 * 7 : 1440); s.rentKind = k; if (!s.car) s.carCol = col; addMoodlet("rental", "Got the keys to a " + t.n, 1, 480, "happy"); return "Keys to a " + cn.toLowerCase() + " " + t.n + ". Drive it from the Ride menu."; } })), // rented
+    mode === "buy" ? "Paint it any colour. " + (t.cha ? "Turns heads: +" + t.cha + " charisma." : "") : "Rentals need " + rs(5000) + " left in your account as a deposit.");
+} // end carDeal
+const carMeetOn = () => EVENTS.some((e) => e.venue === "motors" && evOn(e)); // the Saturday car meet
+function motorsActs() { // everything at Flic Motors
+  const out = [...partyActs("motors").filter((a) => /^Party:/.test(a.label)).map((a) => Object.assign(a, { label: "🏁 Join the car meet", info: "Free · 3 hours · meet car lovers, show off, race", min: 180, cost: 0 }))]; // the weekly meet
+  for (const k in CAR_TYPES) { const t = CAR_TYPES[k]; out.push({ label: "Rent: " + t.i + " " + t.n, info: rs(t.day) + " a day · " + rs(t.week) + " a week" + (t.cha ? " · turns heads" : ""), go: () => openMenu(t.i + " " + t.n, [{ label: "24 hours · " + rs(t.day), info: "Pick your colour", go: () => carDeal("day", k) }, { label: "7 days · " + rs(t.week), info: "Pick your colour", go: () => carDeal("week", k) }], "Speed " + t.sp + " · " + (t.tall ? "room for everyone" : t.conv ? "roof down, wind in your hair" : t.sport ? "the fastest thing on the coast" : "cheap and cheerful")) }); } // rentals
+  for (const k in CAR_TYPES) { const t = CAR_TYPES[k]; out.push({ label: "Buy: " + t.i + " " + t.n, info: rs(t.buy) + (s.car && s.carKind === k ? " · you own one" : ""), go: () => carDeal("buy", k) }); } // buying
+  out.push(A("🎨 Repaint your car", "Rs 2,500 · pick a new colour", 0, 0, {}, { why: s.car ? "" : "Buy a car first", go: () => openMenu("Repaint", CAR_COLS.map(([cn, col]) => A("🎨 " + cn, rs(2500), 60, 2500, {}, { why: s.carCol === col ? "Already this colour" : "", run() { s.carCol = col; return "Fresh " + cn.toLowerCase() + " paint. Looking sharp."; } }))) })); // new paint
+  out.push(A("☕ Free coffee and brochures", "15 min · +fun", 15, 0, { fun: 6, energy: 4 }, { msg: "The salesman tells you about the Sports Coupé for twenty minutes." })); // the lounge
+  out.push(A("😎 Show off your ride", carMeetOn() ? "Car meet only · charisma and people" : "At the Saturday car meet", 60, 0, { social: 30, fun: 25 }, { why: !carMeetOn() ? "The car meet is Saturdays 17:00 to 21:00" : !hasCar() ? "Rent or buy a car first" : "", run() { const t = myCarType(); s.cha += 1 + t.cha; addMoodlet("meet", "Everyone loved my " + t.n, 2, 360, "confident"); const n = NPC[rnd(0, NPC.length - 1)], r = relOf("npc:" + n.name); r.f = Math.min(100, r.f + 8); return "A crowd gathered round your " + t.n + ". " + n.name + " wants a ride later."; } })); // show off
+  out.push(A("👀 Check out the cars", carMeetOn() ? "Car meet · fun and people" : "At the Saturday car meet", 45, 0, { social: 20, fun: 18 }, { why: carMeetOn() ? "" : "The car meet is Saturdays 17:00 to 21:00", msg: "Lowered Golfs, a loud Subaru and one immaculate old Peugeot 504." })); // look around
+  out.push({ label: "🏁 Drag race at the meet", info: carMeetOn() ? "Race for a pot · police are less interested on the lot" : "At the Saturday car meet", why: carMeetOn() ? "" : "The car meet is Saturdays 17:00 to 21:00", go: raceMenu }); // racing
+  return out;
+} // end motorsActs
+
+// ================= Club 69: Cascavelle's neon nightclub =================
+function club69Acts() { // drinks, shots, VIP booths and the stage (club nights, dancing and bottles are added by nightActs)
+  return [...partyActs("club69"), partTime("Club 69 bar staff", 650, 21, 4),
+    A("🍸 Neon cocktail", "Rs 450 · 1 hour · fun and people", 60, 450, { fun: 30, social: 22, bladder: -20, energy: -6 }, { why: openAt(20, 4), msg: "It glows pink under the UV lights. Tastes like passion fruit." }),
+    A("🥃 Shots with strangers", "Rs 300 · 20 min · make a friend", 20, 300, { fun: 18, social: 28, energy: -8 }, { why: openAt(21, 4), run() { const n = NPC[rnd(0, NPC.length - 1)], r = relOf("npc:" + n.name); r.f = Math.min(100, r.f + 10); relTouch(r, n.name); return "Three shots later you and " + n.name + " are best mates. +10 friendship."; } }),
+    A("🛋️ Book a VIP booth", "Rs 3,000 · 2 hours · +2 charisma", 120, 3000, { fun: 45, social: 40, energy: -14 }, { why: openAt(22, 4), run() { s.cha += 2; addMoodlet("vip", "Living it up in the VIP booth", 3, 360, "confident"); return "Velvet seats, a private waiter and the whole club looking over. +2 charisma."; } }),
+    A("🎤 Perform on stage", "30 min · win the crowd for charisma", 30, 0, { fun: 20, energy: -10 }, { why: openAt(21, 4), run() { const ok = Math.random() < 0.35 + Math.min(20, s.cha) * 0.02 + moodScore() * 0.03; if (ok) { s.cha += 2; addMoodlet("stage", "The crowd loved me!", 3, 360, "confident"); return "🎤 The whole club sang along. +2 charisma."; } addMoodlet("stage", "Booed off stage", -2, 240, "tense"); return "🎤 Tough crowd. Someone threw a lime. Try again when you're feeling good."; } })];
+} // end club69Acts
+
+// ================= the look of Flic Motors' lot and Club 69 =================
+function buildVenues() { // display cars, a spinning showcase, flags and a pylon sign; neon, searchlights and a velvet rope
+  const g = new THREE.Group(); R.world.add(g); R.venues = g; // everything here
+  for (let x = 76.6; x < 88; x += 1.25) if (x < 78.6 || x > 79.9) box(0.05, 0.012, 1.6, "#f4f1e8", x, 0.03, 26.7, g); // parking bay lines
+  const show = [["compact", "#e4572e", 77.2], ["suv", "#1f8fd6", 78.2], ["conv", "#ffb020", 80.5], ["compact", "#2e9e5b", 81.7], ["suv", "#f2f4f5", 86.1], ["conv", "#1b1d22", 87.2]]; // cars on show
+  for (const [k, col, x] of show) { const t = CAR_TYPES[k], m = makeCar(Object.assign({}, t, { col })); g.add(m); m.position.set(x, 0, 26.7); m.rotation.y = -Math.PI / 2; const tag = sprite(textTex(rs(t.day) + "/day", "#d81e2c", "#ffffff", 44), 0.22); tag.position.set(x, 1.15, 26.7); g.add(tag); } // with price tags
+  const plat = mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.12, 40), mat("#dfe6eb"), 84.6, 0.06, 24, g); const ring = mesh(new THREE.TorusGeometry(1.35, 0.05, 6, 40), new THREE.MeshBasicMaterial({ color: 0xd81e2c }), 84.6, 0.13, 24, g, false); ring.rotation.x = Math.PI / 2; // the turntable
+  const star = makeCar(Object.assign({}, CAR_TYPES.sport, { col: "#d81e2c" })); g.add(star); star.position.set(84.6, 0.12, 24); R.showcase = star; // the Sports Coupé, turning
+  const st = sprite(textTex("★ SPORTS COUPÉ · " + rs(CAR_TYPES.sport.buy), "#10232c", "#ffd23c", 44), 0.28); st.position.set(84.6, 1.4, 24); g.add(st); // its sign
+  cyl(0.09, 0.12, 4.2, "#2a2e35", 82.9, 2.1, 27.6, g, 8); const sign = mesh(new THREE.PlaneGeometry(2.4, 1.2), new THREE.MeshBasicMaterial({ map: textTex("FLIC MOTORS · RENT · BUY", "#d81e2c", "#ffffff", 72), side: THREE.DoubleSide }), 82.9, 4.0, 27.6, g, false); sign.scale.set(1.25, 0.32, 1); // the pylon sign by the road
+  const flagCols = ["#d81e2c", "#ffd23c", "#1f8fd6", "#2e9e5b", "#f4f1e8"]; for (const [x0, z0, x1, z1] of [[82, 22.2, 88, 22.2], [88, 22.2, 88, 27.9], [76, 27.9, 88, 27.9]]) { // strings of bunting
+    for (const [px, pz] of [[x0, z0], [x1, z1]]) cyl(0.04, 0.05, 2.6, "#c9d1d6", px, 1.3, pz, g, 6); const n = Math.round(Math.hypot(x1 - x0, z1 - z0) / 0.45); // a pole at each end
+    for (let i = 1; i < n; i++) { const f = i / n, fl = mesh(geo("flag", () => { const g2 = new THREE.ConeGeometry(0.13, 0.28, 3); g2.rotateX(Math.PI); return g2; }), new THREE.MeshBasicMaterial({ color: flagCols[i % 5] }), x0 + (x1 - x0) * f, 2.42 - Math.sin(f * Math.PI) * 0.35, z0 + (z1 - z0) * f, g, false); fl.rotation.y = Math.atan2(x1 - x0, z1 - z0); } } // little triangle flags
+  const cx = 90.5, front = 12, H4 = 4.4; // Club 69's front
+  for (const [y, col] of [[H4 - 0.15, 0xff2e88], [0.35, 0x8a3dff]]) box(9.05, 0.08, 0.06, new THREE.MeshBasicMaterial({ color: col }), cx, y, front + 0.06, g); // neon strips along the front
+  const neon = mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: textTex("CLUB 69", "#14081f", "#ff4fa0", 96), transparent: true }), cx, H4 + 0.9, front - 0.2, g, false); neon.scale.set(3.6, 1.0, 1); // the big neon sign on the roof
+  R.clubLight = new THREE.PointLight(0xff2e88, 0, 7); R.clubLight.position.set(cx, 2, front + 1.6); g.add(R.clubLight); // pink glow on the street at night
+  for (let x = cx - 1.6; x <= cx + 1.6; x += 0.8) box(0.75, 0.01, 1.6, "#a0122a", x, 0.02, front + 0.9, g); // red carpet
+  for (const x of [cx - 1.3, cx + 1.3]) { for (const z of [front + 0.4, front + 1.5]) { cyl(0.04, 0.06, 0.8, "#d4a017", x, 0.4, z, g, 8); sph(0.07, "#d4a017", x, 0.82, z, g, 8); } const rope = mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.1, 6), mat("#b0122a"), x, 0.68, front + 0.95, g, false); rope.rotation.x = Math.PI / 2; } // velvet rope
+  R.beams = [0, 1].map((i) => { const b = mesh(new THREE.ConeGeometry(0.9, 9, 16, 1, true), new THREE.MeshBasicMaterial({ color: i ? 0x8a3dff : 0xff2e88, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }), cx + (i ? 2.6 : -2.6), H4 + 4.6, 9, g, false); b.userData.i = i; return b; }); // searchlights
+} // end buildVenues
+function venuesTick() { // each frame: the showcase turns; at night the club's searchlights sweep and the bouncer stands at the door
+  if (!R.venues) return; const t = performance.now() / 1000, night = (() => { const h = hour(); return h >= 19 || h < 5; })(); if (R.showcase) R.showcase.rotation.y = t * 0.5; // the turntable
+  for (const b of R.beams) { b.visible = night && !s.inside; b.rotation.z = Math.sin(t * 0.7 + b.userData.i * 2) * 0.45; b.rotation.x = Math.cos(t * 0.5 + b.userData.i) * 0.25; } if (R.clubLight) R.clubLight.intensity = night && !s.inside ? 1.6 : 0; // searchlights and glow
+  if (!s.inside && night && Math.hypot(s.x - 90.5, s.y - 12) < 25) personAt("bouncer69", { g: "m", skin: SKINS[4], hair: "#101010", hs: "bald", shirt: "#15171a", pants: "#15171a", shades: true, role: "resident", top: "business", legs: "business", feet: "business" }, 92.3, 12.7, 0, false, { name: "Bouncer" }); // the bouncer
+} // end venuesTick
+
 // ================= two-player games (football and chess): against the computer, or live against another player =================
 const ARENA = { on: false, game: "", vs: "", opp: "", oppName: "", id: "", host: false, last: 0, hb: 0, over: false, raf: 0, sc: 1, W: 360, H: 560 }; // the open game
 const relayApi = () => window.claude && window.claude.relay; // live messages to one player (self-hosted server only)
@@ -4303,7 +4379,7 @@ function poolNudge(d) { if (POOL.turn === 0 && !POOL.moving) POOL.angle += d; } 
 function poolEvaluate() { // work out what the shot did and whose turn is next
   POOL.moving = false; const you = POOL.turn === 0, potted = POOL.potted, cueIn = potted.includes(0), who = you ? "You" : POOL.opp; // the shot's results
   const eight = potted.includes(8), myGroup = POOL.group[POOL.turn]; // did the 8 drop, and your assigned group
-  if (eight) { const cleared = myGroup && poolLive(myGroup) === 0; if (cleared && !cueIn) return poolEnd(you ? "win" : "lose", "The 8-ball drops. " + (you ? "You win!" : POOL.opp + " wins.")); return poolEnd(you ? "lose" : "win", "The 8-ball went down too early" + (cueIn ? " with a scratch" : "") + "."); } // 8-ball ends it
+  if (eight) { const cleared = myGroup && poolLive(myGroup) === 0; if (cleared && !cueIn) return poolEnd(you ? "win" : "lose", "The 8-ball drops. " + (you ? "You win!" : POOL.opp + " wins.")); return poolEnd(you ? "lose" : "win", (you ? "You" : POOL.opp) + " potted the 8-ball too early" + (cueIn ? " with a scratch" : "") + ". " + (you ? POOL.opp + " wins the frame." : "You win the frame!")); } // 8-ball ends it
   if (cueIn) { poolResetCue(); POOL.msg = who + " scratched — foul. " + (you ? POOL.opp + "'s" : "Your") + " turn."; POOL.turn = 1 - POOL.turn; poolTimerReset(); return poolAfter(); } // scratch: foul and swap
   const mine = potted.filter((id) => id !== 0 && id !== 8); // object balls potted
   let assignMsg = ""; // set when the groups are decided this shot
@@ -4746,7 +4822,7 @@ function maybeCarHit(dt) { // a small risk while you are standing or walking on 
 } // end maybeCarHit
 
 // ================= the casino slot machine (visual) =================
-const SLOT = { sym: ["🍒", "🔔", "⭐", "💎", "7️⃣"], pay: { "🍒": 5, "🔔": 10, "⭐": 15, "💎": 25, "7️⃣": 60 }, reels: [0, 0, 0], spinning: false, bet: 500, stop: [0, 0, 0], t0: 0, dur: [0, 0, 0], raf: 0, W: 360, H: 180 }; // reels, payouts and state
+const SLOT = { sym: ["🍒", "🔔", "⭐", "💎", "7️⃣"], pay: { "🍒": 5, "🔔": 10, "⭐": 15, "💎": 25, "7️⃣": 50 }, reels: [0, 0, 0], spinning: false, bet: 500, stop: [0, 0, 0], t0: 0, dur: [0, 0, 0], raf: 0, W: 360, H: 180 }; // reels, payouts and state
 function slotBal() { $("slotBal").textContent = rs(s.money); } // refresh the balance
 function slotMsg(t) { $("slotMsg").textContent = t; slotBal(); } // a message plus balance
 function slotBetsUI() { // the bet chips
@@ -4787,6 +4863,7 @@ function cycles_at_rest(i) { const n = SLOT.sym.length; return SLOT.stop[i]; } /
 function slotEval() { // did you win?
   const a = SLOT.stop[0], b = SLOT.stop[1], c = SLOT.stop[2], s0 = SLOT.sym[a]; // the three centre symbols
   if (a === b && b === c) { const win = SLOT.bet * SLOT.pay[s0]; s.money += win; txn("Slot win", win); if (SLOT.pay[s0] >= 25) { toast("🎰 BIG WIN at the slots! +" + rs(win)); } save(); banner("🎰 YOU WIN!", "+" + rs(win) + " on the slots"); slotMsg("🎉 THREE " + s0 + " — you win " + rs(win) + "!"); } // three of a kind pays
+  else if ([a, b, c].filter((i) => SLOT.sym[i] === "7️⃣").length === 2) { s.money += SLOT.bet; txn("Slots: two lucky 7s", SLOT.bet); save(); slotMsg("Two lucky 7s — you get your " + rs(SLOT.bet) + " back!"); } // a pair of 7s: stake back
   else { save(); slotMsg("No match this time. Spin again!"); } // nothing
 } // end slotEval
 
@@ -5006,7 +5083,7 @@ function carsApp(box) { // show what you drive and point you to Flic Motors
   box.append(card); // show the garage card
   box.append(el("p", "pnote", "Scooter: " + (s.scooter ? "\u2713 owned" : "buy at the mall") + " \u00b7 Bicycle: " + (s.bike ? "\u2713 owned" : "buy at the mall"))); // the smaller rides
   const go = el("button", "jwork"); go.type = "button"; go.textContent = "\ud83d\ude97 Go to Flic Motors"; // the dealership button
-  go.onclick = () => { closePhone(); if (s.inside) leaveBuilding(); const d = OBJ.find((o) => o.name === "Flic Motors"); if (d) { path = findPath(s.x, s.y, d.x, d.y); toast("Walking to Flic Motors on the Cascavelle road\u2026"); } }; // walk there
+  go.onclick = () => { closePhone(); if (s.inside) leaveBuilding(); const d = doorOf("motors"); if (d) { pending = d; path = findPath(s.x, s.y, d.x, d.y); toast("Walking to Flic Motors on the Cascavelle road\u2026"); } }; // walk there
   box.append(go); box.append(el("p", "pnote", "Flic Motors, on the Cascavelle road, rents cars by the day or the week and sells cars and scooters.")); // note
 } // end carsApp
 
