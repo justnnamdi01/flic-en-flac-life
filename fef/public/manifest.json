@@ -1,0 +1,11 @@
+{
+  "name": "Flic en Flac Life",
+  "short_name": "Flic en Flac",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#07171f",
+  "theme_color": "#07171f"
+}
