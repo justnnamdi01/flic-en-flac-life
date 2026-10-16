@@ -648,32 +648,32 @@ const mood = () => NEEDS.reduce((a, k) => a + s[k], 0) / 6; // average of all ne
 // ================= map =================
 const terr = new Uint8Array(W * H); // terrain type per tile
 const solid = new Uint8Array(W * H); // 1 where you cannot walk
-const BUILD = [ // buildings: place, size, name, wall colour, roof style and colour, awning colour
-  { id: "snack", x: 30, y: 7, w: 5, h: 4, name: "Snack Chez Ram", col: "#eadfc4", roof: "tile", roofCol: "#b5482f", awn: "#d9482b", door: "S" }, // street food
+const BUILD = [ // buildings: place, size, name, wall colour, roof style and colour, awning colour (kept about 4 tiles apart so the town feels open)
+  { id: "snack", x: 28, y: 7, w: 5, h: 4, name: "Snack Chez Ram", col: "#eadfc4", roof: "tile", roofCol: "#b5482f", awn: "#d9482b", door: "S" }, // street food
   { id: "cafe", x: 37, y: 7, w: 5, h: 4, name: "Kafe Wifi", col: "#e6e0f2", roof: "flat", roofCol: "#8d8aa0", awn: "#7a4fd1", door: "S" }, // freelance spot
-  { id: "shop", x: 44, y: 6, w: 8, h: 5, name: "Super U", col: "#f3f3ef", roof: "flat", roofCol: "#9aa3a8", awn: "#d81e2c", sign: "#0d4fa3", door: "S" }, // supermarket
-  { id: "gelato", x: 17, y: 15, w: 4, h: 3, name: "Gelato Heaven", col: "#fde6ee", roof: "tile", roofCol: "#ee86ab", awn: "#58c9b9", sign: "#c2457a", door: "S" }, // ice cream parlour
-  { id: "dive", x: 23, y: 15, w: 5, h: 4, name: "Dive Centre", col: "#e2f0f6", roof: "tile", roofCol: "#1f6fa8", door: "S" }, // diving jobs
-  { id: "bar", x: 30, y: 15, w: 6, h: 4, name: "Sunset Bar", col: "#f2cfa6", roof: "thatch", roofCol: "#c9a45a", door: "S" }, // nightlife
-  { id: "gym", x: 44, y: 14, w: 6, h: 4, name: "Lagoon Gym", col: "#d3dae0", roof: "flat", roofCol: "#6c7781", sign: "#1c2a33", door: "S" }, // fitness
-  { id: "jumbo", x: 47, y: 20, w: 10, h: 6, name: "Jumbo", col: "#f5f5f1", roof: "flat", roofCol: "#a7afb4", awn: "#1f8f4e", sign: "#d81e2c", door: "S" }, // hypermarket
-  { id: "sapphire", x: 18, y: 21, w: 7, h: 4, name: "Sapphire Resto Bar", col: "#eaf0fa", roof: "tile", roofCol: "#1f4fbf", awn: "#1f4fbf", sign: "#12306f", door: "S" }, // restaurant and bar
+  { id: "shop", x: 46, y: 6, w: 8, h: 5, name: "Super U", col: "#f3f3ef", roof: "flat", roofCol: "#9aa3a8", awn: "#d81e2c", sign: "#0d4fa3", door: "S" }, // supermarket
+  { id: "gelato", x: 30, y: 45, w: 4, h: 3, name: "Gelato Heaven", col: "#fde6ee", roof: "tile", roofCol: "#ee86ab", awn: "#58c9b9", sign: "#c2457a", door: "S" }, // ice cream parlour
+  { id: "dive", x: 18, y: 15, w: 5, h: 4, name: "Dive Centre", col: "#e2f0f6", roof: "tile", roofCol: "#1f6fa8", door: "S" }, // diving jobs
+  { id: "bar", x: 27, y: 15, w: 6, h: 4, name: "Sunset Bar", col: "#f2cfa6", roof: "thatch", roofCol: "#c9a45a", door: "S" }, // nightlife
+  { id: "gym", x: 44, y: 14, w: 5, h: 4, name: "Lagoon Gym", col: "#d3dae0", roof: "flat", roofCol: "#6c7781", sign: "#1c2a33", door: "S" }, // fitness
+  { id: "jumbo", x: 47, y: 21, w: 9, h: 5, name: "Jumbo", col: "#f5f5f1", roof: "flat", roofCol: "#a7afb4", awn: "#1f8f4e", sign: "#d81e2c", door: "S" }, // hypermarket
+  { id: "sapphire", x: 18, y: 22, w: 7, h: 4, name: "Sapphire Resto Bar", col: "#eaf0fa", roof: "tile", roofCol: "#1f4fbf", awn: "#1f4fbf", sign: "#12306f", door: "S" }, // restaurant and bar
   { id: "saxo", x: 9, y: 38, w: 4, h: 4, name: "Saxo Beach Club", col: "#2a2e35", roof: "thatch", roofCol: "#b8934e", sign: "#000000", door: "S" }, // beachfront club
-  { id: "tigers", x: 36, y: 31, w: 6, h: 4, name: "Tigers", col: "#f2b04a", roof: "tile", roofCol: "#1d1d1d", awn: "#111111", sign: "#111111", door: "S" }, // pub with student jobs
+  { id: "tigers", x: 37, y: 31, w: 6, h: 4, name: "Tigers", col: "#f2b04a", roof: "tile", roofCol: "#1d1d1d", awn: "#111111", sign: "#111111", door: "S" }, // pub with student jobs
   { id: "hospital", x: 46, y: 31, w: 7, h: 5, name: "Hospital", col: "#f7f9fa", roof: "flat", roofCol: "#b9c4c9", awn: "#d81e2c", sign: "#d81e2c", door: "S" }, // treats dog bites
   { id: "uni", x: 59, y: 4, w: 13, h: 7, name: "Middlesex University", col: "#f1ece4", roof: "flat", roofCol: "#8f2f2f", sign: "#c8102e", door: "S" }, // campus at Cascavelle
   { id: "mall", x: 59, y: 16, w: 13, h: 8, name: "Cascavelle Mall", col: "#f3efe6", roof: "tile", roofCol: "#c2457a", awn: "#7a5a1e", sign: "#7a5a1e", door: "S" }, // the shopping mall
-  { id: "salon", x: 24, y: 45, w: 4, h: 3, name: "Hair & Nails", col: "#fbeff5", roof: "tile", roofCol: "#7a4fd1", awn: "#ff5fa2", sign: "#7a4fd1", door: "S" }, // hairdresser and nail bar
+  { id: "salon", x: 22, y: 45, w: 4, h: 3, name: "Hair & Nails", col: "#fbeff5", roof: "tile", roofCol: "#7a4fd1", awn: "#ff5fa2", sign: "#7a4fd1", door: "S" }, // hairdresser and nail bar
   { id: "maravan", x: 30, y: 23, w: 6, h: 3, name: "Maravan Burgers", col: "#2b2b2b", roof: "flat", roofCol: "#ffc72c", awn: "#ffc72c", sign: "#c8102e", door: "S" }, // burger restaurant in the middle of town
-  { id: "mcb", x: 81, y: 5, w: 5, h: 6, name: "MCB", col: "#dfe7ec", roof: "flat", roofCol: "#9aa3a8", sign: "#c8102e", door: "S", tall: 9 }, // bank headquarters tower
-  { id: "police", x: 53, y: 14, w: 4, h: 4, name: "Flic en Flac Police Station", col: "#e9eef5", roof: "flat", roofCol: "#1f3a6b", awn: "#1f3a6b", sign: "#0b2a5b", door: "S" }, // report crimes; the cells
+  { id: "mcb", x: 77, y: 5, w: 5, h: 6, name: "MCB", col: "#dfe7ec", roof: "flat", roofCol: "#9aa3a8", sign: "#c8102e", door: "S", tall: 9 }, // bank headquarters tower
+  { id: "police", x: 52, y: 14, w: 4, h: 4, name: "Flic en Flac Police Station", col: "#e9eef5", roof: "flat", roofCol: "#1f3a6b", awn: "#1f3a6b", sign: "#0b2a5b", door: "S" }, // report crimes; the cells
   { id: "coq", x: 38, y: 45, w: 4, h: 3, name: "Crispy Coq", col: "#f3e9df", roof: "flat", roofCol: "#b5302a", awn: "#d8352c", sign: "#b5302a", door: "S" }, // cheap fried chicken
   { id: "burgo", x: 50, y: 45, w: 4, h: 3, name: "Burgo Burgers", col: "#fff4d6", roof: "flat", roofCol: "#e4a11a", awn: "#e4151c", sign: "#c8102e", door: "S" }, // cheap burgers
-  { id: "immig", x: 76, y: 16, w: 5, h: 4, name: "Immigration Office", col: "#e7eef5", roof: "flat", roofCol: "#4a6b9a", awn: "#1f3a6b", sign: "#0b2a5b", door: "S" }, // visas, permits and IDs
+  { id: "immig", x: 76, y: 15, w: 5, h: 4, name: "Immigration Office", col: "#e7eef5", roof: "flat", roofCol: "#4a6b9a", awn: "#1f3a6b", sign: "#0b2a5b", door: "S" }, // visas, permits and IDs
   { id: "sugar", x: 19, y: 51, w: 12, h: 6, name: "Sugar Beach Resort", col: "#f7ecd6", roof: "thatch", roofCol: "#caa35c", sign: "#b07a2e", door: "N" }, // beach resort: pool, bar, volleyball, dates
   { id: "jamal", x: 58, y: 51, w: 9, h: 6, name: "Jamal's House", col: "#e9d7f2", roof: "tile", roofCol: "#7a2fd1", awn: "#c2457a", sign: "#7a2fd1", door: "N" }, // the party house
   { id: "slr", x: 97, y: 18, w: 11, h: 8, name: "Student Life Residence", col: "#eef1e6", roof: "flat", roofCol: "#4c8f45", awn: "#2f7d3a", sign: "#2f6b2f", door: "S" }, // student digs: chill and vice
-  { id: "yasmina1", x: 98, y: 4, w: 5, h: 7, name: "Yasmina 1", col: "#f1e7d6", roof: "flat", roofCol: "#b08a4a", sign: "#7a5a1e", door: "S", tall: 3.8 }, // two-storey apartments
+  { id: "yasmina1", x: 99, y: 4, w: 5, h: 7, name: "Yasmina 1", col: "#f1e7d6", roof: "flat", roofCol: "#b08a4a", sign: "#7a5a1e", door: "S", tall: 3.8 }, // two-storey apartments
   { id: "yasmina2", x: 40, y: 52, w: 5, h: 7, name: "Yasmina 2", col: "#e7eef1", roof: "flat", roofCol: "#4a7a8a", sign: "#2e5560", door: "N", tall: 3.8 }, // two-storey apartments, far from Yasmina 1
   { id: "motors", x: 76, y: 22, w: 6, h: 3, name: "Flic Motors", col: "#f4f7fa", roof: "flat", roofCol: "#d81e2c", awn: "#d81e2c", sign: "#d81e2c", door: "S" }, // car rental and dealership, with its own lot of cars out front
   { id: "club69", x: 86, y: 6, w: 9, h: 6, name: "Club 69", col: "#1b1024", roof: "flat", roofCol: "#2a1238", awn: "#ff2e88", sign: "#ff2e88", door: "S", tall: 4.4 }, // Cascavelle's neon nightclub
