@@ -161,6 +161,7 @@ const server = http.createServer((req, res) => {
   fs.readFile(file, (err, buf) => {
     if (err) { res.writeHead(404, { "content-type": "text/plain" }); return res.end("not found"); } // missing file
     res.writeHead(200, { "content-type": MIME[path.extname(file)] || "application/octet-stream", "cache-control": "no-cache", "x-content-type-options": "nosniff" }); // serve it
+    if (file === path.join(PUBLIC, "index.html")) { const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0].trim(), proto = String(req.headers["x-forwarded-proto"] || "http").split(",")[0].trim() === "https" ? "https" : "http"; buf = Buffer.from(buf.toString("utf8").split("__SITE__").join(/^[a-z0-9.\-]+(:\d+)?$/i.test(host) ? proto + "://" + host : "")); } // link previews need the full address of the share picture
     res.end(buf);
   });
 });
