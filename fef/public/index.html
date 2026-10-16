@@ -476,7 +476,7 @@ button.prow { transition: transform 0.1s ease; } button.prow:active { transform:
   <div class="hud needs" id="needs"></div>
   <div class="hud toast" id="toast" hidden></div>
   <div class="hud music" id="music" hidden><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><b class="mnow" id="mNow"></b><span class="mt"><small id="mWhere">Now playing</small><b id="mTrack"></b></span><span class="gen" id="mGen"></span><button class="mb" id="mDance" type="button">💃 Dance</button><button class="mb" id="mMute" type="button" aria-label="Mute music">🔊</button><button class="mb mtog" id="mToggle" type="button" aria-label="Expand or collapse music">▾</button></div>
-  <div class="hud decbar" id="decbar" hidden><b id="decMsg">Tap furniture to move</b><button class="mb" id="decRot" type="button">🔄 Turn</button><button class="mb" id="decReset" type="button">↺ Reset</button><button class="mb" id="decDone" type="button">✓ Done</button></div>
+  <div class="hud decbar" id="decbar" hidden><b id="decMsg">Tap furniture to move</b><button class="mb" id="decRot" type="button">🔄 Turn</button><button class="mb" id="decPaint" type="button">🖌️ Paint</button><button class="mb" id="decReset" type="button">↺ Reset</button><button class="mb" id="decDone" type="button">✓ Done</button></div>
   <div class="hud shout" id="shout" hidden></div>
   <div class="hud deliv" id="deliv" hidden></div>
   <div class="banner" id="banner" hidden></div>
@@ -719,7 +719,7 @@ function buildMap() { // fill the terrain and collision grids
   for (let y = 53; y <= 55; y++) for (let x = 9; x <= 12; x++) { terr[y * W + x] = 1; solid[y * W + x] = 1; } // Sugar Beach pool (cyan water; you swim from inside the resort)
 } // end buildMap
 function isSolid(tx, ty) { // can this tile be walked on?
-  if (s.inside) return tx < 1 || ty < 1 || tx > rw() - 2 || ty > rh() - 2; // indoors: only the room floor is free
+  if (s.inside) { const d = ROOMDEF[s.inside]; return tx < 1 || ty < 1 || tx > rw() - 2 || ty > rh() - 2 || !!(d && d.solid && d.solid.has(tx + "," + ty)); } // indoors: only the room floor is free, and inner walls block
   if (tx < 0 || ty < 0 || tx >= W || ty >= H) return true; // outside the map
   if (tx === 22 && ty === 9 && s.debt > 0) return true; // landlord locked your door
   return solid[ty * W + tx] === 1; // otherwise use the grid
@@ -968,6 +968,7 @@ function leaveBuilding() { // walk back out
 } // end leaveBuilding
 function drawFurniture(kind, x, y, o) { // paint one piece of furniture (x, y in pixels)
   const u = T; // one tile
+  if (kind.startsWith("fx:")) { const sz = { fridge: [0.8, 0.7, "#e9eef1"], counter: [1.2, 0.62, "#c49a6c"], sink: [0.6, 0.45, "#f4f6f7"], wardrobe: [0.6, 1.2, "#6b4a2f"], nightstand: [0.45, 0.42, "#7a5236"], bed2: [1.4, 1.9, "#9fc4d8"], dtable: [1.5, 0.9, "#a8743f"] }[kind.slice(3)]; if (sz) { g.fillStyle = sz[2]; g.fillRect(x - sz[0] * u / 2, y - sz[1] * u / 2, sz[0] * u, sz[1] * u); } return; } // fixed fittings, seen from above
   if (/^d:|^(bed|shower|toilet|tvset|petbed)$/.test(kind)) { const ic = kind.startsWith("d:") ? (FURN[kind.slice(2)] || {}).i : { bed: "🛏", shower: "🚿", toilet: "🚽", tvset: "📺", petbed: "🐾" }[kind]; g.fillStyle = "rgba(255,255,255,0.3)"; rr(g, x - u * 0.6, y - u * 1.5, u * 1.2, u * 0.9, 6); g.font = Math.round(u * 0.6) + "px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ic || "", x, y - u * 1.05); return; } // home furniture as simple icons in 2D
   if (kind === "counter" || kind === "bar" || kind === "freezer") { // long counters
     g.fillStyle = "rgba(0,0,0,0.2)"; g.fillRect(x - u * 1.5 + 4, y - u * 1.15 + 5, u * 3, u * 0.75); // shadow
@@ -1015,7 +1016,8 @@ function drawRoom(vw, vh, cx, cy) { // paint the inside of the building you are 
   g.fillStyle = "#0a1418"; g.fillRect(0, 0, vw, vh); // dark surround
   g.save(); g.translate(-Math.round(cx), -Math.round(cy)); // centre the room
   g.fillStyle = "#1f262b"; g.fillRect(0, -T * 1.1, rw() * T, (rh() + 1.1) * T); // outer walls, taller at the back
-  for (let y = 1; y < rh() - 1; y++) for (let x = 1; x < rw() - 1; x++) { g.fillStyle = def.floor[(x + y) % 2]; g.fillRect(x * T, y * T, T + 1, T + 1); } // checkered floor
+  for (let y = 1; y < rh() - 1; y++) for (let x = 1; x < rw() - 1; x++) { g.fillStyle = (def.floorAt ? def.floorAt(x, y) : def.floor)[(x + y) % 2]; g.fillRect(x * T, y * T, T + 1, T + 1); } // checkered floor (each room its own floor)
+  if (def.solid) { g.fillStyle = b.col; for (const k of def.solid) { const [x, y] = k.split(",").map(Number), on = (a, c) => def.solid.has(a + "," + c); g.fillRect((x + 0.4) * T, (y + 0.4) * T, T * 0.2, T * 0.2); if (on(x + 1, y) || x === rw() - 2) g.fillRect((x + 0.5) * T, (y + 0.4) * T, T * 0.5 + 1, T * 0.2); if (on(x - 1, y) || x === 1) g.fillRect(x * T - 1, (y + 0.4) * T, T * 0.5 + 1, T * 0.2); if (on(x, y + 1) || y === rh() - 2) g.fillRect((x + 0.4) * T, (y + 0.5) * T, T * 0.2, T * 0.5 + 1); if (on(x, y - 1) || y === 1) g.fillRect((x + 0.4) * T, y * T - 1, T * 0.2, T * 0.5 + 1); } } // the walls between rooms
   g.fillStyle = b.col; g.fillRect(T, -T * 0.85, (rw() - 2) * T, T * 1.85); // tall painted back wall
   g.fillStyle = "rgba(255,255,255,0.22)"; g.fillRect(T, -T * 0.85, (rw() - 2) * T, 5); // light along the top of the wall
   g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.moveTo(T, -T * 0.85); g.lineTo(T * 1.5, -T * 0.3); g.lineTo(T * 1.5, T); g.lineTo(T, T); g.fill(); g.beginPath(); g.moveTo((rw() - 1) * T, -T * 0.85); g.lineTo((rw() - 1.5) * T, -T * 0.3); g.lineTo((rw() - 1.5) * T, T); g.lineTo((rw() - 1) * T, T); g.fill(); // shaded corners where the side walls meet the back wall
@@ -1272,11 +1274,32 @@ function partyActs(id) { // extra actions a venue gets around its party
 
 // ================= homes, furniture and pets =================
 const HOMES = [ // the housing ladder: everyone starts in a small room
-  { n: "Small room", where: "Your own front door", rent: 0, dep: 0, slots: 3, w: 12, h: 9, col: "#f3e3c6", floor: ["#c9a27a", "#bd956c"], kit: 5.4, tv: 7.9, deco: [9.8, 7.4], pet: [3.6, 7.7], slotList: [[4.8, 6.0], [7.4, 6.0], [2.6, 6.2]] }, // rent depends on who you are
+  { n: "Small room", where: "Your own front door", rent: 0, dep: 0, slots: 3, w: 12, h: 9, col: "#f3e3c6", floor: ["#c9a27a", "#bd956c"] }, // rent depends on who you are (its layout is in HOME_PLAN)
   { n: "Studio apartment", where: "Pasadena Flats, Flic en Flac", rent: 5000, dep: 9000, slots: 6, w: 16, h: 10, col: "#efe2c8", floor: ["#d8c3a0", "#cdb592"] }, // first step up
   { n: "Two-bedroom apartment", where: "Sunset Residence, Flic en Flac", rent: 9000, dep: 18000, slots: 9, w: 20, h: 12, col: "#dfe8ee", floor: ["#c9b39a", "#bea68b"] }, // room to entertain
   { n: "Sea-view penthouse", where: "Wolmar seafront", rent: 18000, dep: 45000, slots: 12, w: 24, h: 14, col: "#f6f1e3", floor: ["#f2f0ea", "#e4e1d8"] } // the top
 ]; // end HOMES
+const HOME_PLAN = [ // the floor plan of each home, in tiles: where things stand, the inner walls (solid tiles, with gaps for doors), floor areas, fixed fittings and furniture spots
+  { st: { bed: [2.6, 4.4], stove: [5.2, 3.0], tv: [7.2, 3.0], shower: [9.6, 3.0], toilet: [9.6, 5.2], deco: [9.8, 7.4], pet: [3.6, 7.3] }, // small room with its own bathroom
+    walls: [[8, 1, 8, 2], [8, 5, 8, 6], [9, 6, 10, 6]], zones: [[9, 1, 10, 5, "bath"], [4, 1, 6, 2, "kitchen"]], fix: [],
+    slots: [[4.8, 6.0], [7.4, 6.0], [2.6, 6.2]] },
+  { st: { bed: [2.6, 4.4], stove: [7.6, 3.0], tv: [10.0, 3.0], shower: [13.2, 3.0], toilet: [13.2, 5.2], deco: [13.0, 7.8], pet: [2.0, 8.0] }, // studio: bedroom, kitchen, living room, bathroom
+    walls: [[5, 1, 5, 3], [1, 6, 4, 6], [11, 1, 11, 2], [11, 5, 11, 6], [12, 6, 14, 6]], zones: [[1, 1, 4, 5, "bed"], [6, 1, 9, 3, "kitchen"], [12, 1, 14, 5, "bath"]],
+    fix: [["fridge", 6.1, 1.5], ["sink", 12.2, 1.4], ["wardrobe", 1.4, 5.2], ["nightstand", 3.8, 2.0]],
+    slots: [[7.0, 5.6], [9.8, 5.6], [4.4, 8.0], [11.0, 8.0], [6.0, 7.6], [9.4, 7.6]] },
+  { st: { bed: [3.0, 4.6], stove: [8.6, 3.0], tv: [13.4, 3.0], shower: [17.4, 3.0], toilet: [17.4, 5.2], deco: [15.2, 9.8], pet: [4.6, 9.8] }, // two bedrooms, kitchen-diner, living room, bathroom
+    walls: [[6, 1, 6, 3], [6, 8, 6, 10], [1, 6, 5, 6], [15, 1, 15, 2], [15, 5, 15, 6], [16, 6, 18, 6]], zones: [[1, 1, 5, 5, "bed"], [1, 7, 5, 10, "bed"], [7, 1, 12, 4, "kitchen"], [16, 1, 18, 5, "bath"]],
+    fix: [["fridge", 10.6, 1.5], ["counter", 11.9, 1.5], ["sink", 16.2, 1.4], ["wardrobe", 1.4, 5.0], ["nightstand", 4.2, 2.2], ["bed2", 2.6, 8.8], ["dtable", 9.5, 6.0]],
+    slots: [[11.6, 6.6], [14.2, 6.6], [16.8, 8.4], [13.4, 9.4], [17.6, 10.2], [4.4, 5.0], [7.6, 9.6], [12.2, 8.0], [8.0, 7.6]] },
+  { st: { bed: [3.2, 4.8], stove: [9.6, 3.0], tv: [16.4, 3.0], shower: [21.4, 3.0], toilet: [21.4, 5.6], deco: [19.6, 10.6], pet: [4.6, 11.8] }, // penthouse: master and guest bedrooms, big kitchen-diner, lounge, bathroom
+    walls: [[7, 1, 7, 4], [7, 10, 7, 12], [1, 7, 6, 7], [18, 1, 18, 2], [18, 5, 18, 7], [19, 7, 22, 7]], zones: [[1, 1, 6, 6, "bed"], [1, 8, 6, 12, "bed"], [8, 1, 14, 4, "kitchen"], [19, 1, 22, 6, "bath"]],
+    fix: [["fridge", 11.6, 1.5], ["counter", 13.0, 1.5], ["sink", 19.6, 1.4], ["wardrobe", 1.4, 5.6], ["nightstand", 4.7, 2.2], ["bed2", 2.8, 9.6], ["dtable", 11.0, 6.4]],
+    slots: [[14.0, 6.6], [16.6, 6.6], [9.0, 9.6], [15.0, 9.6], [17.6, 11.6], [21.6, 9.6], [21.6, 12.0], [5.4, 6.2], [12.0, 9.4], [5.0, 9.4], [9.0, 6.6], [19.0, 9.0]] }
+]; // end HOME_PLAN
+const WALLS = { mango: ["Mango", "#d9973a"], terracotta: ["Terracotta", "#c66a43"], sea: ["Sea blue", "#4f8fb5"], mint: ["Mint", "#79bf9f"], cream: ["Cream", "#efe2c8"], lilac: ["Lilac", "#a68bcf"], charcoal: ["Charcoal", "#4b5157"] }; // wall paints
+const FLOORS = { wood: ["Dark wood", ["#8a5530", "#7d4a29"]], oak: ["Light oak", ["#cfa274", "#c29467"]], marble: ["Marble", ["#f1eee7", "#e2ded4"]], terracotta: ["Terracotta tiles", ["#c4704a", "#b4633f"]], teal: ["Teal tiles", ["#3f8f8c", "#367e7b"]] }; // floors for the living areas
+const ZONE_FLOOR = { bed: ["#b07a4a", "#a47042"], kitchen: ["#ece6d8", "#d9d0bd"], bath: ["#e3edf1", "#cbdbe2"] }; // lighter wood in bedrooms, tiles in the kitchen and bathroom
+const PAINT_COST = 800, FLOOR_COST = 2500; // what restyling costs
 const FURN = { // furniture you can buy: name, icon, price, comfort
   plant: { n: "Potted palm", i: "🪴", p: 800, c: 2 }, lamp: { n: "Floor lamp", i: "💡", p: 1500, c: 2 }, rug: { n: "Woven rug", i: "🟫", p: 2000, c: 3 },
   art: { n: "Sunset painting", i: "🖼️", p: 2500, c: 3 }, books: { n: "Bookshelf", i: "📚", p: 3500, c: 3 }, dining: { n: "Dining table", i: "🍽️", p: 4000, c: 4 },
@@ -1294,24 +1317,33 @@ const placed = () => s.decor.slice(0, homeTier().slots); // furniture that fits 
 const hasDecor = (k) => placed().includes(k); // do you have this in your home?
 const comfort = () => placed().reduce((a, k) => a + (FURN[k] ? FURN[k].c : 0), 0) + (s.king ? 8 : 0); // how nice your home is
 const isNight = () => { const h = hour(); return h >= 20 || h < 6; }; // night rates and club hours
-function homeStations(t) { const H = HOMES[t]; return [ // the fixed things in an apartment
-  { icon: "🛏", name: "Bed", kind: "bed", x: 2.6, y: 4.4, from: "Bed" }, { icon: "🍳", name: "Kitchen", kind: "stove", x: H.kit || 5.6, y: 3.0, from: "Stove" },
-  { icon: "📺", name: "TV", kind: "tvset", x: H.tv || 8.4, y: 3.0, from: "TV" }, { icon: "🚿", name: "Shower", kind: "shower", x: H.w - 2.6, y: 3.0, from: "Shower" },
-  { icon: "🚽", name: "Toilet", kind: "toilet", x: H.w - 2.6, y: 5.4, from: "Toilet" }, { icon: "🎨", name: "Decorate", kind: "", x: H.deco ? H.deco[0] : H.w / 2 + 2.4, y: H.deco ? H.deco[1] : H.h - 2.2, go: 1 }]; } // end homeStations
+function homeStations(t) { const P = HOME_PLAN[t].st; return [ // the fixed things in an apartment, placed by its floor plan
+  { icon: "🛏", name: "Bed", kind: "bed", x: P.bed[0], y: P.bed[1], from: "Bed" }, { icon: "🍳", name: "Kitchen", kind: "stove", x: P.stove[0], y: P.stove[1], from: "Stove" },
+  { icon: "📺", name: "TV", kind: "tvset", x: P.tv[0], y: P.tv[1], from: "TV" }, { icon: "🚿", name: "Shower", kind: "shower", x: P.shower[0], y: P.shower[1], from: "Shower" },
+  { icon: "🚽", name: "Toilet", kind: "toilet", x: P.toilet[0], y: P.toilet[1], from: "Toilet" }, { icon: "🎨", name: "Decorate", kind: "", x: P.deco[0], y: P.deco[1], go: 1 }]; } // end homeStations
 function slotsFor(t) { // furniture spots in a home, as [x, y] where you stand to use them
-  if (HOMES[t].slotList) return HOMES[t].slotList.slice(0, HOMES[t].slots); // hand-placed spots
-  const H = HOMES[t], st = homeStations(t).concat([{ x: H.pet ? H.pet[0] : 2.4, y: H.pet ? H.pet[1] : H.h - 2.2 }]), out = []; // stations and the pet bed
+  if (HOME_PLAN[t]) return HOME_PLAN[t].slots.slice(0, HOMES[t].slots); // the floor plan's spots
+  const H = HOMES[t], st = homeStations(t).concat([{ x: 2.4, y: H.h - 2.2 }]), out = []; // stations and the pet bed
   for (let y = 5.6; y <= H.h - 2.0; y += 2.3) for (let x = 2.4; x <= H.w - 2.4; x += 2.6) { if (st.some((q) => Math.hypot(q.x - x, q.y - y) < 2) || Math.hypot(H.w / 2 - x, H.h - 1.5 - y) < 2.2) continue; out.push([x, y]); } // a grid that avoids the fixed things and the door
   for (let x = 11; x <= H.w - 5; x += 2.6) if (out.length < H.slots) out.push([x, 3.0]); // along the back wall in bigger homes
   return out.slice(0, H.slots); // as many as the home allows
 } // end slotsFor
+function planSolid(t) { const S = new Set(); for (const [x0, y0, x1, y1] of HOME_PLAN[t].walls) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) S.add(x + "," + y); return S; } // the wall tiles of a floor plan
+function planFloor(t, floorK) { const P = HOME_PLAN[t], main = (FLOORS[floorK] || FLOORS.wood)[1]; return (x, y) => { for (const [x0, y0, x1, y1, k] of P.zones) if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return ZONE_FLOOR[k]; return main; }; } // floor colours tile by tile
+function homeSpotOK(x, y, t) { // can a piece stand here (its spot and the piece just behind it are clear of walls)?
+  const H = HOMES[t === undefined ? s.home || 0 : t], S = planSolid(t === undefined ? s.home || 0 : t); if (x < 1.4 || x > H.w - 1.4 || y < 2.0 || y > H.h - 1.6) return false; // inside the outer walls
+  for (const [px, py] of [[x, y], [x, y - 0.9], [x - 0.4, y - 0.9], [x + 0.4, y - 0.9]]) if (S.has(Math.floor(px) + "," + Math.floor(py))) return false; return true; // clear of the inner walls
+} // end homeSpotOK
 function homeSetup(src, key, owner) { // lay out the inside of a home for its tier, furniture and pet: yours, or (key "visit") the one you are visiting
   src = src || s; key = key || "home"; const guest = key !== "home"; // whose home, and are you a guest?
   const t = src.home || 0, H = HOMES[t]; // apartment size (a small-room player sees the studio layout, unused)
-  ROOMDEF[key] = { w: H.w, h: H.h, name: guest ? owner + "'s home" : "Your " + H.n.toLowerCase(), col: H.col, sign: "#1f6fa8", roofCol: "#1f6fa8", floor: H.floor, st: [] }; // room size and colours
-  const list = homeStations(t).filter((q) => (q.from !== "TV" || src.tv) && (!guest || !q.go)).map((q) => ({ icon: q.icon, name: q.name, kind: q.kind, x: q.x, y: q.y, use: !guest, acts: q.go ? () => [{ label: "🎨 Decorate mode", info: "Move and rotate your furniture", go: () => { closeMenu(); startDecor(); } }, { label: "🛋️ Furniture, pets & move house", info: "Buy, sell and upgrade", go: () => { closeMenu(); openPhone("house"); } }] : () => OBJ.find((o) => o.name === q.from).acts() })); // bed, kitchen, TV, bathroom, decorate (guests only look)
-  if (src.pet) list.push({ icon: PETS[src.pet.k].i, name: src.pet.name + "'s bed", kind: "petbed", x: (src.petXY && src.petXY[0]) || (H.pet ? H.pet[0] : 2.4), y: (src.petXY && src.petXY[1]) || (H.pet ? H.pet[1] : H.h - 2.2), rot: src.petRot || 0, di: "pet", use: !guest, acts: petActs }); // pet corner
-  slotsFor(t).forEach(([sx, sy], i) => { const k = src.decor[i]; if (!FURN[k]) return; const xy = (src.decorXY && src.decorXY[i]) || [sx, sy]; list.push({ icon: FURN[k].i, name: FURN[k].n, kind: "d:" + k, x: xy[0], y: xy[1], rot: (src.decorRot && src.decorRot[i]) || 0, di: guest ? undefined : i, use: !!DECOR_ACTS[k], acts: () => DECOR_ACTS[k]() }); }); // furniture (guests can use the fun pieces)
+  const wall = (WALLS[src.wallK] || WALLS.mango)[1]; // the paint on the walls
+  ROOMDEF[key] = { w: H.w, h: H.h, name: guest ? owner + "'s home" : "Your " + H.n.toLowerCase(), col: wall, sign: "#1f6fa8", roofCol: "#1f6fa8", floor: (FLOORS[src.floorK] || FLOORS.wood)[1], floorAt: planFloor(t, src.floorK), solid: planSolid(t), st: [] }; // room size, paint, floors and inner walls
+  const list = homeStations(t).filter((q) => (q.from !== "TV" || src.tv) && (!guest || !q.go)).map((q) => ({ icon: q.icon, name: q.name, kind: q.kind, x: q.x, y: q.y, use: !guest, acts: q.go ? () => [{ label: "🎨 Decorate mode", info: "Move and rotate your furniture", go: () => { closeMenu(); startDecor(); } }, { label: "🖌️ Paint & floors", info: "Change your wall colour and floor", go: homeStyleMenu }, { label: "🛋️ Furniture, pets & move house", info: "Buy, sell and upgrade", go: () => { closeMenu(); openPhone("house"); } }] : () => OBJ.find((o) => o.name === q.from).acts() })); // bed, kitchen, TV, bathroom, decorate (guests only look)
+  const petXY = src.petXY && homeSpotOK(src.petXY[0], src.petXY[1], t) ? src.petXY : HOME_PLAN[t].st.pet; // the pet bed, kept out of the walls
+  if (src.pet) list.push({ icon: PETS[src.pet.k].i, name: src.pet.name + "'s bed", kind: "petbed", x: petXY[0], y: petXY[1], rot: src.petRot || 0, di: "pet", use: !guest, acts: petActs }); // pet corner
+  for (const [k, x, y] of HOME_PLAN[t].fix) list.push({ icon: "", name: "", kind: "fx:" + k, x, y, use: false }); // fridge, sink, wardrobe and the other fixed fittings
+  slotsFor(t).forEach(([sx, sy], i) => { const k = src.decor[i]; if (!FURN[k]) return; let xy = (src.decorXY && src.decorXY[i]) || [sx, sy]; if (!homeSpotOK(xy[0], xy[1], t)) xy = [sx, sy]; /* a piece left inside a new wall goes back to its spot */ list.push({ icon: FURN[k].i, name: FURN[k].n, kind: "d:" + k, x: xy[0], y: xy[1], rot: (src.decorRot && src.decorRot[i]) || 0, di: guest ? undefined : i, use: !!DECOR_ACTS[k], acts: () => DECOR_ACTS[k]() }); }); // furniture (guests can use the fun pieces)
   list.push({ icon: "🚪", name: "Exit", kind: "", x: H.w / 2, y: H.h - 1.5, use: true, exit: true }); // the way out
   ROOM[key] = list; if (R.rooms && R.rooms[key]) { R.scene.remove(R.rooms[key]); delete R.rooms[key]; } // rebuild the 3D room next time it is drawn
 } // end homeSetup
@@ -1460,7 +1492,7 @@ function musicWire() { // build the genre buttons once
   $("musicBtn").onclick = () => { musInit(); if (venueGenre()) { toast("The DJ is playing here. Pick a genre in the bar at the top."); return; } s.radio = !s.radio; if (!s.radio) stopDance(); save(); toast(s.radio ? "Music on: " + GENRES[s.genre].n + ". Change genre or dance from the bar at the top." : "Music off."); musicHud(); }; // your own music anywhere
   addEventListener("pointerdown", musInit, { once: true }); addEventListener("keydown", musInit, { once: true }); // sound may only start after a tap
   pnames.parents = "Mum & Dad"; // name on the parents chat
-  $("decDone").onclick = endDecor; $("decRot").onclick = rotateDecor; $("decReset").onclick = resetLayout; // decorate controls
+  $("decDone").onclick = endDecor; $("decRot").onclick = rotateDecor; $("decReset").onclick = resetLayout; $("decPaint").onclick = homeStyleMenu; // decorate controls
 } // end musicWire
 
 // ----- the music engine: three genres synthesised live with Web Audio -----
@@ -2034,6 +2066,7 @@ function phoneRender() { // draw the current phone screen
     const H = homeTier(); box.append(el("div", "pbig", H.n), el("p", "pnote", H.where + " · " + rs(s.rent) + " a week · comfort " + comfort())); // where you live
     if (s.inside !== "home") link("Go home", "Walk to your front door · " + addrName(homesApi() ? myHomeIdx : 0), () => { closePhone(); if (s.inside) leaveBuilding(); const d = OBJ.find((q) => q.name === "Front door"); pending = d; path = findPath(s.x, s.y, d.x, d.y); }); // head home
     if (s.decor.length || s.pet) link("🎨 Decorate mode", "Move and rotate your furniture in your home", () => { closePhone(); startDecor(); }); // arrange things
+    link("🖌️ Paint & floors", "Walls: " + (WALLS[s.wallK] || WALLS.mango)[0] + " · floor: " + (FLOORS[s.floorK] || FLOORS.wood)[0], () => { closePhone(); homeStyleMenu(); }); // restyle
     box.append(el("p", "pnote", "Your furniture · " + Math.min(s.decor.length, H.slots) + " of " + H.slots + " spots used")); // furniture
     s.decor.forEach((k, i) => { const f = FURN[k]; if (!f) return; prow(box, f.i + " " + f.n, i < H.slots ? "Placed" : "Storage", "+" + f.c + " comfort"); const bar = el("div", "tbar"), mv = el("button", "", i < H.slots ? "Move spot" : "Swap in"), sl = el("button", "", "Sell for " + rs(f.p / 2)); mv.type = sl.type = "button"; mv.onclick = () => { moveFurn(i); phoneRender(); }; sl.onclick = () => { sellFurn(i); phoneRender(); }; bar.append(mv, sl); bar.style.borderRadius = "12px"; box.append(bar); }); // each piece
     if (!s.decor.length) box.append(el("p", "pnote", "Nothing yet. Buy something below and it appears in your home at once.")); // empty
@@ -3282,9 +3315,28 @@ function furn(kind, x, z, gr, k, rot) { // one piece of furniture inside a build
   if (kind === "arcade") { R.arcade = R.arcade || []; for (let i = 0; i < 3; i++) { ped(0.6, 1.5, 0.6, "#23282c", x - 0.8 + i * 0.8, 0.75, z - 1.2); const m = new THREE.MeshBasicMaterial({ color: 0x35c4bb }); R.arcade.push(m); box(0.45, 0.4, 0.02, m, x - 0.8 + i * 0.8, 1.15, z - 0.89, gr); } } // arcade cabinets with flashing screens
   if (kind === "screen") { ped(3.0, 1.7, 0.1, "#15171a", x, 1.45, z - 1.7); box(2.7, 1.4, 0.02, new THREE.MeshBasicMaterial({ color: 0xf4f1e8 }), x, 1.45, z - 1.63, gr); } // cinema or lecture screen
   if (kind === "plant") { cyl(0.18, 0.14, 0.35, "#8a5a34", x, 0.18, z, gr, 10); mesh(new THREE.IcosahedronGeometry(0.38, 0), mat("#2f8f4a", { flatShading: true }), x, 0.7, z, gr); } // potted plant
+  if (kind.startsWith("fx:")) { fixture3d(kind.slice(3), x, z, gr); return; } // fixed fittings
   if (kind === "cell" || kind === "bed" || kind === "shower" || kind === "toilet" || kind === "tvset" || kind === "petbed" || kind.startsWith("d:")) { homeFurn(kind, x, z, gr, rot); return; } // apartment furniture
   if (kind === "sofa") { ped(2.2, 0.4, 0.85, "#b8322a", x, 0.3, z - 0.6); ped(2.2, 0.55, 0.25, "#a02a23", x, 0.65, z - 0.95); for (const i of [-1, 1]) ped(0.22, 0.6, 0.85, "#a02a23", x + i * 1.1, 0.4, z - 0.6); } // red sofa
 } // end furn
+function innerWalls3d(def, col, gr) { // walls between the rooms of a home: a post in each wall tile, joined to its neighbours and to the outer walls
+  const Hh = 1.6, T2 = 0.18, top = shade(col, 1.18), on = (x, y) => def.solid.has(x + "," + y); // height, thickness, a lighter top edge
+  const piece = (w, d, x, z) => { box(w, Hh, d, col, x, Hh / 2, z, gr); box(w + 0.02, 0.05, d + 0.02, top, x, Hh + 0.02, z, gr); }; // one stretch of wall with its cap
+  for (const k of def.solid) { const [x, y] = k.split(",").map(Number), cx = x + 0.5, cz = y + 0.5; piece(T2, T2, cx, cz); // the post
+    if (on(x + 1, y)) piece(1, T2, cx + 0.5, cz); if (on(x, y + 1)) piece(T2, 1, cx, cz + 0.5); // join right and down
+    if (x === 1) piece(0.5, T2, cx - 0.25, cz); if (y === 1) piece(T2, 0.5, cx, cz - 0.25); // reach the outer walls
+    if (x === def.w - 2) piece(0.5, T2, cx + 0.25, cz); if (y === def.h - 2) piece(T2, 0.5, cx, cz + 0.25); }
+} // end innerWalls3d
+function fixture3d(k, x, z, gr) { // the fixed fittings of a home (x, z is the middle of the piece)
+  const ped = (w, h, d, col, X, Y, Z) => box(w, h, d, col, X, Y, Z, gr); // shorthand
+  if (k === "fridge") { ped(0.8, 1.9, 0.7, "#e9eef1", x, 0.95, z); ped(0.82, 0.02, 0.72, "#b9c2c8", x, 1.25, z); ped(0.04, 0.5, 0.05, "#7c8791", x + 0.28, 1.55, z + 0.37); ped(0.04, 0.35, 0.05, "#7c8791", x + 0.28, 0.95, z + 0.37); } // fridge
+  if (k === "counter") { ped(1.2, 0.88, 0.62, "#8a5a34", x, 0.44, z); ped(1.26, 0.05, 0.66, "#e8e2d6", x, 0.9, z); ped(0.5, 0.03, 0.36, "#9aa3a8", x, 0.93, z); cyl(0.03, 0.03, 0.3, "#c9d1d6", x, 1.06, z - 0.2, gr, 6); } // counter with a sink
+  if (k === "sink") { ped(0.6, 0.8, 0.45, "#f4f6f7", x, 0.4, z); ped(0.4, 0.03, 0.28, "#cfe6ee", x, 0.81, z); ped(0.5, 0.6, 0.03, "#bfe6f5", x, 1.45, z - 0.3); } // bathroom sink and mirror
+  if (k === "wardrobe") { ped(0.6, 1.9, 1.2, "#6b4a2f", x, 0.95, z); ped(0.02, 1.7, 0.02, "#3a2a1a", x + 0.31, 0.95, z); for (const i of [-1, 1]) ped(0.04, 0.2, 0.04, "#c9a45a", x + 0.32, 1.0, z + i * 0.1); } // wardrobe against the side wall
+  if (k === "nightstand") { ped(0.45, 0.5, 0.42, "#7a5236", x, 0.25, z); cyl(0.05, 0.07, 0.25, "#c9a45a", x, 0.63, z, gr, 8); cyl(0.09, 0.14, 0.16, "#fff1c4", x, 0.82, z, gr, 10); } // bedside table and lamp
+  if (k === "bed2") { ped(1.4, 0.35, 1.9, "#6b4a2f", x, 0.18, z); ped(1.3, 0.18, 1.7, "#9fc4d8", x, 0.44, z + 0.05); ped(1.0, 0.12, 0.32, "#ffffff", x, 0.58, z - 0.65); } // guest bed
+  if (k === "dtable") { ped(1.5, 0.06, 0.9, "#a8743f", x, 0.75, z); for (const i of [-1, 1]) for (const j of [-1, 1]) ped(0.06, 0.72, 0.06, "#6b4a2f", x + i * 0.65, 0.36, z + j * 0.37); for (const i of [-0.4, 0.4]) for (const j of [-1, 1]) { ped(0.38, 0.06, 0.38, "#9b3a2e", x + i, 0.45, z + j * 0.72); ped(0.38, 0.45, 0.05, "#7a2e2a", x + i, 0.68, z + j * 0.9); } } // dining table and four chairs
+} // end fixture3d
 function homeFurn(kind, x, z, gr, rot) { // apartment furniture, turned a quarter at a time
   if (rot) { const sub = new THREE.Group(); sub.position.set(x, 0, z); sub.rotation.y = rot * Math.PI / 2; gr.add(sub); homeFurnDraw(kind, 0, 0, sub); return; } // spin it around where you stand
   homeFurnDraw(kind, x, z, gr); // no turn: draw it straight
@@ -3352,7 +3404,7 @@ function danceMoves(p, gk, seed) { // dance to the beat: different moves for eac
 function buildRoom(id) { // the inside of a building, built the first time you enter
   if (R.rooms[id]) return R.rooms[id]; // already built
   const def = ROOMDEF[id], b = BUILD.find((q) => q.id === id) || def, w = def.w || 12, h = def.h || 8, gr = new THREE.Group(); // size and colours
-  const c = document.createElement("canvas"); c.width = (w - 2) * 32; c.height = (h - 2) * 32; const x2 = c.getContext("2d"); for (let y = 0; y < h - 2; y++) for (let x = 0; x < w - 2; x++) { x2.fillStyle = def.floor[(x + y) % 2]; x2.fillRect(x * 32, y * 32, 32, 32); } // checkered floor picture
+  const c = document.createElement("canvas"); c.width = (w - 2) * 32; c.height = (h - 2) * 32; const x2 = c.getContext("2d"); for (let y = 0; y < h - 2; y++) for (let x = 0; x < w - 2; x++) { x2.fillStyle = (def.floorAt ? def.floorAt(x + 1, y + 1) : def.floor)[(x + y) % 2]; x2.fillRect(x * 32, y * 32, 32, 32); } // checkered floor picture (each room its own floor)
   const ft = new THREE.CanvasTexture(c); ft.encoding = THREE.sRGBEncoding; const fl = mesh(new THREE.PlaneGeometry(w - 2, h - 2), new THREE.MeshLambertMaterial({ map: ft }), w / 2, 0, h / 2, gr, false); fl.rotation.x = -Math.PI / 2; // lay the floor
   box(w - 1.6, 2.7, 0.2, b.col, w / 2, 1.35, 0.9, gr); box(0.2, 2.7, h - 1.8, b.col, 0.9, 1.35, h / 2, gr); // tall back and left walls
   box(0.2, 0.5, h - 1.8, shade(b.col, 0.85), w - 0.9, 0.25, h / 2, gr); for (const [x0, x1] of [[0.8, w / 2 - 0.6], [w / 2 + 0.6, w - 0.8]]) box(x1 - x0, 0.5, 0.2, shade(b.col, 0.85), (x0 + x1) / 2, 0.25, h - 0.9, gr); // low cutaway front and right walls, with the doorway
@@ -3360,6 +3412,7 @@ function buildRoom(id) { // the inside of a building, built the first time you e
   for (const i of [0, 1]) { const wx = i ? w - 3 : 3; box(1.2, 0.9, 0.04, "#3a2a1a", wx, 1.7, 1.01, gr); box(1.05, 0.78, 0.02, R.winMat, wx, 1.7, 1.04, gr); box(0.16, 0.12, 0.12, R.lampMat, wx + (i ? -1.1 : 1.1), 2.2, 1.06, gr); } // windows and wall lamps on the back wall
   const sg = mesh(geo("plane", () => new THREE.PlaneGeometry(1, 1)), new THREE.MeshBasicMaterial({ map: textTex(b.name, b.sign || "#14222b", "#ffffff", 64) }), w / 2, 2.2, 1.02, gr, false); sg.scale.set(0.45 * sg.material.map.userData.aspect, 0.45, 1); // name sign on the back wall
   const lamp = new THREE.PointLight(0xffe2b0, 0.7, Math.max(w, h) * 1.4); lamp.position.set(w / 2, 2.6, h / 2); gr.add(lamp); // warm ceiling light
+  if (def.solid) innerWalls3d(def, b.col, gr); // the walls between rooms
   for (const o of ROOM[id]) furn(o.kind, o.x, o.y, gr, o.k, o.rot || 0); // furniture
   gr.userData.marks = ROOM[id].filter((o) => o.use).map((o) => { const ring = mesh(geo("ring", () => new THREE.RingGeometry(0.26, 0.36, 28)), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, side: THREE.DoubleSide }), o.x, 0.03, o.y, gr, false); ring.rotation.x = -Math.PI / 2; const ic = sprite(emojiTex(o.icon || "•"), 0.5); ic.position.set(o.x, 1.75, o.y); gr.add(ic); const lb = sprite(textTex(o.name, "rgba(6,28,40,0.85)", "#ffffff"), 0.26, true); lb.position.set(o.x, 2.15, o.y); gr.add(lb); return { o, ring, ic }; }); // station rings, icons and names
   gr.visible = false; R.scene.add(gr); R.rooms[id] = gr; return gr; // keep it for next time
@@ -3706,6 +3759,7 @@ function handleDecorTap(wx, wy) { // a tap while decorating
   if (hit && decorSel !== hit.di) { decorSel = hit.di; decorBar(); toast("Picked up " + hit.name + ". Tap a spot, or 🔄 to turn it."); return; } // pick it up
   if (decorSel === -1) { toast("Tap one of your pieces of furniture first."); return; } // nothing picked up
   const H = homeTier(), x = Math.max(1.6, Math.min(H.w - 1.6, wx)), y = Math.max(2.3, Math.min(H.h - 1.9, wy)); // keep it inside the walls
+  if (!homeSpotOK(x, y)) { toast("That's in a wall. Pick a spot on the floor."); return; } // not inside the walls between rooms
   if (decorSel === "pet") s.petXY = [x, y]; else { s.decorXY = s.decorXY || []; s.decorXY[decorSel] = [x, y]; } // remember where it goes
   homeSetup(); decorSel = -1; decorBar(); save(); // rebuild the room and drop the piece
 } // end handleDecorTap
@@ -3714,6 +3768,12 @@ function rotateDecor() { // turn the picked-up piece a quarter turn
   if (decorSel === "pet") s.petRot = ((s.petRot || 0) + 1) % 4; else { s.decorRot = s.decorRot || []; s.decorRot[decorSel] = ((s.decorRot[decorSel] || 0) + 1) % 4; } // next quarter turn
   homeSetup(); save(); // rebuild and keep it
 } // end rotateDecor
+function homeStyleMenu() { // repaint the walls or change the floor
+  const W0 = s.wallK || "mango", F0 = s.floorK || "wood", acts = []; // what you have now
+  for (const k in WALLS) acts.push({ label: (k === W0 ? "✓ " : "🖌️ ") + "Walls: " + WALLS[k][0], info: k === W0 ? "Your walls now" : rs(PAINT_COST) + " · painted at once", why: k !== W0 && s.money < PAINT_COST ? "Not enough money" : "", go: () => { if (k !== W0) { s.money -= PAINT_COST; txn("Paint: " + WALLS[k][0], -PAINT_COST); s.wallK = k; homeSetup(); save(); toast("Walls painted " + WALLS[k][0].toLowerCase() + "."); } homeStyleMenu(); } }); // wall colours
+  for (const k in FLOORS) acts.push({ label: (k === F0 ? "✓ " : "🪵 ") + "Floor: " + FLOORS[k][0], info: k === F0 ? "Your floor now" : rs(FLOOR_COST) + " · laid at once", why: k !== F0 && s.money < FLOOR_COST ? "Not enough money" : "", go: () => { if (k !== F0) { s.money -= FLOOR_COST; txn("Floor: " + FLOORS[k][0], -FLOOR_COST); s.floorK = k; homeSetup(); save(); toast(FLOORS[k][0] + " floor laid."); } homeStyleMenu(); } }); // floors
+  openMenu("🖌️ Paint & floors", acts, "Walls " + rs(PAINT_COST) + " · floors " + rs(FLOOR_COST) + ". The floor covers your living areas; bedrooms keep their wood, the kitchen and bathroom their tiles."); // show them
+} // end homeStyleMenu
 function resetLayout() { s.decorXY = []; s.decorRot = []; s.petXY = null; s.petRot = 0; decorSel = -1; homeSetup(); decorBar(); save(); toast("Layout reset to the default."); } // start the layout over
 
 // ================= Mauritius landmarks: dodo, seven coloured earth, underwater waterfall =================
@@ -5145,7 +5205,8 @@ function decorDragMove(cx, cy) { // the held piece follows your finger
   if (!decorDrag) return; // nothing held
   const g = $("decghost"); if (g) { g.style.left = cx + "px"; g.style.top = cy + "px"; } // move the puck to the finger
   const w = worldAt(cx, cy); if (!w) return; const H = homeTier(); // where it would land, kept inside the walls
-  decorDrag.x = Math.max(1.6, Math.min(H.w - 1.6, w[0])); decorDrag.y = Math.max(2.3, Math.min(H.h - 1.9, w[1])); decorDrag.moved = true; // remember the target
+  const nx = Math.max(1.6, Math.min(H.w - 1.6, w[0])), ny = Math.max(2.3, Math.min(H.h - 1.9, w[1])); if (!homeSpotOK(nx, ny)) return; // never into a wall: it stays at the last good spot
+  decorDrag.x = nx; decorDrag.y = ny; decorDrag.moved = true; // remember the target
 } // end decorDragMove
 function decorDrop() { // let go of the held piece
   const g = $("decghost"); if (g) g.hidden = true; // hide the puck
