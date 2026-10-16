@@ -254,6 +254,7 @@ canvas.pv3d { width: 130px; height: 170px; background: radial-gradient(circle at
 .opt.on { background: var(--mango); color: var(--mango-ink); border-color: var(--mango); }
 .opt.sw { width: 30px; height: 30px; padding: 0; border-radius: 50%; }
 .opt.sw.on { outline: 3px solid var(--mango); outline-offset: 2px; }
+.nmerr { color: #e5484d; font-size: 0.8rem; margin: 4px 0 0; min-height: 1em; }
 .start { background: var(--mango); color: var(--mango-ink); border: 0; border-radius: 10px; padding: 11px; font-weight: 700; }
 .btns { display: flex; gap: 6px; }
 .hint { min-width: 0; display: none; }
@@ -2353,6 +2354,24 @@ function optRow(boxId, list, key, redo) { // build one row of choice buttons
     box.appendChild(b); // add to the row
   } // end choices
 } // end optRow
+function nameTaken(n) { // is another player already called this?
+  const k = n.toLowerCase(); if (players.some((p) => p.id !== uid && p.name.toLowerCase() === k)) return true; // anyone who has played
+  return Object.values(others).some((o) => o.p && o.p.uid !== uid && String(o.p.name || "").toLowerCase() === k); // anyone online right now
+} // end nameTaken
+function nameProblem(n) { // why a name can't be used, or "" when it's fine
+  if (!n) return "Type a name for your character.";
+  if (n.replace(/[^\p{L}\p{N}]/gu, "").length < 2) return "Your name needs at least 2 letters or numbers.";
+  if (nameTaken(n)) return "Someone is already called " + n + ". Pick another name.";
+  return "";
+} // end nameProblem
+function namePicker(after) { // older characters stuck with the old default name choose their own, once
+  const card = $("card"); card.className = "card"; card.innerHTML = ""; card.append(el("h2", "", "What's your name?"), el("p", "", "Lots of players ended up called Alex. Pick your own name so people know who you are.")); // header
+  const inp = el("input", ""); inp.type = "text"; inp.maxLength = 14; inp.placeholder = "Your name"; inp.id = "nm2"; const lb = el("label", "", "Name"); lb.htmlFor = "nm2"; // the box
+  const err = el("p", "nmerr", ""), go = el("button", "start", "Save name"); go.type = "button"; inp.oninput = () => { err.textContent = ""; }; // problems and the button
+  go.onclick = () => { const nm = cleanText(inp.value, 14), bad = nameProblem(nm); if (bad) { err.textContent = bad; inp.focus(); return; } s.name = nm; s.nameV2 = 1; save(); $("sheet").hidden = true; toast("You're now " + nm + "."); if (after) after(); }; // keep it
+  inp.onkeydown = (e) => { if (e.key === "Enter") go.onclick(); }; // enter saves
+  card.append(lb, inp, err, go); $("sheet").hidden = false; inp.focus(); // show it
+} // end namePicker
 function openCreate() { // the "who are you" screen
   const card = $("card"); // sheet body
   card.innerHTML = '<h2>Who are you in Flic en Flac?</h2><div class="mk"><div class="pvbox" id="pvbox"><canvas id="pv" width="220" height="280"></canvas></div><div class="mkf"><label for="nm">Name</label><input id="nm" type="text" maxlength="14" placeholder="Your name"><h3>Gender</h3><div class="opts" id="og"></div><h3>Status</h3><div class="opts" id="or"></div><p id="ri"></p><h3 id="ch">Course</h3><div class="opts" id="oco"></div><h3>Skin</h3><div class="opts" id="os"></div><h3>Hair</h3><div class="opts" id="ohd"></div><h3>Hair colour</h3><div class="opts" id="ohc"></div><h3>Outfit</h3><div class="opts" id="oot"></div><h3>Top colour</h3><div class="opts" id="oc"></div></div></div>'; // layout
@@ -2374,10 +2393,13 @@ function openCreate() { // the "who are you" screen
     else { const pc = $("pv").getContext("2d"); pc.clearRect(0, 0, 220, 280); drawBody(pc, 110, 170, 200, myLook(), 0, 0, false, false); } // or the flat drawing
   }; // end redo
   redo(); // first draw
-  const go = document.createElement("button"); // start button
+  const go = document.createElement("button"), nmErr = el("p", "nmerr", ""); // start button, and a line for name problems
   go.type = "button"; go.className = "start"; go.textContent = "Start living"; // label
+  $("nm").after(nmErr); $("nm").oninput = () => { nmErr.textContent = ""; }; // where name problems show
   go.onclick = () => { // create the character
-    s.name = cleanText($("nm").value, 14) || "Alex"; // name, cleaned of hidden characters, with a fallback
+    const nm = cleanText($("nm").value, 14), bad = nameProblem(nm); // name, cleaned of hidden characters
+    if (bad) { nmErr.textContent = bad; $("nm").focus(); $("nm").scrollIntoView({ block: "center" }); return; } // everyone needs their own name
+    s.name = nm; s.nameV2 = 1; // keep it
     s.money = ROLE[s.role].money; s.rent = ROLE[s.role].weekly; // money and rent from your status
     if (s.role === "resident") s.cha = 3; // residents already know people
     { const P = pieceSet(myLook()); for (const k of SLOTS) s.wardrobe[pieceKey(P.g, k, P[k])] = 1; } // your starting clothes are yours to keep
@@ -5357,6 +5379,7 @@ function start(data) { // boot the game
   chatRender(); // show the public chat panel
   playIntro(); // welcome intro
   if (!s.made) createWait = setTimeout(() => { if (!s.made) openCreate(); }, 2600); // wait a moment for cloud progress, then make your character
+  if (s.made && !s.nameV2) { if (s.name && s.name !== "Alex") s.nameV2 = 1; else { const nt = setInterval(() => { if (s.nameV2 || (typeof introOn !== "undefined" && introOn) || !$("sheet").hidden || !$("phone").hidden) return; clearInterval(nt); namePicker(); }, 900); } } // older characters that got the default "Alex" pick a real name
   requestAnimationFrame(frame); // begin the loop
 } // end start
 window.claude?.hot?.snapshot?.(() => ({ s })); // keep progress across page updates
