@@ -6,9 +6,11 @@
 <meta name="theme-color" content="#07171f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Flic en Flac">
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>html,body{height:100%;margin:0;background:#07171f;overflow:hidden}.game{border:0!important;border-radius:0!important}</style>
 <script src="net-adapter.js?v=7"></script>
 </head>
@@ -451,6 +453,8 @@ button.prow { transition: transform 0.1s ease; } button.prow:active { transform:
 .card.small .pv { padding: 5px 9px; } .card.small .pv b { font-size: 0.8rem; } .card.small .pv span { font-size: 0.72rem; }
 .card.small .act { padding: 7px 10px; } .card.small .close { padding: 7px; }
 .zoom #centerBtn { font-size: 0.95rem; }
+.fshelp { margin: 4px 0 14px; padding-left: 22px; display: grid; gap: 8px; line-height: 1.4; }
+.zoom #fsBtn { font-size: 1rem; background: var(--mango); color: var(--mango-ink); }
 .game.introOn > .hud, .game.introOn > .dock, .game.introOn > .zoom, .game.introOn > .sheet, .game.introOn > .phonewrap { visibility: hidden; }
 @keyframes drop { from { opacity: 0; transform: translateY(-60px) rotate(-8deg); } to { opacity: 1; transform: none; } }
 @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
@@ -480,7 +484,7 @@ button.prow { transition: transform 0.1s ease; } button.prow:active { transform:
   <div class="hud matchhud" id="matchhud" hidden></div>
   <div class="hud busy" id="busy" hidden><span id="busyText"></span><div class="bar"><i id="busyBar"></i></div></div>
   <div class="decghost" id="decghost" hidden>✨</div>
-  <div class="zoom"><button class="pill" id="zoomIn" type="button" aria-label="Zoom in">+</button><button class="pill" id="zoomOut" type="button" aria-label="Zoom out">−</button><button class="pill" id="centerBtn" type="button" aria-label="Back to my character" title="Back to my character" hidden>⌖</button></div>
+  <div class="zoom"><button class="pill" id="fsBtn" type="button" aria-label="Full screen" title="Full screen" hidden>⛶</button><button class="pill" id="zoomIn" type="button" aria-label="Zoom in">+</button><button class="pill" id="zoomOut" type="button" aria-label="Zoom out">−</button><button class="pill" id="centerBtn" type="button" aria-label="Back to my character" title="Back to my character" hidden>⌖</button></div>
   <div class="dock">
     <span class="btns"><button class="pill" id="rideBtn" type="button">Ride</button><button class="pill" id="musicBtn" type="button" aria-label="Music">🎵</button></span>
     <span class="hint" id="hint">Walk: arrows / WASD or tap · tap a building to go in · E use · R ride · +/− zoom</span>
@@ -2072,6 +2076,7 @@ function phoneRender() { // draw the current phone screen
     prow(box, "Name", s.name); prow(box, "Status", ROLE[s.role].label);
     { const r = el("button", "prow"); r.type = "button"; r.append(el("span", "", "Replay the welcome intro"), el("b", "", "›")); r.onclick = () => { closePhone(); playIntro(); }; box.append(r); } // watch the intro again
     { const r = el("button", "prow"), l = el("span", "", "📘 How to play"); l.append(el("small", "", "A one-minute tour of the game")); r.type = "button"; r.append(l, el("b", "", "›")); r.onclick = tutStart; box.append(r); } // the tutorial again
+    if (!fsCan() && isIOS() && !isAppMode()) { const r = el("button", "prow"), l = el("span", "", "⛶ Full screen"); l.append(el("small", "", "Add the game to your home screen to play without browser bars")); r.type = "button"; r.append(l, el("b", "", "How ›")); r.onclick = () => { closePhone(); iosFsHelp(); }; box.append(r); } // iPhone: the home screen way
     if (fsCan()) { const r = el("button", "prow"), l = el("span", "", "⛶ Full screen"); l.append(el("small", "", "Hide the browser bars while you play")); r.type = "button"; r.append(l, el("b", "", fsOn() ? "On" : "Off")); r.onclick = () => { s.fs = fsOn() ? 0 : 1; save(); (s.fs ? fsEnter() : fsExit()).finally(() => setTimeout(phoneRender, 300)); }; box.append(r); } // full screen on or off
     { const r = el("button", "prow"), l = el("span", "", "Progress saving"); l.append(el("small", "", db ? "Saved on this device and to your account" + (myCloud ? " · last synced " + new Date(myCloud.savedAt || Date.now()).toLocaleDateString() : "") : "Saved on this device only")); r.type = "button"; r.append(l, el("b", "", db ? "Load from cloud ›" : "ⓘ")); r.onclick = () => { loadCloudManually(); phoneRender(); }; box.append(r); } // cross-device save
     if (window.claude && window.claude.account) { // self-hosted server: a username and password to play this character on other devices
@@ -5381,8 +5386,21 @@ const fsCan = () => !!(document.documentElement.requestFullscreen || document.do
 const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement); // already full screen
 function fsEnter() { const d = document.documentElement; try { if (fsOn() || !fsCan()) return Promise.resolve(); const r = d.requestFullscreen ? d.requestFullscreen({ navigationUI: "hide" }) : d.webkitRequestFullscreen(); return Promise.resolve(r).catch(() => {}); } catch (e) { return Promise.resolve(); } } // go full screen (browsers only allow it after a tap)
 function fsExit() { try { if (!fsOn()) return Promise.resolve(); return Promise.resolve(document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen()).catch(() => {}); } catch (e) { return Promise.resolve(); } } // leave full screen
+const isPhone = () => matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 900; // a phone or small tablet
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); // iPhone or iPad
+const isAppMode = () => !!navigator.standalone || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches; // opened from the home screen icon
+function fsBtnSync() { const b = $("fsBtn"); if (b) b.hidden = !isPhone() || isAppMode() || fsOn() || (!fsCan() && !isIOS()); } // show the button on phones that are not full screen yet
+function iosFsHelp() { // iPhone Safari can't go full screen from a web page: the home screen icon is the way
+  const card = $("card"); card.className = "card"; card.innerHTML = ""; card.append(el("h2", "", "📱 Play full screen"), el("p", "", "iPhones only allow full screen for games added to the home screen:")); // header
+  const ol = el("ol", "fshelp"); for (const step of ["Tap the Share button ⬆️ (bottom of Safari, or top right in Chrome).", "Scroll down and tap “Add to Home Screen”, then Add.", "Open Flic en Flac from the new icon on your home screen. No browser bars.", "There, log in with your username and password to carry on with this character."]) ol.append(el("li", "", step)); card.append(ol); // the steps
+  if (accApi() && !accApi().name()) card.append(el("p", "pnote", "No login yet? Add one first in Phone → Settings, so you can carry on from the home screen.")); // they'll need a login there
+  const ok = el("button", "start", "Got it"); ok.type = "button"; ok.onclick = closeMenu; card.append(ok); topX(card); $("sheet").hidden = false; // show it
+} // end iosFsHelp
 function fsAuto(e) { if (e && e.target && e.target.closest && e.target.closest("input, textarea, select")) return; if (!s || s.fs !== 0) fsEnter(); removeEventListener("pointerup", fsAuto); removeEventListener("keydown", fsAuto); } // the first tap goes full screen, unless you turned it off
 addEventListener("pointerup", fsAuto); addEventListener("keydown", fsAuto); // browsers need a tap or a key press first
+$("fsBtn").onclick = () => { if (fsCan()) { if (s) { s.fs = 1; save(); } fsEnter(); } else iosFsHelp(); }; // the full screen button
+for (const ev of ["fullscreenchange", "webkitfullscreenchange"]) document.addEventListener(ev, fsBtnSync); addEventListener("resize", fsBtnSync); fsBtnSync(); // keep the button up to date
+setTimeout(function fsTip() { if (!s || !s.made || s.fsTip || !isIOS() || isAppMode() || fsCan()) return; if (introOn || !$("sheet").hidden || !$("phone").hidden) { setTimeout(fsTip, 5000); return; } s.fsTip = 1; save(); toast("📱 Want full screen? Tap the orange ⛶ button to see how."); }, 45000); // tell iPhone players once
 
 // ================= start =================
 function start(data) { // boot the game
