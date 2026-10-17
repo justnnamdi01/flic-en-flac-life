@@ -137,7 +137,25 @@ and `<script src="net-adapter.js"></script>` **before** the game's own markup).
 
 ---
 
-## 5. Before you open it to strangers — read this
+## 5. Removing players: the admin page
+
+Set an `ADMIN_KEY` on the server (at least 12 characters; a long random password is best) and restart it:
+
+```bash
+ADMIN_KEY='pick-a-long-secret-key' npm start           # locally
+docker run -e ADMIN_KEY='pick-a-long-secret-key' ...   # Docker; on Railway/Render add it as a variable
+```
+
+Then open **https://your-domain/admin**, enter the key, search for a player by name, login username or id, and tap **Delete**:
+
+- Their save, login, house plot, invites, waiting money transfers and gossip are removed, and they're kicked out if online.
+- Their browser is told to wipe its copy and start a brand-new character next time it opens the game.
+- Tick **Also ban** to keep that browser out for good (unban from the same page).
+- A full backup is written to `backups/before-delete-<id>-<time>.json` first, so a mistake can be undone by restoring it.
+
+Without `ADMIN_KEY` the admin page is switched off. Eight wrong keys from one address lock it out for 10 minutes.
+
+## 6. Before you open it to strangers — read this
 
 This MVP trusts the client, which is fine for friends but not for a public launch. The important
 gaps (see your launch checklist for the full list):
@@ -162,7 +180,7 @@ gaps (see your launch checklist for the full list):
 5. **Legal:** add a privacy policy, terms, and a contact for abuse reports. You're in Mauritius, so
    the Data Protection Act 2017 applies; GDPR too if you get EU players.
 
-## 6. Scaling note
+## 7. Scaling note
 
 One process keeps all state in memory and broadcasts the room to every tab, so it's great up to a
 few hundred concurrent players on a small VPS. Beyond that, move `data.json` to Postgres or Redis,

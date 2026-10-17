@@ -23,11 +23,21 @@
   function reconnectNow() { if (open || (ws && ws.readyState <= 1)) return; clearTimeout(retry); connect(); } // the screen came back: reconnect at once
   document.addEventListener("visibilitychange", function () { if (!document.hidden) reconnectNow(); }); // phone unlocked or tab shown again
   window.addEventListener("online", reconnectNow); window.addEventListener("pageshow", reconnectNow); // network back, or page restored
+  var gone = false;                                                // set once an admin removed this character
+  function removed(ban) { // wipe this browser's copy of the deleted character; a ban keeps the id so the server can keep refusing it
+    if (gone) return; gone = true; try { var set = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === "fef-sim-v2") return; return set.call(this, k, v); }; } catch (e) {} // the game must not save it again
+    try { localStorage.removeItem("fef-sim-v2"); if (!ban) { localStorage.removeItem("fef_uid"); localStorage.removeItem("fef_token"); } } catch (e) {}
+    var d = document.createElement("div"); d.setAttribute("role", "alertdialog"); d.style.cssText = "position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:24px;background:#07171f;color:#eaf7f4;font:600 17px/1.5 system-ui,sans-serif;text-align:center";
+    d.innerHTML = ban ? "<div><div style='font-size:48px'>⛔</div><p>This account has been removed from Flic en Flac Life and banned.</p></div>" : "<div><div style='font-size:48px'>🌴</div><p>This character was removed by the game admin.<br>Starting fresh…</p></div>"; document.body.appendChild(d); // tell the player
+    if (!ban) setTimeout(function () { location.reload(); }, 2500); // a brand-new character
+  }
   function connect() {
+    if (gone) return; // removed: never reconnect as that character
     try { ws = new WebSocket(URL); } catch (e) { setTimeout(connect, 2000); return; } // retry if the socket cannot be created
     ws.onopen = function () { ws.send(JSON.stringify({ t: "hello", uid: uid, token: token || undefined })); }; // identify with our key
     ws.onmessage = function (ev) {
       var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.t === "removed") { removed(!!m.ban); return; } // an admin deleted this character (or banned it)
       if (m.t === "welcome") { myPeer = m.peer; remember(m.uid, m.token); accountName = m.account || ""; open = true; if (myPres) try { ws.send(JSON.stringify({ t: "presence", patch: myPres })); } catch (e) {} /* back online: tell everyone where you are again */ for (var id in snaps) sendSub(id); var q = readyQ; readyQ = []; q.forEach(function (r) { r(); }); } // accepted: the server says who we are, then restore subscriptions
       else if (m.t === "account" || m.t === "homes") { var ar = asks[m.rid]; if (ar) { clearTimeout(ar.timer); delete asks[m.rid]; ar.resolve(m); } } // an answer to a login or home request
       if (m.t === "welcome" && m.news) newsBack = m.news, newsCbs.forEach(function (cb) { try { cb(m.news, true); } catch (e) {} }); // the latest gossip, on every (re)connect
