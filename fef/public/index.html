@@ -412,6 +412,8 @@ canvas.pv3d { width: 130px; height: 170px; background: radial-gradient(circle at
 @media (max-width: 760px) { .matchhud { top: 118px; } }
 .shout.pop { animation: pop 0.6s cubic-bezier(.2,1.4,.4,1); }
 @keyframes pop { from { transform: translateX(-50%) scale(0.6); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+@media (max-width: 760px) { .hud.chat { bottom: var(--chatBottom, 172px); } .hud.quest { bottom: var(--questBottom, 64px); } .dock { bottom: var(--dockBottom, 150px); } }
+@media (max-width: 420px) { .quest { grid-template-columns: auto minmax(0, 1fr); overflow: visible; } .quest small { display: none; } .quest .qi { width: 34px; height: 34px; font-size: 19px; } .quest .qpay { position: absolute; top: -9px; right: -6px; padding: 5px 7px; } }
 @media (max-width: 760px) { .clock { max-width: var(--clockMax, calc(100% - 20px)); } .music .gen { flex-wrap: wrap; justify-content: center; flex-shrink: 1; min-width: 0; } .music { left: 10px; right: auto; top: var(--musTop, 54px); transform: none; max-width: var(--musMax, calc(100% - 20px)); flex-wrap: wrap; gap: 5px; } .music.min { left: 10px; right: auto; top: var(--musTop, 52px); transform: none; } .music:not(.min) { justify-content: center; } .music:not(.min) .mt { flex: 1 1 100%; order: 5; } .shout { top: 46px; } .decbar { top: 46px; } }
 .buymode { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; background: rgba(8, 24, 34, 0.95); border-top: 1px solid var(--line); border-radius: 18px 18px 0 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); display: grid; gap: 8px; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.35); }
 .bmtop { display: flex; align-items: center; gap: 8px; } .bmtitle { font-family: var(--display); font-size: 0.8rem; white-space: nowrap; } .bmcap { margin-right: auto; white-space: nowrap; }
@@ -2827,13 +2829,18 @@ function drawPerson(p) { // draw someone in the world
   if (p.bubble) drawBubble(p.x * T, p.y * T - u * 0.95, p.bubble); // what they just said in town chat
 } // end drawPerson
 function hudLayout() { // phones: clock and music on the left, mood and needs on the right, never on top of each other
-  const game = document.querySelector(".game"); if (!game) return; const st = game.style, small = innerWidth <= 760; if (!small) { for (const v of ["--clockMax", "--needsTop", "--musTop", "--musMax"]) st.removeProperty(v); return; } // big screens keep their layout
+  const game = document.querySelector(".game"); if (!game) return; const st = game.style, small = innerWidth <= 760, gb = $("goBtn"); if (!small) { for (const v of ["--clockMax", "--needsTop", "--musTop", "--musMax", "--chatBottom", "--questBottom", "--dockBottom"]) st.removeProperty(v); Object.assign(gb.style, { position: "", left: "", bottom: "", maxWidth: "" }); return; } // big screens keep their layout
   const G = game.getBoundingClientRect(), mc = $("moodChip"), mr = mc && !mc.hidden ? mc.getBoundingClientRect() : null; // the screen and the mood chip
   st.setProperty("--needsTop", Math.round((mr ? mr.bottom - G.top : 10) + 6) + "px"); // needs sit under the mood chip
   const nd = $("needs"), nr = nd.offsetParent ? nd.getBoundingClientRect() : null, edge = Math.min(mr ? mr.left : G.right, nr ? nr.left : G.right); // the right-hand column starts here
   st.setProperty("--clockMax", Math.max(150, edge - G.left - 18) + "px"); // the clock stops before it
   const ck = document.querySelector(".hud.clock").getBoundingClientRect(); // after the clock settles
   st.setProperty("--musTop", Math.round(ck.bottom - G.top + 6) + "px"); st.setProperty("--musMax", Math.max(150, (nr ? nr.left - G.left : G.width - 10) - 18) + "px"); // music under the clock, left of the needs
+  const nb = $("navbar"), zm = document.querySelector(".zoom"); if (nb && !nb.hidden) st.setProperty("--questBottom", Math.round(G.bottom - nb.getBoundingClientRect().top + 8) + "px"); // the goal card sits above the nav bar
+  if (zm && zm.offsetParent) st.setProperty("--dockBottom", Math.round(G.bottom - zm.getBoundingClientRect().top + 8) + "px"); // Ride sits above the zoom buttons
+  const qe = $("quest"), base = qe && !qe.hidden ? qe.getBoundingClientRect().top : nb && !nb.hidden ? nb.getBoundingClientRect().top : G.bottom - 10; // the bottom-left stack starts above the goal card (or the nav bar)
+  Object.assign(gb.style, { position: "fixed", left: Math.round(G.left + 10) + "px", bottom: Math.round(innerHeight - base + 8) + "px", maxWidth: "calc(100% - 92px)" }); // the yellow action button sits just above the goal card
+  const top = gb.hidden ? base : gb.getBoundingClientRect().top; st.setProperty("--chatBottom", Math.round(G.bottom - top + 8) + "px"); // and the public chat above that
 } // end hudLayout
 function hud() { // refresh the text panels
   const h = Math.floor(hour()), m = Math.floor(s.t % 60); // clock parts
