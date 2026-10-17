@@ -57,7 +57,11 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 .clock h1 span { color: var(--mango); }
 .clock b { font-family: var(--mono); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
 .clock .cash { color: var(--mango); font-size: 1rem; }
-.needs { right: 10px; top: 54px; display: grid; grid-template-columns: auto 48px; gap: 4px 6px; align-items: center; font-size: 1rem; color: var(--muted); }
+.needs { right: 10px; top: 54px; display: grid; gap: 4px; justify-items: end; font-size: 1rem; color: var(--muted); padding: 4px 10px 8px; }
+.needs .nlist { display: grid; grid-template-columns: auto 48px; gap: 4px 6px; align-items: center; justify-self: stretch; }
+.needs .ntog { border: 0; background: transparent; color: var(--muted); font-size: 0.8rem; padding: 0 2px; line-height: 1; cursor: pointer; }
+.needs.min { padding: 4px 6px 6px; } .needs.min .nlist { grid-template-columns: auto; gap: 3px; justify-items: center; }
+.needs .ni { position: relative; display: inline-block; } .needs .nd { position: absolute; right: -3px; bottom: -1px; width: 8px; height: 8px; border-radius: 50%; background: #2bd46a; box-shadow: 0 0 0 2px rgba(6, 28, 40, 0.9); } .needs .nd.mid { background: #f3a712; } .needs .nd.low { background: var(--warn); }
 .bar { height: 7px; background: var(--line); border-radius: 4px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--reef); }
 .bar i.low { background: var(--warn); }
@@ -216,7 +220,7 @@ button:focus-visible { outline: 3px solid var(--mango); outline-offset: 2px; }
 .playedbig { display: grid; justify-items: center; gap: 2px; margin: 4px 0 10px; padding: 14px; border-radius: 16px; background: linear-gradient(135deg, #1fa5a0, #3d7be9); color: #fff; } .playedbig b { font-size: 2rem; font-weight: 800; line-height: 1; } .playedbig span { font-size: 0.82rem; opacity: 0.92; }
 .moodchip { position: absolute; right: 10px; top: 10px; z-index: 6; display: flex; align-items: center; gap: 6px; border: 0; cursor: pointer; padding: 6px 12px 6px 8px; border-radius: 999px; font: 800 0.8rem/1 Figtree, system-ui, sans-serif; color: #10232c; background: #fffdf8; box-shadow: 0 0 0 3px var(--mc, #3fd16b), 0 6px 16px rgba(0, 0, 0, 0.3); }
 .moodchip .mci { font-size: 1.15rem; } .moodchip[hidden] { display: none; }
-.hud.needs { top: 52px !important; }
+.hud.needs { top: var(--needsTop, 52px) !important; }
 .traitgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 10px 0 14px; }
 .traitopt { display: grid; gap: 3px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.06); color: inherit; cursor: pointer; font: inherit; }
 .traitopt .ti { font-size: 1.5rem; } .traitopt b { font-size: 0.95rem; } .traitopt small { font-size: 0.75rem; opacity: 0.8; line-height: 1.3; }
@@ -408,7 +412,7 @@ canvas.pv3d { width: 130px; height: 170px; background: radial-gradient(circle at
 @media (max-width: 760px) { .matchhud { top: 118px; } }
 .shout.pop { animation: pop 0.6s cubic-bezier(.2,1.4,.4,1); }
 @keyframes pop { from { transform: translateX(-50%) scale(0.6); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
-@media (max-width: 760px) { .music { left: 50%; right: auto; top: 54px; transform: translateX(-50%); max-width: calc(100% - 20px); flex-wrap: wrap; gap: 5px; } .music.min { left: 10px; right: auto; top: 52px; transform: none; } .music:not(.min) { justify-content: center; } .music:not(.min) .mt { flex: 1 1 100%; order: 5; } .shout { top: 46px; } .decbar { top: 46px; } }
+@media (max-width: 760px) { .clock { max-width: var(--clockMax, calc(100% - 20px)); } .music .gen { flex-wrap: wrap; justify-content: center; flex-shrink: 1; min-width: 0; } .music { left: 10px; right: auto; top: var(--musTop, 54px); transform: none; max-width: var(--musMax, calc(100% - 20px)); flex-wrap: wrap; gap: 5px; } .music.min { left: 10px; right: auto; top: var(--musTop, 52px); transform: none; } .music:not(.min) { justify-content: center; } .music:not(.min) .mt { flex: 1 1 100%; order: 5; } .shout { top: 46px; } .decbar { top: 46px; } }
 .buymode { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; background: rgba(8, 24, 34, 0.95); border-top: 1px solid var(--line); border-radius: 18px 18px 0 0; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); display: grid; gap: 8px; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.35); }
 .bmtop { display: flex; align-items: center; gap: 8px; } .bmtitle { font-family: var(--display); font-size: 0.8rem; white-space: nowrap; } .bmcap { margin-right: auto; white-space: nowrap; }
 .bmcash { font-family: var(--mono); font-weight: 700; color: var(--mango); font-size: 0.85rem; } .bmcap { font-size: 0.75rem; color: var(--muted); }
@@ -497,7 +501,7 @@ button.prow { transition: transform 0.1s ease; } button.prow:active { transform:
     <div class="chatlog" id="chatLog" aria-live="polite"></div>
     <form class="chatform" id="chatForm"><input id="chatBox" type="text" maxlength="200" placeholder="Say hey to everyone (T)" autocomplete="off"><button type="submit">Send</button></form>
   </div>
-  <div class="hud needs" id="needs"></div>
+  <div class="hud needs" id="needs"><button class="ntog" id="needsTog" type="button" aria-label="Collapse needs" aria-expanded="true">▴</button><div class="nlist" id="needsList"></div></div>
   <div class="hud toast" id="toast" hidden></div>
   <div class="hud music" id="music" hidden><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><b class="mnow" id="mNow"></b><span class="mt"><small id="mWhere">Now playing</small><b id="mTrack"></b></span><span class="gen" id="mGen"></span><button class="mb" id="mDance" type="button">💃 Dance</button><button class="mb" id="mMute" type="button" aria-label="Mute music">🔊</button><button class="mb mtog" id="mToggle" type="button" aria-label="Expand or collapse music">▾</button></div>
   <div class="bmsel" id="bmSel" hidden><span class="bmtxt" id="bmSelTxt">Tap an item below to buy it · drag furniture to move it</span><span class="bmbtns" id="bmSelBtns"><button type="button" id="bmRot">🔄 Turn</button><button type="button" id="bmSell">Sell</button><button type="button" id="bmDesel" aria-label="Put down">✕</button></span></div>
@@ -2822,12 +2826,23 @@ function drawPerson(p) { // draw someone in the world
   if (p.name && (p.real || Math.hypot(p.x - s.x, p.y - s.y) < 3)) { g.font = "700 11px Figtree, sans-serif"; g.fillStyle = "#06202b"; g.fillText(p.name, p.x * T + 1, p.y * T - u * 0.82 + 1); g.fillStyle = p.real ? "#ffd23c" : "#ffffff"; g.fillText(p.name + (!p.real && (s.friends[p.name] || 0) >= 3 ? " ♥" : "") + (p.tag || ""), p.x * T, p.y * T - u * 0.82); } // name: always for real players (yellow), nearby for neighbours
   if (p.bubble) drawBubble(p.x * T, p.y * T - u * 0.95, p.bubble); // what they just said in town chat
 } // end drawPerson
+function hudLayout() { // phones: clock and music on the left, mood and needs on the right, never on top of each other
+  const game = document.querySelector(".game"); if (!game) return; const st = game.style, small = innerWidth <= 760; if (!small) { for (const v of ["--clockMax", "--needsTop", "--musTop", "--musMax"]) st.removeProperty(v); return; } // big screens keep their layout
+  const G = game.getBoundingClientRect(), mc = $("moodChip"), mr = mc && !mc.hidden ? mc.getBoundingClientRect() : null; // the screen and the mood chip
+  st.setProperty("--needsTop", Math.round((mr ? mr.bottom - G.top : 10) + 6) + "px"); // needs sit under the mood chip
+  const nd = $("needs"), nr = nd.offsetParent ? nd.getBoundingClientRect() : null, edge = Math.min(mr ? mr.left : G.right, nr ? nr.left : G.right); // the right-hand column starts here
+  st.setProperty("--clockMax", Math.max(150, edge - G.left - 18) + "px"); // the clock stops before it
+  const ck = document.querySelector(".hud.clock").getBoundingClientRect(); // after the clock settles
+  st.setProperty("--musTop", Math.round(ck.bottom - G.top + 6) + "px"); st.setProperty("--musMax", Math.max(150, (nr ? nr.left - G.left : G.width - 10) - 18) + "px"); // music under the clock, left of the needs
+} // end hudLayout
 function hud() { // refresh the text panels
   const h = Math.floor(hour()), m = Math.floor(s.t % 60); // clock parts
   $("clock").textContent = "Day " + showDay() + " " + DAYS[(day() - 1) % 7] + " " + String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + " " + WEATHER[weather().k].e; // day, time and the sky
   $("cash").textContent = rsShort(s.money); // money, short form
   { const dv = $("deliv"); if (dv) { if (s.driverWait) { dv.hidden = false; dv.textContent = "🛵 Driver at your home — collect"; } else if (s.deliverMs && Date.now() < s.deliverMs) { dv.hidden = false; dv.textContent = "🛵 Food arriving in " + Math.ceil((s.deliverMs - Date.now()) / 1000) + "s"; } else dv.hidden = true; } } // live delivery status
-  $("needs").innerHTML = NEEDS.map((k) => '<span title="' + NEED_LABEL[k] + '">' + NEED_ICON[k] + '</span><div class="bar"><i class="' + (s[k] < 25 ? "low" : "") + '" style="width:' + Math.round(s[k]) + '%"></i></div>').join(""); // six need bars, icon-labelled
+  { const nm = !!s.needsMin, nd = $("needs"); nd.classList.toggle("min", nm); $("needsTog").textContent = nm ? "▾" : "▴"; $("needsTog").setAttribute("aria-expanded", String(!nm)); $("needsTog").setAttribute("aria-label", nm ? "Show need bars" : "Collapse needs"); // open, or folded down to icons
+    $("needsList").innerHTML = NEEDS.map((k) => nm ? '<span class="ni" title="' + NEED_LABEL[k] + " " + Math.round(s[k]) + '%">' + NEED_ICON[k] + '<i class="nd ' + (s[k] < 25 ? "low" : s[k] < 50 ? "mid" : "") + '"></i></span>' : '<span title="' + NEED_LABEL[k] + '">' + NEED_ICON[k] + '</span><div class="bar"><i class="' + (s[k] < 25 ? "low" : "") + '" style="width:' + Math.round(s[k]) + '%"></i></div>').join(""); } // six need bars (or icons with a coloured dot when folded)
+  hudLayout(); // keep the top panels from overlapping on small screens
   musicHud(); // now playing bar
   $("busy").hidden = !busy; // progress panel
   if (ride) { $("busy").hidden = false; $("busyText").textContent = ride.text; $("busyBar").style.width = "100%"; } // show the trip status
@@ -5556,6 +5571,7 @@ function tapWorld(e) { // tap or click the world
 $("goBtn").onclick = useNear; // yellow use button
 $("pclose").onclick = closePhone; // phone close X
 $("navHome").onclick = () => { if (decorMode) endDecor(); else if (s.inside === "home") startDecor(); else goHome(); }; // Home, or Decorate when you are inside
+$("needsTog").onclick = () => { s.needsMin = !s.needsMin; save(); hud(); }; // fold the need bars away, or bring them back
 $("navBuy").onclick = () => { if (decorMode) return; if (s.debt && s.inside !== "home") { openPhone("house"); return; } startDecor(); }; // Buy mode in your home (the Home app still has pets and moving house)
 $("navMap").onclick = () => openPhone("maps"); // the town map
 $("navPhone").onclick = () => openPhone(); // open the phone
