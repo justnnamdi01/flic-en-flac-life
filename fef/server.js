@@ -50,8 +50,8 @@ function pruneMail() { // keep the mail collection from growing without bound
 
 // ---------- the little Firestore-like database (collections of documents) ----------
 const dict = (o) => Object.assign(Object.create(null), o || {}); // a lookup table with no prototype (so "__proto__" is just a key)
-let db = { players: {}, mail: {}, homes: dict(), auth: { bound: dict(), accounts: dict(), names: dict() }, invites: dict(), news: [] }; // public collections, plus private login data, home invites and town gossip
-try { const loaded = JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); db.players = loaded.players || {}; db.mail = loaded.mail || {}; db.news = Array.isArray(loaded.news) ? loaded.news.slice(-60) : []; db.homes = dict(loaded.homes); const a = loaded.auth || {}; db.auth = { bound: dict(a.bound), accounts: dict(a.accounts), names: dict(a.names) }; db.invites = dict(); for (const k in loaded.invites || {}) db.invites[k] = dict(loaded.invites[k]); } catch (e) {} // load last state (known collections only)
+let db = { players: {}, mail: {}, homes: dict(), auth: { bound: dict(), accounts: dict(), names: dict() }, invites: dict(), news: [], removed: dict() }; // public collections, plus private login data, home invites and town gossip
+try { const loaded = JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); db.players = loaded.players || {}; db.mail = loaded.mail || {}; db.news = Array.isArray(loaded.news) ? loaded.news.slice(-60) : []; db.homes = dict(loaded.homes); db.removed = dict(loaded.removed); const a = loaded.auth || {}; db.auth = { bound: dict(a.bound), accounts: dict(a.accounts), names: dict(a.names) }; db.invites = dict(); for (const k in loaded.invites || {}) db.invites[k] = dict(loaded.invites[k]); } catch (e) {} // load last state (known collections only)
 const PUBLIC_COLS = ["players", "mail", "homes"];      // the only collections a tab may read (homes: which player lives at which address)
 let saveTimer = null;                                  // debounce disk writes
 const BACKUP_DIR = path.join(path.dirname(DATA_FILE), "backups"); // daily copies of everyone's progress, kept for two weeks
@@ -150,10 +150,58 @@ async function account(ws, me, m) { // create a login for this character, or log
   } catch (e) { return reply({ ok: false, error: "Something went wrong. Try again." }); }
 }
 
+// ---------- admin: find and delete players (only when ADMIN_KEY is set on the server) ----------
+const ADMIN_KEY = String(process.env.ADMIN_KEY || ""); // the password for /admin; at least 12 characters, or the admin tools stay off
+const adminFails = new Map();                          // ip -> { n, until }: lock out after 8 wrong keys
+function adminOk(req) { // is this request from someone holding the admin key?
+  if (ADMIN_KEY.length < 12) return false; const got = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  const a = crypto.createHash("sha256").update(got).digest(), b = crypto.createHash("sha256").update(ADMIN_KEY).digest(); return crypto.timingSafeEqual(a, b); // constant-time compare
+}
+function playerRow(uid) { // what the admin page shows about one player
+  const d = db.players[uid] || {}, login = db.auth.names[uid] || "", online = [...peers.values()].some((p) => p.uid === uid && !p.away);
+  return { uid, name: String(d.name || "(no name)").slice(0, 24), login, money: Number.isFinite(d.money) ? Math.round(d.money) : 0, role: String(d.role || ""), joined: d.joined || 0, savedAt: d.savedAt || 0, home: homeOf(uid), online };
+}
+function removePlayer(uid, ban) { // delete everything about one player, and kick them out if they are online
+  try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); fs.writeFileSync(path.join(BACKUP_DIR, "before-delete-" + uid + "-" + Date.now() + ".json"), JSON.stringify(db)); } catch (e) { return "Could not write a backup, so nothing was deleted: " + e.message; } // a backup first, always
+  const name = (db.players[uid] || {}).name || ""; delete db.players[uid]; // their save
+  const login = db.auth.names[uid]; if (login && db.auth.accounts[login] && db.auth.accounts[login].uid === uid) delete db.auth.accounts[login]; delete db.auth.names[uid]; // their username and password
+  for (const i in db.homes) if (db.homes[i].uid === uid) delete db.homes[i]; parties.delete(uid); // their address goes back to the pool
+  delete db.invites[uid]; for (const o in db.invites) delete db.invites[o][uid]; // invites from and to them
+  for (const id in db.mail) if (db.mail[id].to === uid) delete db.mail[id]; db.news = db.news.filter((n) => n.uid !== uid && n.vuid !== uid); // money waiting for them, and gossip about them
+  db.removed[uid] = { at: Date.now(), ban: !!ban, name: String(name).slice(0, 24) }; persist(); // remember, so their browser starts fresh (or stays out if banned)
+  for (const [id, p] of peers) if (p.uid === uid) { send(p.ws, { t: "removed", ban: !!ban }); const w = p.ws; setTimeout(() => { try { w && w.close(); } catch (e) {} }, 300); peers.delete(id); } // kick them out now
+  peersDirty = true; fanout("players"); fanout("homes"); fanout("mail"); return ""; // everyone's lists update
+}
+function adminApi(req, res, url) { // the JSON API behind /admin
+  const json = (code, o) => { res.writeHead(code, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(o)); };
+  if (ADMIN_KEY.length < 12) return json(404, { ok: false, error: "Admin is turned off. Set ADMIN_KEY (12+ characters) on the server and restart it." });
+  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim(), f = adminFails.get(ip);
+  if (f && f.until > Date.now()) return json(429, { ok: false, error: "Too many wrong keys. Wait 10 minutes." });
+  if (!adminOk(req)) { const n = (f ? f.n : 0) + 1; if (adminFails.size > 5000) adminFails.clear(); adminFails.set(ip, { n, until: n >= 8 ? Date.now() + 600000 : 0 }); return json(401, { ok: false, error: "Wrong admin key." }); }
+  adminFails.delete(ip); const q = new URL(req.url, "http://x").searchParams;
+  if (req.method === "GET" && url === "/api/admin/players") { // search by name, login or id
+    const s = String(q.get("q") || "").trim().toLowerCase(), ids = Object.keys(db.players).filter((uid) => { if (!s) return true; const r = playerRow(uid); return r.name.toLowerCase().includes(s) || r.login.includes(s) || uid.includes(s); });
+    const rows = ids.map(playerRow).sort((a, b) => a.name.localeCompare(b.name)); return json(200, { ok: true, total: Object.keys(db.players).length, count: rows.length, players: rows.slice(0, 200) });
+  }
+  if (req.method === "GET" && url === "/api/admin/banned") return json(200, { ok: true, banned: Object.entries(db.removed).filter(([, r]) => r.ban).map(([uid, r]) => ({ uid, name: r.name, at: r.at })) }); // the ban list
+  if (req.method === "POST" && (url === "/api/admin/delete" || url === "/api/admin/unban")) { // read a small JSON body
+    let body = ""; req.on("data", (c) => { body += c; if (body.length > 2048) req.destroy(); });
+    req.on("end", () => { let m = {}; try { m = JSON.parse(body || "{}"); } catch (e) { return json(400, { ok: false, error: "Bad request." }); } const uid = String(m.uid || "");
+      if (!UID_RE.test(uid)) return json(400, { ok: false, error: "That isn't a player id." });
+      if (url === "/api/admin/unban") { if (db.removed[uid]) { db.removed[uid].ban = false; persist(); } return json(200, { ok: true }); } // they may come back as a new character
+      if (!db.players[uid] && !db.auth.names[uid]) return json(404, { ok: false, error: "No player with that id." });
+      const err = removePlayer(uid, !!m.ban); return err ? json(500, { ok: false, error: err }) : json(200, { ok: true }); });
+    return;
+  }
+  return json(404, { ok: false, error: "Unknown admin request." });
+}
+
 // ---------- the HTTP side: serve the game from /public ----------
 const server = http.createServer((req, res) => {
-  if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end("method not allowed"); } // read-only static server
   let url = decodeURIComponent((req.url || "/").split("?")[0]);   // the path only
+  if (url.startsWith("/api/admin/")) return adminApi(req, res, url); // the admin tools
+  if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end("method not allowed"); } // read-only static server
+  if (url === "/admin") url = "/admin.html";                      // the admin page
   if (url === "/api/stats") { res.writeHead(200, { "content-type": "application/json", "cache-control": "no-cache" }); return res.end(JSON.stringify({ total: playedCount() })); } // the welcome screen's population
   if (url === "/") url = "/index.html";                           // default page
   const file = path.join(PUBLIC, path.normalize(url).replace(/^(\.\.[\/\\])+/, "")); // block path escapes
@@ -222,7 +270,9 @@ wss.on("connection", (ws) => {
     let m; try { m = JSON.parse(raw); } catch (e) { return; } // ignore junk
     const me = peers.get(peerId); if (!me) return;        // gone already
     if (m.t === "hello") { // who this tab is: checked against its key, then welcomed (once per connection)
-      if (me.uid) return; clearTimeout(helloTimer); me.uid = whoIs(m);
+      if (me.uid) return; clearTimeout(helloTimer);
+      const gone = db.removed[String(m.uid || "")]; if (gone && keyOk(String(m.uid), m.token)) { send(ws, { t: "removed", ban: !!gone.ban }); peers.delete(peerId); peersDirty = true; setTimeout(() => { try { ws.close(); } catch (e) {} }, 300); return; } // an admin deleted this character: tell the browser to start fresh (or that it is banned)
+      me.uid = whoIs(m);
       for (const [id, p] of peers) if (p.away && p.uid === me.uid) { if (!Object.keys(me.presence).length) me.presence = p.presence; peers.delete(id); } peersDirty = true; // back from "away": take your old spot
       send(ws, { t: "welcome", peer: peerId, uid: me.uid, token: sign(me.uid), account: db.auth.names[me.uid] || "", news: db.news.slice(-25) }); return; // its id, key, login name and the latest gossip
     }
@@ -241,7 +291,7 @@ wss.on("connection", (ws) => {
       peersDirty = true; } return; }
     if (m.t === "doc.set") { // only your own players/<uid>, nothing else
       const parts = String(m.path || "").split("/"), col = parts[0], id = parts[1]; // which document
-      if (col === "players" && id && id === me.uid && allow(me) && sizeOk(m.data, MAX_DOC)) { db.players[id] = m.data; persist(); fanout("players"); } // save your own record
+      if (col === "players" && id && id === me.uid && !db.removed[id] && allow(me) && sizeOk(m.data, MAX_DOC)) { db.players[id] = m.data; persist(); fanout("players"); } // save your own record
       send(ws, { t: "ack", rid: m.rid }); return; // always ack so the client never hangs
     }
     if (m.t === "col.add") { // only valid mail (money transfers) may be added

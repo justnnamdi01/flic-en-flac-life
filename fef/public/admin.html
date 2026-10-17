@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#07171f">
+<title>Flic en Flac Life · Admin</title>
+<style>
+:root { --bg: #07171f; --panel: #0e2633; --line: #24485a; --ink: #eaf7f4; --muted: #9cc0c6; --mango: #ffa733; --mango-ink: #2b1700; --red: #e23b3b; --green: #35c48b; color-scheme: dark; }
+* { box-sizing: border-box; } [hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 18px 16px 60px; display: grid; gap: 14px; }
+h1 { font-size: 1.25rem; margin: 4px 0 0; } h2 { font-size: 1rem; margin: 0; }
+.muted { color: var(--muted); font-size: 0.85rem; margin: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+input[type=password], input[type=search] { flex: 1 1 220px; min-width: 0; background: #071c26; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; }
+button { border: 0; border-radius: 999px; padding: 9px 15px; font: 700 0.9rem system-ui, sans-serif; cursor: pointer; background: #173444; color: var(--ink); }
+button.primary { background: var(--mango); color: var(--mango-ink); } button.danger { background: var(--red); color: #fff; } button:disabled { opacity: 0.5; cursor: default; }
+.err { color: #ff8a80; font-weight: 600; margin: 0; } .ok { color: var(--green); font-weight: 600; margin: 0; }
+.list { display: grid; gap: 8px; }
+.p { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; background: #0a202b; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.p b { font-size: 1rem; overflow-wrap: anywhere; } .p .meta { grid-column: 1; color: var(--muted); font-size: 0.8rem; overflow-wrap: anywhere; } .p button { grid-row: 1 / span 2; grid-column: 2; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-left: 6px; vertical-align: middle; }
+dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; padding: 18px; max-width: min(420px, calc(100% - 32px)); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+dialog ul { margin: 6px 0 12px; padding-left: 20px; color: var(--muted); font-size: 0.88rem; }
+label.chk { display: flex; gap: 8px; align-items: flex-start; font-size: 0.92rem; margin: 6px 0 14px; } label.chk input { margin-top: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <div><h1>🌴 Flic en Flac Life · Admin</h1><p class="muted">Find a player and remove them from the game.</p></div>
+
+  <section class="card" id="keyCard">
+    <h2>Admin key</h2>
+    <p class="muted">The ADMIN_KEY set on your server. It's kept only in this browser tab.</p>
+    <form class="row" id="keyForm"><input type="password" id="key" autocomplete="current-password" placeholder="Admin key" aria-label="Admin key"><button class="primary" type="submit">Unlock</button></form>
+    <p class="err" id="keyErr" hidden></p>
+  </section>
+
+  <section class="card" id="findCard" hidden>
+    <div class="row"><h2 style="margin-right:auto">Players</h2><span class="muted" id="total"></span><button type="button" id="lock">Lock</button></div>
+    <form class="row" id="findForm"><input type="search" id="q" placeholder="Search by name, login or id" aria-label="Search players"><button class="primary" type="submit">Search</button></form>
+    <p class="ok" id="msg" hidden></p><p class="err" id="err" hidden></p>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section class="card" id="banCard" hidden>
+    <h2>Banned</h2>
+    <div class="list" id="banList"></div>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <h2 id="dlgTitle">Delete player?</h2>
+  <p class="muted" id="dlgWho"></p>
+  <p style="margin:10px 0 0">This permanently removes:</p>
+  <ul><li>their character, money and progress</li><li>their login (username and password)</li><li>their house plot and home invites</li><li>money transfers waiting for them, and gossip about them</li></ul>
+  <p class="muted">If they're online they're kicked out now. Next time their browser opens the game it starts a new character. A backup of all data is saved first.</p>
+  <label class="chk"><input type="checkbox" id="ban"> <span>Also <b>ban</b> this browser, so it can't come back</span></label>
+  <div class="row"><button type="button" id="cancel">Cancel</button><button type="button" class="danger" id="confirm">Delete player</button></div>
+</dialog>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let key = ""; try { key = sessionStorage.getItem("fefAdminKey") || ""; } catch (e) {}
+  let target = null;
+  const show = (el, text) => { el.textContent = text || ""; el.hidden = !text; };
+  const money = (n) => "Rs " + Math.round(n).toLocaleString("en");
+  const when = (t) => t ? new Date(t).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "—";
+  async function api(path, body) { // one admin request
+    const r = await fetch(path, { method: body ? "POST" : "GET", headers: Object.assign({ authorization: "Bearer " + key }, body ? { "content-type": "application/json" } : {}), body: body ? JSON.stringify(body) : undefined, cache: "no-store" });
+    let d = {}; try { d = await r.json(); } catch (e) {} if (!r.ok || !d.ok) { const e = new Error(d.error || "Request failed (" + r.status + ")."); e.status = r.status; throw e; } return d;
+  }
+  function locked(text) { key = ""; try { sessionStorage.removeItem("fefAdminKey"); } catch (e) {} $("findCard").hidden = $("banCard").hidden = true; $("keyCard").hidden = false; show($("keyErr"), text); }
+  async function search() { // list players matching the search box
+    show($("err"), ""); const q = $("q").value.trim();
+    try { const d = await api("/api/admin/players?q=" + encodeURIComponent(q)); $("total").textContent = d.total + " players"; const list = $("list"); list.innerHTML = "";
+      if (!d.players.length) { const p = document.createElement("p"); p.className = "muted"; p.textContent = q ? "No player matches “" + q + "”." : "No players yet."; list.append(p); }
+      for (const pl of d.players) { const row = document.createElement("div"); row.className = "p"; const b = document.createElement("b"); b.textContent = pl.name; if (pl.online) { const dot = document.createElement("span"); dot.className = "dot"; dot.title = "Online now"; b.append(dot); }
+        const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = [pl.login ? "@" + pl.login : "no login", money(pl.money), pl.role || "", "joined " + when(pl.joined), "id " + pl.uid].filter(Boolean).join(" · ");
+        const del = document.createElement("button"); del.type = "button"; del.className = "danger"; del.textContent = "Delete"; del.onclick = () => ask(pl); row.append(b, del, meta); list.append(row); }
+      if (d.count > d.players.length) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "Showing 200 of " + d.count + ". Search to narrow it down."; list.append(p); }
+      $("keyCard").hidden = true; $("findCard").hidden = $("banCard").hidden = false; bans();
+    } catch (e) { if (e.status === 401 || e.status === 404 || e.status === 429) locked(e.message); else show($("err"), e.message); }
+  }
+  async function bans() { // the ban list, with unban buttons
+    try { const d = await api("/api/admin/banned"), list = $("banList"); list.innerHTML = "";
+      if (!d.banned.length) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "Nobody is banned."; list.append(p); return; }
+      for (const r of d.banned) { const row = document.createElement("div"); row.className = "p"; const b = document.createElement("b"); b.textContent = r.name || "(no name)"; const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = "banned " + when(r.at) + " · id " + r.uid;
+        const un = document.createElement("button"); un.type = "button"; un.textContent = "Unban"; un.onclick = async () => { un.disabled = true; try { await api("/api/admin/unban", { uid: r.uid }); show($("msg"), (r.name || "That player") + " is unbanned. They can start a new character."); bans(); } catch (e) { show($("err"), e.message); un.disabled = false; } };
+        row.append(b, un, meta); list.append(row); }
+    } catch (e) {}
+  }
+  function ask(pl) { target = pl; $("dlgTitle").textContent = "Delete " + pl.name + "?"; $("dlgWho").textContent = (pl.login ? "@" + pl.login + " · " : "") + money(pl.money) + " · id " + pl.uid; $("ban").checked = false; $("confirm").disabled = false; $("dlg").showModal(); }
+  $("cancel").onclick = () => $("dlg").close();
+  $("confirm").onclick = async () => { if (!target) return; $("confirm").disabled = true;
+    try { await api("/api/admin/delete", { uid: target.uid, ban: $("ban").checked }); $("dlg").close(); show($("msg"), target.name + " was deleted" + ($("ban").checked ? " and banned." : ".")); search(); }
+    catch (e) { $("dlg").close(); show($("err"), e.message); } };
+  $("keyForm").onsubmit = (e) => { e.preventDefault(); key = $("key").value.trim(); if (!key) return; try { sessionStorage.setItem("fefAdminKey", key); } catch (er) {} show($("keyErr"), ""); search(); };
+  $("findForm").onsubmit = (e) => { e.preventDefault(); show($("msg"), ""); search(); };
+  $("lock").onclick = () => locked("");
+  if (key) search();
+})();
+</script>
+</body>
+</html>
